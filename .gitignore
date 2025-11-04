@@ -1,0 +1,38 @@
+# Build artifacts
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+TestResults/
+*.coverage*
+*.trx
+*.log
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# NuGet
+.nuget/
+packages/
+*.nupkg
+*.snupkg
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tooling
+/.ionide/
+/.fleet/
+/.tools/
+
+# Generated
+**/*.Generated.cs
+
+# Rider
+.git/.idea/
