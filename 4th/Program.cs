@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Forth;
 
-Console.WriteLine("Forth REPL - placeholder");
+Console.WriteLine("Forth REPL - type BYE to exit");
 var interp = new ForthInterpreter();
 
 while (true)
@@ -11,12 +11,13 @@ while (true)
     if (line is null) break;
     try
     {
-        if (!interp.Interpret(line)) break;
+        var keepGoing = interp.Interpret(line);
+        Console.WriteLine(" ok");
+        if (!keepGoing) break;
     }
-    catch (NotImplementedException)
+    catch (ForthException ex)
     {
-        Console.WriteLine("Interpreter not implemented yet.");
-        break;
+        Console.WriteLine($"Error: {ex.Code}: {ex.Message}");
     }
     catch (Exception ex)
     {
