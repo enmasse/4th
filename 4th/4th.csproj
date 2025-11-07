@@ -9,4 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\src\Forth.Core\Forth.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Forth\" />
+  </ItemGroup>
 </Project>

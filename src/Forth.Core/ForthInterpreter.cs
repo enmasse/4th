@@ -18,6 +18,9 @@ public class ForthInterpreter : IForthInterpreter
     private readonly Dictionary<long, long> _mem = new();
     private long _nextAddr = 1;
 
+    // REPL exit signal
+    private bool _exitRequested;
+
     public ForthInterpreter(IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
@@ -89,12 +92,14 @@ public class ForthInterpreter : IForthInterpreter
                 if (TryParseNumber(tok, out var num))
                 {
                     _stack.Add(num);
+                    if (_exitRequested) return false;
                     continue;
                 }
 
                 if (_dict.TryGetValue(tok, out var w))
                 {
                     w.Execute(this);
+                    if (_exitRequested) return false;
                     continue;
                 }
 
@@ -115,7 +120,10 @@ public class ForthInterpreter : IForthInterpreter
                         try
                         {
                             foreach (var instr in compiledBody)
+                            {
                                 instr(interp);
+                                if (interp._exitRequested) break;
+                            }
                         }
                         catch (ExitWordException)
                         {
@@ -285,7 +293,7 @@ public class ForthInterpreter : IForthInterpreter
             }
         }
 
-        return true;
+        return !_exitRequested;
     }
 
     private List<Action<ForthInterpreter>> CurrentList()
@@ -417,6 +425,10 @@ public class ForthInterpreter : IForthInterpreter
         {
             throw new ExitWordException();
         });
+
+        // Words to exit the REPL
+        _dict["BYE"] = new Word(interp => interp._exitRequested = true);
+        _dict["QUIT"] = new Word(interp => interp._exitRequested = true);
 
         _dict["."] = new Word(interp =>
         {
