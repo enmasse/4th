@@ -109,22 +109,17 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; continue; }
                 if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
 
-                if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after VARIABLE");
-                    var name = tokens[i++];
-                    var addr = _nextAddr++;
-                    _mem[addr] = 0;
-                    _dict[name] = new Word(interp => { interp.Push(addr); });
-                    continue;
-                }
                 if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT");
                     var name = tokens[i++];
-                    EnsureStack(this, 1, "CONSTANT");
-                    var value = PopInternal();
-                    _dict[name] = new Word(interp => { interp.Push(value); });
+                    fiber.Instructions.Enqueue((interp,f) =>
+                    {
+                        EnsureStack(interp, 1, "CONSTANT");
+                        var value = interp.PopInternal();
+                        interp._dict[name] = new Word(ii => { ii.Push(value); });
+                        return Task.CompletedTask;
+                    });
                     continue;
                 }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))
@@ -138,7 +133,8 @@ public class ForthInterpreter : IForthInterpreter
 
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
                 {
-                    fiber.Instructions.Enqueue(async (interp,f) =>
+                    Func<ForthInterpreter, Fiber, Task>? instr = null;
+                    instr = async (interp,f) =>
                     {
                         EnsureStack(interp, 1, "AWAIT");
                         var id = interp.PopInternal();
@@ -146,16 +142,22 @@ public class ForthInterpreter : IForthInterpreter
                         if (obj is not Task task) throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task id");
                         if (!task.IsCompleted)
                         {
+                            // put the same instruction back to the front to handle result when resumed
+                            var rest = f.Instructions;
+                            var newQ = new Queue<Func<ForthInterpreter, Fiber, Task>>();
+                            newQ.Enqueue(instr);
+                            while (rest.Count > 0) newQ.Enqueue(rest.Dequeue());
+                            f.Instructions = newQ;
                             f.WaitOn(task, _scheduler);
-                            return; // resume later
+                            return;
                         }
-                        // completed now
                         if (task.GetType().IsGenericType)
                         {
                             var val = task.GetType().GetProperty("Result")!.GetValue(task);
                             ClrBinder.PushValueOrStoreObject(interp, val);
                         }
-                    });
+                    };
+                    fiber.Instructions.Enqueue(instr);
                     continue;
                 }
 
@@ -232,6 +234,99 @@ public class ForthInterpreter : IForthInterpreter
                     _currentInstructions = null;
                     continue;
                 }
+                if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase))
+                {
+                    _controlStack.Push(new IfFrame());
+                    continue;
+                }
+                if (tok.Equals("ELSE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not IfFrame ifr)
+                        throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF");
+                    if (ifr.ElsePart is not null)
+                        throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE in IF");
+                    ifr.ElsePart = new List<Func<ForthInterpreter, Task>>();
+                    ifr.InElse = true;
+                    continue;
+                }
+                if (tok.Equals("THEN", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not IfFrame ifr)
+                        throw new ForthException(ForthErrorCode.CompileError, "THEN without IF");
+                    _controlStack.Pop();
+                    var thenPart = ifr.ThenPart;
+                    var elsePart = ifr.ElsePart;
+                    Func<ForthInterpreter, Task> compiledIf = async interp =>
+                    {
+                        EnsureStack(interp, 1, "IF");
+                        var flag = interp.PopInternal();
+                        if (flag != 0)
+                        {
+                            foreach (var a in thenPart) await a(interp);
+                        }
+                        else if (elsePart is not null)
+                        {
+                            foreach (var a in elsePart) await a(interp);
+                        }
+                    };
+                    CurrentList().Add(compiledIf);
+                    continue;
+                }
+                if (tok.Equals("BEGIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    _controlStack.Push(new BeginFrame());
+                    continue;
+                }
+                if (tok.Equals("WHILE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
+                        throw new ForthException(ForthErrorCode.CompileError, "WHILE without BEGIN");
+                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "Multiple WHILE in loop");
+                    bf.InWhile = true;
+                    continue;
+                }
+                if (tok.Equals("REPEAT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
+                        throw new ForthException(ForthErrorCode.CompileError, "REPEAT without BEGIN");
+                    if (!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "REPEAT requires WHILE");
+                    _controlStack.Pop();
+                    var pre = bf.PrePart;
+                    var mid = bf.MidPart;
+                    Func<ForthInterpreter, Task> compiledLoop = async interp =>
+                    {
+                        while (true)
+                        {
+                            foreach (var a in pre) await a(interp);
+                            EnsureStack(interp, 1, "WHILE");
+                            var flag = interp.PopInternal();
+                            if (flag == 0) break;
+                            foreach (var b in mid) await b(interp);
+                        }
+                    };
+                    CurrentList().Add(compiledLoop);
+                    continue;
+                }
+                if (tok.Equals("UNTIL", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
+                        throw new ForthException(ForthErrorCode.CompileError, "UNTIL without BEGIN");
+                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "UNTIL not allowed after WHILE; use REPEAT");
+                    _controlStack.Pop();
+                    var body = bf.PrePart;
+                    Func<ForthInterpreter, Task> compiledUntil = async interp =>
+                    {
+                        while (true)
+                        {
+                            foreach (var a in body) await a(interp);
+                            EnsureStack(interp, 1, "UNTIL");
+                            var flag = interp.PopInternal();
+                            if (flag != 0) break;
+                        }
+                    };
+                    CurrentList().Add(compiledUntil);
+                    continue;
+                }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
                 {
                     // inside definitions treat as immediate await (blocking) for now
@@ -287,6 +382,13 @@ public class ForthInterpreter : IForthInterpreter
         _dict["-"] = new Word(interp => { EnsureStack(interp,2,"-"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a-b); });
         _dict["*"] = new Word(interp => { EnsureStack(interp,2,"*"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a*b); });
         _dict["/"] = new Word(interp => { EnsureStack(interp,2,"/"); var b=interp.PopInternal(); var a=interp.PopInternal(); if(b==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); interp.Push(a/b); });
+        _dict["<"] = new Word(interp => { EnsureStack(interp,2,"<"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a < b ? 1 : 0); });
+        _dict["="] = new Word(interp => { EnsureStack(interp,2,"="); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a == b ? 1 : 0); });
+        _dict[">"] = new Word(interp => { EnsureStack(interp,2,">"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a > b ? 1 : 0); });
+        _dict["@"]= new Word(interp => { EnsureStack(interp,1,"@"); var addr=interp.PopInternal(); interp._mem.TryGetValue(addr, out var val); interp.Push(val); });
+        _dict["!"]= new Word(interp => { EnsureStack(interp,2,"!"); var addr=interp.PopInternal(); var val=interp.PopInternal(); interp._mem[addr]=val; });
+        _dict["ROT"]= new Word(interp => { EnsureStack(interp,3,"ROT"); var last=interp._stack.Count-1; var a=interp._stack[last-2]; var b=interp._stack[last-1]; var c=interp._stack[last]; interp._stack[last-2]=b; interp._stack[last-1]=c; interp._stack[last]=a; });
+        _dict["-ROT"]= new Word(interp => { EnsureStack(interp,3,"-ROT"); var last=interp._stack.Count-1; var a=interp._stack[last-2]; var b=interp._stack[last-1]; var c=interp._stack[last]; interp._stack[last-2]=c; interp._stack[last-1]=a; interp._stack[last]=b; });
         _dict["DUP"] = new Word(interp => { EnsureStack(interp,1,"DUP"); interp.Push(interp._stack[^1]); });
         _dict["DROP"] = new Word(interp => { EnsureStack(interp,1,"DROP"); interp._stack.RemoveAt(interp._stack.Count-1); });
         _dict["SWAP"] = new Word(interp => { EnsureStack(interp,2,"SWAP"); var last=interp._stack.Count-1; (interp._stack[last-1],interp._stack[last])=(interp._stack[last],interp._stack[last-1]); });
@@ -294,6 +396,9 @@ public class ForthInterpreter : IForthInterpreter
         _dict["EXIT"] = new Word(interp => { throw new ExitWordException(); });
         _dict["BYE"] = new Word(interp => { interp._exitRequested = true; });
         _dict["QUIT"] = new Word(interp => { interp._exitRequested = true; });
+        _dict["."] = new Word(interp => { EnsureStack(interp,1,"."); var n=interp.PopInternal(); interp._io.PrintNumber(n); });
+        _dict["CR"] = new Word(interp => { interp._io.NewLine(); });
+        _dict["EMIT"] = new Word(interp => { EnsureStack(interp,1,"EMIT"); var n=interp.PopInternal(); char ch=(char)(n & 0xFFFF); interp._io.Print(ch.ToString()); });
     }
 
     private long PopInternal()
@@ -305,6 +410,12 @@ public class ForthInterpreter : IForthInterpreter
         return v;
     }
 
+    private List<Func<ForthInterpreter, Task>> CurrentList()
+    {
+        if (_controlStack.Count == 0) return _currentInstructions!;
+        return _controlStack.Peek().GetCurrentList();
+    }
+
     internal sealed class Word
     {
         private readonly Func<ForthInterpreter, Task> _run;
@@ -313,6 +424,23 @@ public class ForthInterpreter : IForthInterpreter
         public Task ExecuteAsync(ForthInterpreter interp) => _run(interp);
     }
 
-    private abstract class CompileFrame { }
+    private abstract class CompileFrame
+    {
+        public abstract List<Func<ForthInterpreter, Task>> GetCurrentList();
+    }
+    private sealed class IfFrame : CompileFrame
+    {
+        public List<Func<ForthInterpreter, Task>> ThenPart { get; } = new();
+        public List<Func<ForthInterpreter, Task>>? ElsePart { get; set; }
+        public bool InElse { get; set; }
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => InElse ? (ElsePart ??= new()) : ThenPart;
+    }
+    private sealed class BeginFrame : CompileFrame
+    {
+        public List<Func<ForthInterpreter, Task>> PrePart { get; } = new();
+        public List<Func<ForthInterpreter, Task>> MidPart { get; } = new();
+        public bool InWhile { get; set; }
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => InWhile ? MidPart : PrePart;
+    }
     private sealed class ExitWordException : Exception { }
 }
