@@ -109,17 +109,22 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; continue; }
                 if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
 
+                if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after VARIABLE");
+                    var name = tokens[i++];
+                    var addr = _nextAddr++;
+                    _mem[addr] = 0;
+                    _dict[name] = new Word(interp => { interp.Push(addr); });
+                    continue;
+                }
                 if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT");
                     var name = tokens[i++];
-                    fiber.Instructions.Enqueue((interp,f) =>
-                    {
-                        EnsureStack(interp, 1, "CONSTANT");
-                        var value = interp.PopInternal();
-                        interp._dict[name] = new Word(ii => { ii.Push(value); });
-                        return Task.CompletedTask;
-                    });
+                    EnsureStack(this, 1, "CONSTANT");
+                    var value = PopInternal();
+                    _dict[name] = new Word(interp => { interp.Push(value); });
                     continue;
                 }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))
@@ -127,12 +132,13 @@ public class ForthInterpreter : IForthInterpreter
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected character after CHAR");
                     var word = tokens[i++];
                     var ch = word.Length > 0 ? word[0] : 0;
-                    fiber.Instructions.Enqueue((interp,f) => { interp.Push(ch); return Task.CompletedTask; });
+                    Push(ch);
                     continue;
                 }
 
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Fiber based await remains
                     Func<ForthInterpreter, Fiber, Task>? instr = null;
                     instr = async (interp,f) =>
                     {
@@ -142,12 +148,15 @@ public class ForthInterpreter : IForthInterpreter
                         if (obj is not Task task) throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task id");
                         if (!task.IsCompleted)
                         {
-                            // put the same instruction back to the front to handle result when resumed
-                            var rest = f.Instructions;
-                            var newQ = new Queue<Func<ForthInterpreter, Fiber, Task>>();
-                            newQ.Enqueue(instr);
-                            while (rest.Count > 0) newQ.Enqueue(rest.Dequeue());
-                            f.Instructions = newQ;
+                            // push result on completion then resume fiber with next instruction
+                            task.ContinueWith(t =>
+                            {
+                                if (t.GetType().IsGenericType)
+                                {
+                                    var val = t.GetType().GetProperty("Result")!.GetValue(t);
+                                    ClrBinder.PushValueOrStoreObject(interp, val);
+                                }
+                            }, TaskScheduler.Default);
                             f.WaitOn(task, _scheduler);
                             return;
                         }
@@ -160,7 +169,6 @@ public class ForthInterpreter : IForthInterpreter
                     fiber.Instructions.Enqueue(instr);
                     continue;
                 }
-
                 if (tok.Equals("TASK?", StringComparison.OrdinalIgnoreCase))
                 {
                     fiber.Instructions.Enqueue((interp,f) =>
@@ -197,13 +205,13 @@ public class ForthInterpreter : IForthInterpreter
 
                 if (TryParseNumber(tok, out var num))
                 {
-                    fiber.Instructions.Enqueue((interp,f)=> { interp.Push(num); return Task.CompletedTask; });
+                    Push(num);
                     continue;
                 }
 
                 if (_dict.TryGetValue(tok, out var w))
                 {
-                    fiber.Instructions.Enqueue(async (interp,f)=> await w.ExecuteAsync(interp));
+                    await w.ExecuteAsync(this);
                     continue;
                 }
 
@@ -355,12 +363,12 @@ public class ForthInterpreter : IForthInterpreter
                 }
                 if (TryParseNumber(tok,out var lit))
                 {
-                    _currentInstructions!.Add(interp => { interp.Push(lit); return Task.CompletedTask; });
+                    CurrentList().Add(interp => { interp.Push(lit); return Task.CompletedTask; });
                     continue;
                 }
                 if (_dict.TryGetValue(tok,out var compiledWord))
                 {
-                    _currentInstructions!.Add(async interp => await compiledWord.ExecuteAsync(interp));
+                    CurrentList().Add(async interp => await compiledWord.ExecuteAsync(interp));
                     continue;
                 }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
