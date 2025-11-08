@@ -21,8 +21,12 @@ public interface IForthIO
 /// </summary>
 public sealed class ConsoleForthIO : IForthIO
 {
+    /// <inheritdoc />
     public void Print(string text) => Console.Write(text);
+    /// <inheritdoc />
     public void PrintNumber(long number) => Console.Write(number);
+    /// <inheritdoc />
     public void NewLine() => Console.WriteLine();
+    /// <inheritdoc />
     public string? ReadLine() => Console.ReadLine();
 }
