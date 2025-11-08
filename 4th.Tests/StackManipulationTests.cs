@@ -1,6 +1,7 @@
 using Forth;
 using Xunit;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Forth.Tests;
 
@@ -13,7 +14,7 @@ public class StackManipulationTests
     public async Task Dup_DuplicatesTop()
     {
         var forth = New();
-        Assert.True(await forth.InterpretAsync("42 DUP"));
+        Assert.True(await forth.EvalAsync("42 DUP"));
         Assert.Equal(new long[] { 42, 42 }, Longs(forth));
     }
 
@@ -21,7 +22,7 @@ public class StackManipulationTests
     public async Task Drop_RemovesTop()
     {
         var forth = New();
-        Assert.True(await forth.InterpretAsync("1 2 DROP"));
+        Assert.True(await forth.EvalAsync("1 2 DROP"));
         Assert.Equal(new long[] { 1 }, Longs(forth));
     }
 
@@ -29,7 +30,7 @@ public class StackManipulationTests
     public async Task Swap_ExchangesTopTwo()
     {
         var forth = New();
-        Assert.True(await forth.InterpretAsync("1 2 SWAP"));
+        Assert.True(await forth.EvalAsync("1 2 SWAP"));
         Assert.Equal(new long[] { 2, 1 }, Longs(forth));
     }
 
@@ -37,7 +38,7 @@ public class StackManipulationTests
     public async Task Over_CopiesSecondToTop()
     {
         var forth = New();
-        Assert.True(await forth.InterpretAsync("1 2 OVER"));
+        Assert.True(await forth.EvalAsync("1 2 OVER"));
         Assert.Equal(new long[] { 1, 2, 1 }, Longs(forth));
     }
 }

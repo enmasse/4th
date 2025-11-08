@@ -24,10 +24,10 @@ public class ControlFlowAndIOPlan
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(await forth.InterpretAsync(": FLOOR5 DUP 6 < IF DROP 5 ELSE 1 - THEN ;"));
-        Assert.True(await forth.InterpretAsync("1 FLOOR5"));
+        Assert.True(await forth.EvalAsync(": FLOOR5 DUP 6 < IF DROP 5 ELSE 1 - THEN ;"));
+        Assert.True(await forth.EvalAsync("1 FLOOR5"));
         Assert.Equal(new long[] { 5 }, Longs(forth));
-        Assert.True(await forth.InterpretAsync("8 FLOOR5"));
+        Assert.True(await forth.EvalAsync("8 FLOOR5"));
         Assert.Equal(new long[] { 5, 7 }, Longs(forth));
     }
 
@@ -36,7 +36,7 @@ public class ControlFlowAndIOPlan
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(await forth.InterpretAsync("25 10 * 50 + CR ."));
+        Assert.True(await forth.EvalAsync("25 10 * 50 + CR ."));
         Assert.Equal(new[] { "\n", "300" }, io.Outputs);
     }
 }

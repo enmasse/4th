@@ -91,13 +91,13 @@ public class ForthInterpreter : IForthInterpreter
     /// Interpret one line synchronously. This blocks on any async work (awaits internally).
     /// Returns false if BYE / QUIT was executed.
     /// </summary>
-    public bool Interpret(string line) => InterpretAsync(line).GetAwaiter().GetResult();
+    public bool Interpret(string line) => EvalAsync(line).GetAwaiter().GetResult();
 
     /// <summary>
     /// Interpret one line asynchronously. Supports AWAIT for Task / Task&lt;T&gt; / ValueTask / ValueTask&lt;T&gt; objects pushed by BINDASYNC.
     /// Returns false if BYE / QUIT was executed.
     /// </summary>
-    public async Task<bool> InterpretAsync(string line)
+    public async Task<bool> EvalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
         var tokens = Tokenizer.Tokenize(line);

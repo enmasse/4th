@@ -10,13 +10,13 @@ public class ReplExitTests
     public async Task Bye_ReturnsFalse()
     {
         var forth = new ForthInterpreter();
-        Assert.False(await forth.InterpretAsync("BYE"));
+        Assert.False(await forth.EvalAsync("BYE"));
     }
 
     [Fact]
     public async Task Quit_ReturnsFalse()
     {
         var forth = new ForthInterpreter();
-        Assert.False(await forth.InterpretAsync("QUIT"));
+        Assert.False(await forth.EvalAsync("QUIT"));
     }
 }

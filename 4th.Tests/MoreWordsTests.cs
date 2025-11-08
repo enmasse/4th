@@ -23,11 +23,11 @@ public class MoreWordsTests
     public async Task Comparisons_Work()
     {
         var forth = new ForthInterpreter();
-        Assert.True(await forth.InterpretAsync("1 2 <"));
+        Assert.True(await forth.EvalAsync("1 2 <"));
         Assert.Equal(new long[] { 1 }, Longs(forth));
-        Assert.True(await forth.InterpretAsync("2 2 ="));
+        Assert.True(await forth.EvalAsync("2 2 ="));
         Assert.Equal(new long[] { 1, 1 }, Longs(forth));
-        Assert.True(await forth.InterpretAsync("3 2 >"));
+        Assert.True(await forth.EvalAsync("3 2 >"));
         Assert.Equal(new long[] { 1, 1, 1 }, Longs(forth));
     }
 
@@ -35,9 +35,9 @@ public class MoreWordsTests
     public async Task Rotations_Work()
     {
         var forth = new ForthInterpreter();
-        Assert.True(await forth.InterpretAsync("1 2 3 ROT"));
+        Assert.True(await forth.EvalAsync("1 2 3 ROT"));
         Assert.Equal(new long[] { 2, 3, 1 }, Longs(forth));
-        Assert.True(await forth.InterpretAsync("4 5 -ROT"));
+        Assert.True(await forth.EvalAsync("4 5 -ROT"));
         Assert.Equal(new long[] { 2, 3, 5, 1, 4 }, Longs(forth));
     }
 
@@ -45,8 +45,8 @@ public class MoreWordsTests
     public async Task Constant_DefinesValueWord()
     {
         var forth = new ForthInterpreter();
-        Assert.True(await forth.InterpretAsync("42 CONSTANT X"));
-        Assert.True(await forth.InterpretAsync("X X +"));
+        Assert.True(await forth.EvalAsync("42 CONSTANT X"));
+        Assert.True(await forth.EvalAsync("X X +"));
         Assert.Equal(new long[] { 84 }, Longs(forth));
     }
 
@@ -55,7 +55,7 @@ public class MoreWordsTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(await forth.InterpretAsync("81 EMIT"));
+        Assert.True(await forth.EvalAsync("81 EMIT"));
         Assert.Equal(new[] { "Q" }, io.Outputs);
     }
 }

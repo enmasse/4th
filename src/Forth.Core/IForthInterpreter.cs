@@ -9,7 +9,7 @@ public interface IForthInterpreter
     /// <summary>
     /// Interpret a line asynchronously (awaits any async words such as AWAIT). Returns false if exit requested.
     /// </summary>
-    System.Threading.Tasks.Task<bool> InterpretAsync(string line);
+    System.Threading.Tasks.Task<bool> EvalAsync(string line);
     /// <summary>
     /// Current parameter stack. Top of stack is the last element. Holds boxed numeric values and Task objects.
     /// </summary>

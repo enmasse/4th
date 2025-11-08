@@ -14,7 +14,7 @@ public class FiberSpawnTests
     public async Task SpawnDuplicateTaskAndAwaitBoth()
     {
         var f = New();
-        await f.InterpretAsync("BINDASYNC Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 10 32 ADDAB DUP SPAWN AWAIT AWAIT");
+        await f.EvalAsync("BINDASYNC Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 10 32 ADDAB DUP SPAWN AWAIT AWAIT");
         Assert.Equal(new long[]{42}, Longs(f));
     }
 
@@ -22,7 +22,7 @@ public class FiberSpawnTests
     public async Task YieldDoesNotLoseStack()
     {
         var f = New();
-        await f.InterpretAsync("1 2 3 YIELD 4 5");
+        await f.EvalAsync("1 2 3 YIELD 4 5");
         Assert.Equal(new long[]{1,2,3,4,5}, Longs(f));
     }
 }
