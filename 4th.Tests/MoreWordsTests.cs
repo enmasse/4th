@@ -1,6 +1,7 @@
 using Forth;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Forth.Tests;
@@ -19,42 +20,42 @@ public class MoreWordsTests
     private static long[] Longs(IForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
 
     [Fact]
-    public void Comparisons_Work()
+    public async Task Comparisons_Work()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("1 2 <"));
+        Assert.True(await forth.InterpretAsync("1 2 <"));
         Assert.Equal(new long[] { 1 }, Longs(forth));
-        Assert.True(forth.Interpret("2 2 ="));
+        Assert.True(await forth.InterpretAsync("2 2 ="));
         Assert.Equal(new long[] { 1, 1 }, Longs(forth));
-        Assert.True(forth.Interpret("3 2 >"));
+        Assert.True(await forth.InterpretAsync("3 2 >"));
         Assert.Equal(new long[] { 1, 1, 1 }, Longs(forth));
     }
 
     [Fact]
-    public void Rotations_Work()
+    public async Task Rotations_Work()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("1 2 3 ROT"));
+        Assert.True(await forth.InterpretAsync("1 2 3 ROT"));
         Assert.Equal(new long[] { 2, 3, 1 }, Longs(forth));
-        Assert.True(forth.Interpret("4 5 -ROT"));
+        Assert.True(await forth.InterpretAsync("4 5 -ROT"));
         Assert.Equal(new long[] { 2, 3, 5, 1, 4 }, Longs(forth));
     }
 
     [Fact]
-    public void Constant_DefinesValueWord()
+    public async Task Constant_DefinesValueWord()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("42 CONSTANT X"));
-        Assert.True(forth.Interpret("X X +"));
+        Assert.True(await forth.InterpretAsync("42 CONSTANT X"));
+        Assert.True(await forth.InterpretAsync("X X +"));
         Assert.Equal(new long[] { 84 }, Longs(forth));
     }
 
     [Fact]
-    public void Emit_PrintsCharacter()
+    public async Task Emit_PrintsCharacter()
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(forth.Interpret("81 EMIT"));
+        Assert.True(await forth.InterpretAsync("81 EMIT"));
         Assert.Equal(new[] { "Q" }, io.Outputs);
     }
 }

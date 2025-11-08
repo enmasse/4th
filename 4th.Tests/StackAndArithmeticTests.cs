@@ -1,6 +1,7 @@
 using Forth;
 using Xunit;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Forth.Tests;
 
@@ -10,42 +11,42 @@ public class StackAndArithmeticTests
     private static long[] Longs(IForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
 
     [Fact]
-    public void PushNumbersOntoStack()
+    public async Task PushNumbersOntoStack()
     {
         var forth = New();
-        Assert.True(forth.Interpret("1 2 3"));
+        Assert.True(await forth.InterpretAsync("1 2 3"));
         Assert.Equal(new long[] { 1, 2, 3 }, Longs(forth));
     }
 
     [Fact]
-    public void Addition()
+    public async Task Addition()
     {
         var forth = New();
-        Assert.True(forth.Interpret("1 2 +"));
+        Assert.True(await forth.InterpretAsync("1 2 +"));
         Assert.Equal(new long[] { 3 }, Longs(forth));
     }
 
     [Fact]
-    public void Subtraction()
+    public async Task Subtraction()
     {
         var forth = New();
-        Assert.True(forth.Interpret("5 2 -"));
+        Assert.True(await forth.InterpretAsync("5 2 -"));
         Assert.Equal(new long[] { 3 }, Longs(forth));
     }
 
     [Fact]
-    public void Multiplication()
+    public async Task Multiplication()
     {
         var forth = New();
-        Assert.True(forth.Interpret("4 3 *"));
+        Assert.True(await forth.InterpretAsync("4 3 *"));
         Assert.Equal(new long[] { 12 }, Longs(forth));
     }
 
     [Fact]
-    public void Division_TruncatesTowardZero()
+    public async Task Division_TruncatesTowardZero()
     {
         var forth = New();
-        Assert.True(forth.Interpret("7 2 /"));
+        Assert.True(await forth.InterpretAsync("7 2 /"));
         Assert.Equal(new long[] { 3 }, Longs(forth));
     }
 }

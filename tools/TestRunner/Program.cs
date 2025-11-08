@@ -3,16 +3,16 @@ using System;
 
 Console.WriteLine("Manual test runner: exercise interpreter");
 var f = new ForthInterpreter();
-f.Interpret("1 2 3");
+await f.InterpretAsync("1 2 3");
 Console.WriteLine(string.Join(',', f.Stack));
 
-f.Interpret(": SQUARE DUP * ;");
-f.Interpret("4 SQUARE");
+await f.InterpretAsync(": SQUARE DUP * ;");
+await f.InterpretAsync("4 SQUARE");
 Console.WriteLine(string.Join(',', f.Stack));
 
 try
 {
-    f.Interpret("+");
+    await f.InterpretAsync("+");
 }
 catch (Exception ex)
 {

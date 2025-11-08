@@ -1,4 +1,5 @@
 using Forth;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Forth.Tests;
@@ -6,16 +7,16 @@ namespace Forth.Tests;
 public class ReplExitTests
 {
     [Fact]
-    public void Bye_ReturnsFalse()
+    public async Task Bye_ReturnsFalse()
     {
         var forth = new ForthInterpreter();
-        Assert.False(forth.Interpret("BYE"));
+        Assert.False(await forth.InterpretAsync("BYE"));
     }
 
     [Fact]
-    public void Quit_ReturnsFalse()
+    public async Task Quit_ReturnsFalse()
     {
         var forth = new ForthInterpreter();
-        Assert.False(forth.Interpret("QUIT"));
+        Assert.False(await forth.InterpretAsync("QUIT"));
     }
 }

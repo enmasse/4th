@@ -3,6 +3,11 @@ using System.Threading.Tasks;
 
 namespace Forth;
 
+/// <summary>
+/// Implementation of a minimal Forth interpreter with a parameter stack (object based) and
+/// a small dictionary of primitive words plus support for defining new words at runtime.
+/// Supports binding and awaiting .NET Task / Task&lt;T&gt; / ValueTask / ValueTask&lt;T&gt; methods via BIND / BINDASYNC.
+/// </summary>
 public class ForthInterpreter : IForthInterpreter
 {
     private readonly List<object> _stack = new();
@@ -10,25 +15,27 @@ public class ForthInterpreter : IForthInterpreter
     private readonly IForthIO _io;
     private bool _exitRequested;
 
-    // Compilation state
+    // Compilation state (when inside ':' ... ';')
     private bool _isCompiling;
     private string? _currentDefName;
     private List<Func<ForthInterpreter, Task>>? _currentInstructions;
     private readonly Stack<CompileFrame> _controlStack = new();
 
-    // Simple variable storage
+    // Simple variable storage (VARIABLE allocates address, CONSTANT captures value)
     private readonly Dictionary<long,long> _mem = new();
     private long _nextAddr = 1;
 
-    // Track awaited tasks to avoid double pushing results
+    // Track awaited tasks to avoid pushing result multiple times when same Task object appears twice
     private readonly HashSet<object> _consumedTaskResults = new();
 
+    /// <summary>Create a new interpreter instance. Optionally supply an <see cref="IForthIO"/> for I/O redirection.</summary>
     public ForthInterpreter(IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
         InstallPrimitives();
     }
 
+    /// <summary>Parameter stack (top is last element). Contains boxed numeric values and Task instances.</summary>
     public IReadOnlyList<object> Stack => _stack;
 
     internal void Push(object v) => _stack.Add(v);
@@ -79,8 +86,10 @@ public class ForthInterpreter : IForthInterpreter
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
-    public bool Interpret(string line) => InterpretAsync(line).GetAwaiter().GetResult();
-
+    /// <summary>
+    /// Interpret one line asynchronously. Supports AWAIT for Task / Task&lt;T&gt; / ValueTask / ValueTask&lt;T&gt; objects pushed by BINDASYNC.
+    /// Returns false if BYE / QUIT was executed.
+    /// </summary>
     public async Task<bool> InterpretAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
@@ -92,7 +101,7 @@ public class ForthInterpreter : IForthInterpreter
             if (tok.Length == 0) continue;
             if (!_isCompiling)
             {
-                // Immediate mode
+                // Immediate (interpret) mode
                 if (tok == ":")
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after ':'");
@@ -184,7 +193,7 @@ public class ForthInterpreter : IForthInterpreter
             }
             else
             {
-                // Compilation mode
+                // Compilation mode (building new word)
                 if (tok == ";")
                 {
                     if (_currentInstructions is null || string.IsNullOrEmpty(_currentDefName))

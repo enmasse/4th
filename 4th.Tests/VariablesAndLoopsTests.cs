@@ -1,5 +1,6 @@
 using Forth;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Forth.Tests;
@@ -9,41 +10,41 @@ public class VariablesAndLoopsTests
     private static long[] Longs(IForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : o is char c ? (long)c : 0L).ToArray();
 
     [Fact]
-    public void Variable_ReadWrite()
+    public async Task Variable_ReadWrite()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("VARIABLE X"));
-        Assert.True(forth.Interpret("10 X !"));
-        Assert.True(forth.Interpret("X @"));
+        Assert.True(await forth.InterpretAsync("VARIABLE X"));
+        Assert.True(await forth.InterpretAsync("10 X !"));
+        Assert.True(await forth.InterpretAsync("X @"));
         Assert.Equal(new long[] { 10 }, Longs(forth));
     }
 
     [Fact]
-    public void BeginUntil_Loop()
+    public async Task BeginUntil_Loop()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret(": INC1 1 + ;"));
-        Assert.True(forth.Interpret(": TO5 0 BEGIN INC1 DUP 5 = UNTIL ;"));
-        Assert.True(forth.Interpret("TO5"));
+        Assert.True(await forth.InterpretAsync(": INC1 1 + ;"));
+        Assert.True(await forth.InterpretAsync(": TO5 0 BEGIN INC1 DUP 5 = UNTIL ;"));
+        Assert.True(await forth.InterpretAsync("TO5"));
         Assert.Equal(new long[] { 5 }, Longs(forth));
     }
 
     [Fact]
-    public void BeginWhileRepeat_Loop()
+    public async Task BeginWhileRepeat_Loop()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret(": W3 0 BEGIN DUP 3 < WHILE 1 + REPEAT ;"));
-        Assert.True(forth.Interpret("W3"));
+        Assert.True(await forth.InterpretAsync(": W3 0 BEGIN DUP 3 < WHILE 1 + REPEAT ;"));
+        Assert.True(await forth.InterpretAsync("W3"));
         Assert.Equal(new long[] { 3 }, Longs(forth));
     }
 
     [Fact]
-    public void CharAndLiteral()
+    public async Task CharAndLiteral()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("CHAR A"));
+        Assert.True(await forth.InterpretAsync("CHAR A"));
         Assert.Equal(new long[] { 'A' }, Longs(forth));
-        Assert.True(forth.Interpret("CHAR Z"));
+        Assert.True(await forth.InterpretAsync("CHAR Z"));
         Assert.Equal(new long[] { 'A', 'Z' }, Longs(forth));
     }
 }

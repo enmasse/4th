@@ -11,7 +11,7 @@ while (true)
     if (line is null) break;
     try
     {
-        var keepGoing = interp.Interpret(line);
+        var keepGoing = await interp.InterpretAsync(line);
         Console.WriteLine(" ok");
         if (!keepGoing) break;
     }
