@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Threading.Tasks;
+using System; // added for Type reflection
 
 namespace Forth;
 
@@ -7,7 +8,7 @@ namespace Forth;
 /// Minimal Forth interpreter core. Supports async words, definitions, simple variables/constants,
 /// optional modules, and a public API to manipulate the stack and register words.
 /// </summary>
-public class ForthInterpreter : IForthInterpreter
+public partial class ForthInterpreter : IForthInterpreter
 {
     private readonly ForthStack _stack = new();
     private readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
@@ -174,6 +175,32 @@ public class ForthInterpreter : IForthInterpreter
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after USING");
                     var m = tokens[i++];
                     if (!_usingModules.Contains(m)) _usingModules.Add(m);
+                    continue;
+                }
+                if (tok.Equals("LOAD-ASM", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected path after LOAD-ASM");
+                    var path = tokens[i++];
+                    var count = AssemblyWordLoader.Load(this, path);
+                    Push((long)count); // push number of modules loaded
+                    continue;
+                }
+                if (tok.Equals("LOAD-ASM-TYPE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected type after LOAD-ASM-TYPE");
+                    var typeName = tokens[i++];
+                    Type? t = Type.GetType(typeName, throwOnError:false, ignoreCase:false);
+                    if (t == null)
+                    {
+                        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                        {
+                            t = asm.GetType(typeName, throwOnError:false, ignoreCase:false);
+                            if (t != null) break;
+                        }
+                    }
+                    if (t == null) throw new ForthException(ForthErrorCode.CompileError, $"Type not found: {typeName}");
+                    var count = LoadAssemblyWords(t.Assembly);
+                    Push((long)count);
                     continue;
                 }
 
