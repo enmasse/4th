@@ -3,6 +3,10 @@ using System.Threading.Tasks;
 
 namespace Forth;
 
+/// <summary>
+/// Minimal Forth interpreter core. Supports async words, definitions, simple variables/constants,
+/// optional modules, and a public API to manipulate the stack and register words.
+/// </summary>
 public class ForthInterpreter : IForthInterpreter
 {
     private readonly ForthStack _stack = new();
@@ -22,24 +26,31 @@ public class ForthInterpreter : IForthInterpreter
     private readonly List<string> _usingModules = new();
     private string? _currentModule;
 
+    /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
         InstallPrimitives();
     }
 
+    /// <summary>Gets the current parameter stack (top is last element).</summary>
     public IReadOnlyList<object> Stack => _stack.AsReadOnly();
 
+    /// <summary>Push a value onto the parameter stack.</summary>
     public void Push(object value) => _stack.Push(value);
+    /// <summary>Pop and return the top-most value from the parameter stack.</summary>
     public object Pop() => _stack.Pop();
+    /// <summary>Return the top-most value from the parameter stack without removing it.</summary>
     public object Peek() => _stack.Peek();
 
+    /// <summary>Register a new synchronous word by name.</summary>
     public void AddWord(string name, Action<IForthInterpreter> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
         TargetDict()[name] = new Word(intr => body(intr));
     }
+    /// <summary>Register a new asynchronous word by name.</summary>
     public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -61,27 +72,40 @@ public class ForthInterpreter : IForthInterpreter
         return _dict;
     }
 
-    private bool TryResolveWord(string token, out Word word)
+    private bool TryResolveWord(string token, out Word? word)
     {
+        // Qualified Module:Word
         var idx = token.IndexOf(':');
         if (idx > 0)
         {
             var mod = token.Substring(0, idx);
             var wname = token.Substring(idx + 1);
-            if (_modules.TryGetValue(mod, out var mdict) && mdict.TryGetValue(wname, out word))
+            if (_modules.TryGetValue(mod, out var mdict) && mdict.TryGetValue(wname, out var wq))
+            {
+                word = wq;
                 return true;
-            word = default!;
+            }
+            word = null;
             return false;
         }
-        if (!string.IsNullOrWhiteSpace(_currentModule) && _modules.TryGetValue(_currentModule!, out var cur) && cur.TryGetValue(token, out word))
+        // Current module
+        if (!string.IsNullOrWhiteSpace(_currentModule) && _modules.TryGetValue(_currentModule!, out var cur) && cur.TryGetValue(token, out var wc))
+        {
+            word = wc;
             return true;
+        }
+        // Using modules in order
         for (int i = _usingModules.Count - 1; i >= 0; i--)
         {
             var mn = _usingModules[i];
-            if (_modules.TryGetValue(mn, out var md) && md.TryGetValue(token, out word))
+            if (_modules.TryGetValue(mn, out var md) && md.TryGetValue(token, out var wu))
+            {
+                word = wu;
                 return true;
+            }
         }
-        return _dict.TryGetValue(token, out word!);
+        // Core dict
+        return _dict.TryGetValue(token, out word);
     }
 
     internal object PopInternal() => Pop();
@@ -115,8 +139,15 @@ public class ForthInterpreter : IForthInterpreter
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
+    /// <summary>
+    /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
+    /// </summary>
     public bool Interpret(string line) => EvalAsync(line).GetAwaiter().GetResult();
 
+    /// <summary>
+    /// Interpret one line asynchronously. Returns false if BYE/QUIT requested exit.
+    /// Supports async words and AWAIT of Task/Task&lt;T&gt;/ValueTask words.
+    /// </summary>
     public async Task<bool> EvalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
@@ -128,6 +159,7 @@ public class ForthInterpreter : IForthInterpreter
             if (tok.Length == 0) continue;
             if (!_isCompiling)
             {
+                // Module management (immediate)
                 if (tok.Equals("MODULE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after MODULE");
@@ -145,6 +177,7 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
 
+                // Immediate (interpret) mode
                 if (tok == ":")
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after ':'");
@@ -231,7 +264,7 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
 
                 if (TryParseNumber(tok, out var num)) { Push(num); continue; }
-                if (TryResolveWord(tok, out var w)) { await w.ExecuteAsync(this); continue; }
+                if (TryResolveWord(tok, out var w) && w is not null) { await w.ExecuteAsync(this); continue; }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
             }
             else
@@ -370,7 +403,7 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }
-                if (TryResolveWord(tok, out var cw)) { CurrentList().Add(async intr => await cw.ExecuteAsync(intr)); continue; }
+                if (TryResolveWord(tok, out var cw) && cw is not null) { CurrentList().Add(async intr => await cw.ExecuteAsync(intr)); continue; }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
             }
         }
