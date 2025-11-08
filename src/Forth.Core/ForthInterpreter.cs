@@ -55,6 +55,7 @@ public class ForthInterpreter : IForthInterpreter
             throw new ForthException(ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
     }
 
+    internal static long ToLongPublic(object v) => ToLong(v);
     private static long ToLong(object v)
     {
         return v switch
@@ -85,6 +86,12 @@ public class ForthInterpreter : IForthInterpreter
 
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
+
+    /// <summary>
+    /// Interpret one line synchronously. This blocks on any async work (awaits internally).
+    /// Returns false if BYE / QUIT was executed.
+    /// </summary>
+    public bool Interpret(string line) => InterpretAsync(line).GetAwaiter().GetResult();
 
     /// <summary>
     /// Interpret one line asynchronously. Supports AWAIT for Task / Task&lt;T&gt; / ValueTask / ValueTask&lt;T&gt; objects pushed by BINDASYNC.
@@ -354,30 +361,21 @@ public class ForthInterpreter : IForthInterpreter
 
     private void InstallPrimitives()
     {
-        _dict["+"] = new Word(intr => { EnsureStack(intr,2,"+"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a+b); });
-        _dict["-"] = new Word(intr => { EnsureStack(intr,2,"-"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a-b); });
-        _dict["*"] = new Word(intr => { EnsureStack(intr,2,"*"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a*b); });
-        _dict["/"] = new Word(intr => { EnsureStack(intr,2,"/"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a/b); });
-        _dict["<"] = new Word(intr => { EnsureStack(intr,2,"<"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a < b ? 1L : 0L); });
-        _dict["="] = new Word(intr => { EnsureStack(intr,2,"="); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a == b ? 1L : 0L); });
-        _dict[">"] = new Word(intr => { EnsureStack(intr,2,">"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a > b ? 1L : 0L); });
-        _dict["ROT"] = new Word(intr => { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(b); intr.Push(c); intr.Push(a); });
-        _dict["-ROT"] = new Word(intr => { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(c); intr.Push(a); intr.Push(b); });
-        _dict["@"] = new Word(intr => { EnsureStack(intr,1,"@"); var addr=ToLong(intr.PopInternal()); intr._mem.TryGetValue(addr,out var v); intr.Push(v); });
-        _dict["!"] = new Word(intr => { EnsureStack(intr,2,"!"); var addr=ToLong(intr.PopInternal()); var val=ToLong(intr.PopInternal()); intr._mem[addr]=val; });
-        _dict["DUP"] = new Word(intr => { EnsureStack(intr,1,"DUP"); intr.Push(intr._stack[^1]); });
-        _dict["DROP"] = new Word(intr => { EnsureStack(intr,1,"DROP"); intr._stack.RemoveAt(intr._stack.Count-1); });
-        _dict["SWAP"] = new Word(intr => { EnsureStack(intr,2,"SWAP"); var last=intr._stack.Count-1; (intr._stack[last-1],intr._stack[last])=(intr._stack[last],intr._stack[last-1]); });
-        _dict["OVER"] = new Word(intr => { EnsureStack(intr,2,"OVER"); intr.Push(intr._stack[^2]); });
-        _dict["SPAWN"] = new Word(intr => { EnsureStack(intr,1,"SPAWN"); var obj=intr.PopInternal(); if (obj is not Task) throw new ForthException(ForthErrorCode.CompileError,"SPAWN expects a Task"); intr.Push(obj); });
-        _dict["YIELD"] = new Word(async intr => { await Task.Yield(); });
-        _dict["BYE"] = new Word(intr => { intr._exitRequested = true; });
-        _dict["QUIT"] = new Word(intr => { intr._exitRequested = true; });
-        _dict["."] = new Word(intr => { EnsureStack(intr,1,"."); var n=ToLong(intr.PopInternal()); intr._io.PrintNumber(n); });
-        _dict["CR"] = new Word(intr => { intr._io.NewLine(); });
-        _dict["EMIT"] = new Word(intr => { EnsureStack(intr,1,"EMIT"); var n=ToLong(intr.PopInternal()); char ch=(char)(n & 0xFFFF); intr._io.Print(ch.ToString()); });
-        _dict["EXIT"] = new Word(intr => { throw new ExitWordException(); });
+        CorePrimitives.Install(this, _dict);
     }
+
+    // Helpers used by CorePrimitives
+    internal object StackTop() => _stack[^1];
+    internal object StackNthFromTop(int n) => _stack[^n];
+    internal void DropTop() => _stack.RemoveAt(_stack.Count - 1);
+    internal void SwapTop2() { var last=_stack.Count-1; (_stack[last-1],_stack[last]) = (_stack[last], _stack[last-1]); }
+    internal void MemTryGet(long addr, out long v) { _mem.TryGetValue(addr, out v); }
+    internal void MemSet(long addr, long v) { _mem[addr] = v; }
+    internal void RequestExit() { _exitRequested = true; }
+    internal void WriteNumber(long n) => _io.PrintNumber(n);
+    internal void NewLine() => _io.NewLine();
+    internal void WriteText(string s) => _io.Print(s);
+    internal void ThrowExit() => throw new ExitWordException();
 
     private List<Func<ForthInterpreter, Task>> CurrentList()
     {
