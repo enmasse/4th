@@ -1,0 +1,56 @@
+name: Build and Pack Forth.Core
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/Forth.Core/**'
+      - '.github/workflows/pack.yml'
+      - '4th.Tests/**'
+      - 'Forth.sln'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-pack:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore Forth.sln
+
+      - name: Build
+        run: dotnet build Forth.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test 4th.Tests/4th.Tests.csproj -c Release --no-build --verbosity normal
+
+      - name: Pack Forth.Core
+        run: dotnet pack src/Forth.Core/Forth.Core.csproj -c Release -o artifacts --no-build
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/*.nupkg
+
+      - name: Upload symbols artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols
+          path: artifacts/*.snupkg
+
+      - name: Publish to NuGet (manual trigger via secret)
+        if: ${{ github.event_name == 'push' && secrets.NUGET_API_KEY != '' }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          for %f in (artifacts\*.nupkg) do dotnet nuget push "%f" --api-key "%NUGET_API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          for %f in (artifacts\*.snupkg) do dotnet nuget push "%f" --api-key "%NUGET_API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
