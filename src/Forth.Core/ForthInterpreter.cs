@@ -3,14 +3,9 @@ using System.Threading.Tasks;
 
 namespace Forth;
 
-/// <summary>
-/// Implementation of a minimal Forth interpreter with a parameter stack (object based) and
-/// a small dictionary of primitive words plus support for defining new words at runtime.
-/// Supports binding and awaiting .NET Task / Task&lt;T&gt; / ValueTask / ValueTask&lt;T&gt; methods via BIND / BINDASYNC.
-/// </summary>
 public class ForthInterpreter : IForthInterpreter
 {
-    private readonly List<object> _stack = new();
+    private readonly ForthStack _stack = new();
     private readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
     private readonly IForthIO _io;
     private bool _exitRequested;
@@ -36,27 +31,16 @@ public class ForthInterpreter : IForthInterpreter
     }
 
     /// <summary>Parameter stack (top is last element). Contains boxed numeric values and Task instances.</summary>
-    public IReadOnlyList<object> Stack => _stack;
+    public IReadOnlyList<object> Stack => _stack.AsReadOnly();
 
     /// <summary>Push a value onto the parameter stack.</summary>
-    public void Push(object value) => _stack.Add(value);
+    public void Push(object value) => _stack.Push(value);
 
     /// <summary>Pop and return top-of-stack value.</summary>
-    public object Pop()
-    {
-        var idx = _stack.Count - 1;
-        if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
-        var v = _stack[idx];
-        _stack.RemoveAt(idx);
-        return v;
-    }
+    public object Pop() => _stack.Pop();
 
     /// <summary>Return top-of-stack value without removing it.</summary>
-    public object Peek()
-    {
-        if (_stack.Count == 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
-        return _stack[^1];
-    }
+    public object Peek() => _stack.Peek();
 
     /// <summary>Register a new synchronous word by name.</summary>
     public void AddWord(string name, Action<IForthInterpreter> body)
@@ -199,11 +183,12 @@ public class ForthInterpreter : IForthInterpreter
                             var val = resultProp!.GetValue(t);
                             Push(Normalize(val));
                             // If there is another Task just beneath, keep it on top for consecutive AWAIT
-                            if (_stack.Count >= 2 && _stack[^2] is Task)
+                            if (_stack.Count >= 2 && _stack.NthFromTop(2) is Task)
                             {
-                                var top = _stack[^1];
-                                _stack[^1] = _stack[^2];
-                                _stack[^2] = top;
+                                var top = _stack.Pop();
+                                var below = _stack.Pop();
+                                _stack.Push(top);
+                                _stack.Push(below);
                             }
                         }
                         MarkResultConsumed(obj);
@@ -342,11 +327,12 @@ public class ForthInterpreter : IForthInterpreter
                             {
                                 var val = resultProp!.GetValue(t);
                                 intr.Push(Normalize(val));
-                                if (intr._stack.Count >= 2 && intr._stack[^2] is Task)
+                                if (intr._stack.Count >= 2 && intr._stack.NthFromTop(2) is Task)
                                 {
-                                    var top = intr._stack[^1];
-                                    intr._stack[^1] = intr._stack[^2];
-                                    intr._stack[^2] = top;
+                                    var top = intr._stack.Pop();
+                                    var below = intr._stack.Pop();
+                                    intr._stack.Push(top);
+                                    intr._stack.Push(below);
                                 }
                             }
                             intr.MarkResultConsumed(obj);
@@ -392,10 +378,10 @@ public class ForthInterpreter : IForthInterpreter
     }
 
     // Helpers used by CorePrimitives
-    internal object StackTop() => _stack[^1];
-    internal object StackNthFromTop(int n) => _stack[^n];
-    internal void DropTop() => _stack.RemoveAt(_stack.Count - 1);
-    internal void SwapTop2() { var last=_stack.Count-1; (_stack[last-1],_stack[last]) = (_stack[last], _stack[last-1]); }
+    internal object StackTop() => _stack.Top();
+    internal object StackNthFromTop(int n) => _stack.NthFromTop(n);
+    internal void DropTop() => _stack.DropTop();
+    internal void SwapTop2() => _stack.SwapTop2();
     internal void MemTryGet(long addr, out long v) { _mem.TryGetValue(addr, out v); }
     internal void MemSet(long addr, long v) { _mem[addr] = v; }
     internal void RequestExit() { _exitRequested = true; }
