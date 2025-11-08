@@ -3,6 +3,7 @@ namespace Forth;
 /// <summary>
 /// Tokenizes a single line of Forth source into whitespace-delimited tokens, supporting
 /// inline comments with "( ... )" and line comments starting with backslash ("\\").
+/// Also supports quoted string tokens using double quotes ("...").
 /// </summary>
 public static class Tokenizer
 {
@@ -17,9 +18,26 @@ public static class Tokenizer
         var list = new List<string>();
         var current = new List<char>();
         bool inComment = false;
+        bool inString = false;
         for (int i = 0; i < input.Length; i++)
         {
             char c = input[i];
+            if (inString)
+            {
+                if (c == '"')
+                {
+                    // end string
+                    current.Add('"');
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                    inString = false;
+                }
+                else
+                {
+                    current.Add(c);
+                }
+                continue;
+            }
             if (inComment)
             {
                 if (c == ')') inComment = false;
@@ -32,6 +50,7 @@ public static class Tokenizer
             }
             if (c == '\\') // line comment
             {
+                // stop tokenizing rest of the line unless we are in a quoted string
                 break;
             }
             if (char.IsWhiteSpace(c))
@@ -51,6 +70,18 @@ public static class Tokenizer
                     current.Clear();
                 }
                 list.Add(";");
+                continue;
+            }
+            if (c == '"')
+            {
+                if (current.Count > 0)
+                {
+                    // flush previous token then start string
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                current.Add('"');
+                inString = true;
                 continue;
             }
             current.Add(c);

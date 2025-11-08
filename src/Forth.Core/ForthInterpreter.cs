@@ -240,6 +240,13 @@ public partial class ForthInterpreter : IForthInterpreter
                     Push(s.Length > 0 ? (long)s[0] : 0L);
                     continue;
                 }
+                // double-quoted string literal: push content as string
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    var s = tok.Substring(1, tok.Length - 2);
+                    Push(s);
+                    continue;
+                }
                 if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
                 {
                     bool asyncBind = tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase);
@@ -427,6 +434,13 @@ public partial class ForthInterpreter : IForthInterpreter
                     EnsureStack(this,1,"LITERAL");
                     var value = PopInternal();
                     _currentInstructions!.Add(intr => { intr.Push(value); return Task.CompletedTask; });
+                    continue;
+                }
+                // double-quoted string literal in compile mode
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    var s = tok.Substring(1, tok.Length - 2);
+                    _currentInstructions!.Add(intr => { intr.Push(s); return Task.CompletedTask; });
                     continue;
                 }
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }

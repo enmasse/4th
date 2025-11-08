@@ -51,6 +51,34 @@ public sealed class ProtoActorModule : IForthWordModule
                 await system.ShutdownAsync();
             }
         });
+
+        // SPAWN-FORTH ? pid
+        forth.AddWordAsync("SPAWN-FORTH", async i =>
+        {
+            var system = new ActorSystem();
+            var props = Props.FromProducer(() => new ForthInterpreterActor());
+            var pid = system.Root.Spawn(props);
+            _systems[pid] = system;
+            i.Push(pid);
+            await Task.CompletedTask;
+        });
+
+        // FORTH-EVAL: pid "source" -- task<ForthEvalResponse>
+        forth.AddWord("FORTH-EVAL", i =>
+        {
+            var srcObj = i.Pop();
+            var pidObj = i.Pop();
+            if (pidObj is not PID pid) throw new ForthException(ForthErrorCode.TypeError, "FORTH-EVAL expects PID then source");
+            if (!_systems.TryGetValue(pid, out var system)) throw new ForthException(ForthErrorCode.TypeError, "Unknown PID (no system)");
+            var raw = srcObj?.ToString() ?? string.Empty;
+            if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"')
+            {
+                raw = raw.Substring(1, raw.Length - 2); // strip surrounding quotes
+            }
+            var req = new ForthEvalRequest(raw);
+            var task = system.Root.RequestAsync<ForthEvalResponse>(pid, req);
+            i.Push(task);
+        });
     }
 
     private static long ToLong(object v) => v switch
