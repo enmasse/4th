@@ -2,10 +2,8 @@ namespace Forth;
 
 public interface IForthInterpreter
 {
-    // Feed a line of input; returns true if successful, false if exit requested
     bool Interpret(string line);
     System.Threading.Tasks.Task<bool> InterpretAsync(string line);
-
-    // Expose the parameter stack for testing (top is last)
-    IReadOnlyList<long> Stack { get; }
+    // Expose stack as objects; tests expect longs so helper for casting could be added later
+    IReadOnlyList<object> Stack { get; }
 }

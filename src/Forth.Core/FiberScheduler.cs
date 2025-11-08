@@ -27,6 +27,20 @@ internal sealed class Fiber
             scheduler.Enqueue(this);
         }, TaskScheduler.Default);
     }
+
+    public void Prepend(Func<ForthInterpreter, Fiber, Task> instr)
+    {
+        if (Completed) return;
+        if (Instructions.Count == 0)
+        {
+            Instructions.Enqueue(instr);
+            return;
+        }
+        var list = new List<Func<ForthInterpreter, Fiber, Task>>(Instructions.Count + 1) { instr };
+        while (Instructions.Count > 0)
+            list.Add(Instructions.Dequeue());
+        Instructions = new Queue<Func<ForthInterpreter, Fiber, Task>>(list);
+    }
 }
 
 internal sealed class FiberScheduler
@@ -80,7 +94,7 @@ internal sealed class FiberScheduler
                 catch (Exception ex)
                 {
                     fiber.Completed = true;
-                    interp.StoreObject(ex);
+                    interp.Push(ex);
                 }
                 if (!fiber.Completed && !fiber.Waiting && fiber.Instructions.Count > 0)
                     _runQueue.Enqueue(fiber);

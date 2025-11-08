@@ -8,12 +8,14 @@ public class AsyncAwaitTests
 {
     private static ForthInterpreter New() => new();
 
+    private static long[] Longs(ForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
+
     [Fact]
     public async Task AwaitBoundAsyncMethod()
     {
         var f = New();
         await f.InterpretAsync("BINDASYNC Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 5 7 ADDAB AWAIT");
-        Assert.Equal(new long[]{12}, f.Stack);
+        Assert.Equal(new long[]{12}, Longs(f));
     }
 
     [Fact]
@@ -21,7 +23,7 @@ public class AsyncAwaitTests
     {
         var f = New();
         await f.InterpretAsync("BINDASYNC Forth.Tests.AsyncTestTargets VoidDelay 1 DELAY 30 DELAY DUP TASK? DROP AWAIT");
-        Assert.Empty(f.Stack);
+        Assert.Empty(f.Stack); // void task leaves nothing
     }
 
     [Fact]
@@ -29,7 +31,7 @@ public class AsyncAwaitTests
     {
         var f = New();
         await f.InterpretAsync("BINDASYNC Forth.Tests.AsyncTestTargets AddValueTask 2 ADDVT 2 3 ADDVT AWAIT");
-        Assert.Equal(new long[]{5}, f.Stack);
+        Assert.Equal(new long[]{5}, Longs(f));
     }
 
     [Fact]

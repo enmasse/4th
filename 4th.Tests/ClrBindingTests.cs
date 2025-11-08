@@ -30,13 +30,14 @@ public static class AsyncTestTargets
 public class ClrBindingTests
 {
     private static IForthInterpreter New() => new ForthInterpreter();
+    private static long[] Longs(IForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
 
     [Fact]
     public void Bind_Sync_Static_Method()
     {
         var f = New();
         Assert.True(f.Interpret($"BIND Forth.Tests.AsyncTestTargets Add 2 ADDAB 3 4 ADDAB"));
-        Assert.Equal(new long[]{7}, f.Stack);
+        Assert.Equal(new long[]{7}, Longs((ForthInterpreter)f));
     }
 
     [Fact]
@@ -44,8 +45,7 @@ public class ClrBindingTests
     {
         var f = New();
         Assert.True(f.Interpret($"BIND Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 5 6 ADDAB"));
-        // Should push object id (since generic Task<int>) or direct int? We push int.
-        Assert.Equal(new long[]{11}, f.Stack);
+        Assert.Equal(new long[]{11}, Longs((ForthInterpreter)f));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class ClrBindingTests
     {
         var f = New();
         Assert.True(f.Interpret($"BIND Forth.Tests.AsyncTestTargets AddValueTask 2 ADDVT 2 9 ADDVT"));
-        Assert.Equal(new long[]{11}, f.Stack);
+        Assert.Equal(new long[]{11}, Longs((ForthInterpreter)f));
     }
 
     [Fact]

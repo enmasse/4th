@@ -10,7 +10,6 @@ internal static class ClrBinder
     {
         var type = ResolveType(typeName) ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
-        // Pick first matching by name and parameter count.
         var target = methods.FirstOrDefault(m => m.Name == methodName && m.GetParameters().Length == argCount)
             ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
         bool isStatic = target.IsStatic;
@@ -22,10 +21,8 @@ internal static class ClrBinder
         bool isGenericValueTask = returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>);
         return new ForthInterpreter.Word(async interp =>
         {
-            // If instance method expect object reference on stack first (after args)
             int totalPop = argCount + (isStatic ? 0 : 1);
             ForthInterpreter.EnsureStack(interp, totalPop, methodName);
-            // Pop values; stack is LIFO so collect in reverse
             object? instance = null;
             var argVals = new object?[argCount];
             for (int i = argCount - 1; i >= 0; i--)
@@ -35,8 +32,8 @@ internal static class ClrBinder
             }
             if (!isStatic)
             {
-                var rawInstance = interp.Pop();
-                instance = CoerceObject(interp, rawInstance, type);
+                var rawInst = interp.Pop();
+                instance = rawInst; // allow instance object directly
             }
             object? result = target.Invoke(instance, argVals);
             if (isTask)
@@ -46,25 +43,24 @@ internal static class ClrBinder
                 if (isGenericTask)
                 {
                     var val = task.GetType().GetProperty("Result")!.GetValue(task);
-                    PushValueOrStoreObject(interp, val);
+                    ForthInterpreterPush(interp, val);
                 }
             }
             else if (isValueTask)
             {
-                // Convert to Task and await
                 var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
                 await asTask.ConfigureAwait(false);
             }
             else if (isGenericValueTask)
             {
-                var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!; // Task<T>
+                var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
                 await asTask.ConfigureAwait(false);
                 var val = asTask.GetType().GetProperty("Result")!.GetValue(asTask);
-                PushValueOrStoreObject(interp, val);
+                ForthInterpreterPush(interp, val);
             }
             else
             {
-                PushValueOrStoreObject(interp, result);
+                ForthInterpreterPush(interp, result);
             }
         });
     }
@@ -94,24 +90,66 @@ internal static class ClrBinder
             }
             if (!isStatic)
             {
-                var rawInstance = interp.Pop();
-                instance = CoerceObject(interp, rawInstance, type);
+                instance = interp.Pop();
             }
             object? result = target.Invoke(instance, argVals);
-            object toStore;
+            Task toPush;
             if (result is Task t)
             {
-                toStore = t;
+                toPush = t;
             }
             else
             {
-                // ValueTask or ValueTask<T> -> convert to Task via AsTask
-                toStore = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
+                toPush = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
             }
-            var id = interp.StoreObject(toStore);
-            interp.Push(id);
+            interp.Push(toPush);
             return Task.CompletedTask;
         });
+    }
+
+    private static object? Coerce(object raw, Type target)
+    {
+        if (raw is null) return null;
+        if (target.IsInstanceOfType(raw)) return raw;
+        try
+        {
+            // Handle numeric coercions from boxed longs/ints
+            if (raw is long l)
+            {
+                if (target == typeof(int)) return (int)l;
+                if (target == typeof(short)) return (short)l;
+                if (target == typeof(byte)) return (byte)l;
+                if (target == typeof(char)) return (char)l;
+                if (target == typeof(bool)) return l != 0;
+                if (target == typeof(long)) return l;
+            }
+            if (raw is int i)
+            {
+                if (target == typeof(long)) return (long)i;
+                if (target == typeof(short)) return (short)i;
+                if (target == typeof(byte)) return (byte)i;
+                if (target == typeof(char)) return (char)i;
+                if (target == typeof(bool)) return i != 0;
+                if (target == typeof(int)) return i;
+            }
+        }
+        catch { }
+        return raw;
+    }
+
+    private static void ForthInterpreterPush(ForthInterpreter interp, object? value)
+    {
+        if (value is null) return;
+        switch (value)
+        {
+            case int i: interp.Push((long)i); break;
+            case long l: interp.Push(l); break;
+            case short s: interp.Push((long)s); break;
+            case byte b: interp.Push((long)b); break;
+            case char c: interp.Push((long)c); break;
+            case bool bo: interp.Push(bo ? 1L : 0L); break;
+            default: interp.Push(value); break;
+        }
     }
 
     private static Type? ResolveType(string name)
@@ -124,47 +162,5 @@ internal static class ClrBinder
             if (t != null) return t;
         }
         return null;
-    }
-
-    private static object? Coerce(long value, Type target)
-    {
-        if (target == typeof(long) || target == typeof(object)) return value;
-        if (target == typeof(int)) return (int)value;
-        if (target == typeof(short)) return (short)value;
-        if (target == typeof(byte)) return (byte)value;
-        if (target == typeof(char)) return (char)value;
-        if (target == typeof(bool)) return value != 0;
-        if (target.IsEnum) return Enum.ToObject(target, value);
-        // For now only primitive numeric. Instance binding expects passing an address to object map: not implemented.
-        throw new ForthException(ForthErrorCode.CompileError, $"Cannot coerce {value} to {target.Name}");
-    }
-
-    private static object? CoerceObject(ForthInterpreter interp, long id, Type expected)
-    {
-        var obj = interp.GetObject(id);
-        if (obj is null) return null;
-        if (!expected.IsInstanceOfType(obj))
-            throw new ForthException(ForthErrorCode.CompileError, $"Object {id} is not {expected.Name}");
-        return obj;
-    }
-
-    internal static void PushValueOrStoreObject(ForthInterpreter interp, object? value)
-    {
-        if (value is null) return;
-        switch (value)
-        {
-            case int i: interp.Push(i); break;
-            case long l: interp.Push(l); break;
-            case short s: interp.Push(s); break;
-            case byte b: interp.Push(b); break;
-            case char c: interp.Push(c); break;
-            case bool bo: interp.Push(bo ? 1 : 0); break;
-            case Enum e: interp.Push(Convert.ToInt64(e)); break;
-            default:
-                // store object and push its id
-                var id = interp.StoreObject(value);
-                interp.Push(id);
-                break;
-        }
     }
 }

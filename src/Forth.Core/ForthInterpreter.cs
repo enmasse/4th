@@ -1,31 +1,27 @@
 using System.Globalization;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Forth;
 
 public class ForthInterpreter : IForthInterpreter
 {
-    private readonly List<long> _stack = new();
+    private readonly List<object> _stack = new();
     private readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
     private readonly IForthIO _io;
-    private readonly FiberScheduler _scheduler = new();
-    // Object heap for future instance support
-    private readonly Dictionary<long, object?> _objHeap = new();
-    private long _nextObjId = 1;
+    private bool _exitRequested;
 
-    // Compile state
+    // Compilation state
     private bool _isCompiling;
     private string? _currentDefName;
     private List<Func<ForthInterpreter, Task>>? _currentInstructions;
     private readonly Stack<CompileFrame> _controlStack = new();
 
-    // Simple variable storage (addresses mapped to values)
-    private readonly Dictionary<long, long> _mem = new();
+    // Simple variable storage
+    private readonly Dictionary<long,long> _mem = new();
     private long _nextAddr = 1;
 
-    // REPL exit signal
-    private bool _exitRequested;
+    // Track awaited tasks to avoid double pushing results
+    private readonly HashSet<object> _consumedTaskResults = new();
 
     public ForthInterpreter(IForthIO? io = null)
     {
@@ -33,26 +29,55 @@ public class ForthInterpreter : IForthInterpreter
         InstallPrimitives();
     }
 
-    public IReadOnlyList<long> Stack => _stack;
+    public IReadOnlyList<object> Stack => _stack;
 
-    internal long StoreObject(object? obj)
+    internal void Push(object v) => _stack.Add(v);
+    internal object PopInternal()
     {
-        var id = _nextObjId++;
-        _objHeap[id] = obj;
-        return id;
+        var idx = _stack.Count - 1;
+        if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
+        var v = _stack[idx];
+        _stack.RemoveAt(idx);
+        return v;
     }
-    internal object? GetObject(long id)
+    internal object Pop() => PopInternal();
+
+    internal static void EnsureStack(ForthInterpreter interp, int needed, string word)
     {
-        _objHeap.TryGetValue(id, out var o);
-        return o;
-    }
-    internal void Push(long v) => _stack.Add(v);
-    internal long Pop() => PopInternal();
-    internal static void EnsureStack(ForthInterpreter interp, int required, string word)
-    {
-        if (interp._stack.Count < required)
+        if (interp._stack.Count < needed)
             throw new ForthException(ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
     }
+
+    private static long ToLong(object v)
+    {
+        return v switch
+        {
+            long l => l,
+            int i => i,
+            short s => s,
+            byte b => b,
+            char c => c,
+            bool bo => bo ? 1L : 0L,
+            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
+        };
+    }
+
+    private static bool ToBool(object v)
+    {
+        return v switch
+        {
+            bool b => b,
+            long l => l != 0,
+            int i => i != 0,
+            short s => s != 0,
+            byte b8 => b8 != 0,
+            char c => c != '\0',
+            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
+        };
+    }
+
+    private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
+    private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
     public bool Interpret(string line) => InterpretAsync(line).GetAwaiter().GetResult();
 
@@ -60,19 +85,17 @@ public class ForthInterpreter : IForthInterpreter
     {
         ArgumentNullException.ThrowIfNull(line);
         var tokens = Tokenizer.Tokenize(line);
-        var fiber = _scheduler.CreateFiber();
-        var i = 0;
+        int i = 0;
         while (i < tokens.Count)
         {
             var tok = tokens[i++];
             if (tok.Length == 0) continue;
-
-            // Compilation state handled synchronously (definitions created immediately)
             if (!_isCompiling)
             {
+                // Immediate mode
                 if (tok == ":")
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected word name after ':'");
+                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after ':'");
                     _currentDefName = tokens[i++];
                     if (string.IsNullOrWhiteSpace(_currentDefName)) throw new ForthException(ForthErrorCode.CompileError, "Invalid word name");
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
@@ -80,159 +103,101 @@ public class ForthInterpreter : IForthInterpreter
                     _isCompiling = true;
                     continue;
                 }
-
-                if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i + 3 >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "BIND requires: type method argCount name");
-                    var typeName = tokens[i++];
-                    var methodName = tokens[i++];
-                    if (!int.TryParse(tokens[i++], NumberStyles.Integer, CultureInfo.InvariantCulture, out var argCount))
-                        throw new ForthException(ForthErrorCode.CompileError, "Invalid argCount for BIND");
-                    var forthName = tokens[i++];
-                    var word = ClrBinder.CreateBoundWord(typeName, methodName, argCount);
-                    _dict[forthName] = word;
-                    continue;
-                }
-                if (tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i + 3 >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "BINDASYNC requires: type method argCount name");
-                    var typeName = tokens[i++];
-                    var methodName = tokens[i++];
-                    if (!int.TryParse(tokens[i++], NumberStyles.Integer, CultureInfo.InvariantCulture, out var argCount))
-                        throw new ForthException(ForthErrorCode.CompileError, "Invalid argCount for BINDASYNC");
-                    var forthName = tokens[i++];
-                    var word = ClrBinder.CreateBoundTaskWord(typeName, methodName, argCount);
-                    _dict[forthName] = word;
-                    continue;
-                }
-
-                if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; continue; }
-                if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
-
                 if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after VARIABLE");
                     var name = tokens[i++];
                     var addr = _nextAddr++;
                     _mem[addr] = 0;
-                    _dict[name] = new Word(interp => { interp.Push(addr); });
+                    _dict[name] = new Word(intr => intr.Push(addr));
                     continue;
                 }
                 if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT");
                     var name = tokens[i++];
-                    EnsureStack(this, 1, "CONSTANT");
+                    EnsureStack(this,1,"CONSTANT");
                     var value = PopInternal();
-                    _dict[name] = new Word(interp => { interp.Push(value); });
+                    _dict[name] = new Word(intr => intr.Push(value));
                     continue;
                 }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected character after CHAR");
-                    var word = tokens[i++];
-                    var ch = word.Length > 0 ? word[0] : 0;
-                    Push(ch);
+                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected char after CHAR");
+                    var s = tokens[i++];
+                    Push(s.Length > 0 ? (long)s[0] : 0L);
                     continue;
                 }
-
+                if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
+                {
+                    bool asyncBind = tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase);
+                    if (i + 3 >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, (asyncBind?"BINDASYNC":"BIND") + " requires: type method argCount name");
+                    var typeName = tokens[i++];
+                    var methodName = tokens[i++];
+                    if (!int.TryParse(tokens[i++], NumberStyles.Integer, CultureInfo.InvariantCulture, out var argCount))
+                        throw new ForthException(ForthErrorCode.CompileError, "Invalid arg count");
+                    var forthName = tokens[i++];
+                    _dict[forthName] = asyncBind ? ClrBinder.CreateBoundTaskWord(typeName, methodName, argCount) : ClrBinder.CreateBoundWord(typeName, methodName, argCount);
+                    continue;
+                }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Fiber based await remains
-                    Func<ForthInterpreter, Fiber, Task>? instr = null;
-                    instr = async (interp,f) =>
+                    EnsureStack(this,1,"AWAIT");
+                    var obj = PopInternal();
+                    if (obj is not Task t) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id");
+                    await t.ConfigureAwait(false);
+                    var tt = t.GetType();
+                    if (tt.IsGenericType && !IsResultConsumed(obj))
                     {
-                        EnsureStack(interp, 1, "AWAIT");
-                        var id = interp.PopInternal();
-                        var obj = interp.GetObject(id) ?? throw new ForthException(ForthErrorCode.MemoryFault, $"No object for id {id}");
-                        if (obj is not Task task) throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task id");
-                        if (!task.IsCompleted)
+                        var resultProp = tt.GetProperty("Result");
+                        var resultType = resultProp?.PropertyType;
+                        if (resultType?.FullName != "System.Threading.Tasks.VoidTaskResult")
                         {
-                            // push result on completion then resume fiber with next instruction
-                            task.ContinueWith(t =>
+                            var val = resultProp!.GetValue(t);
+                            Push(Normalize(val));
+                            // If there is another Task just beneath, keep it on top for consecutive AWAIT
+                            if (_stack.Count >= 2 && _stack[^2] is Task)
                             {
-                                if (t.GetType().IsGenericType)
-                                {
-                                    var val = t.GetType().GetProperty("Result")!.GetValue(t);
-                                    ClrBinder.PushValueOrStoreObject(interp, val);
-                                }
-                            }, TaskScheduler.Default);
-                            f.WaitOn(task, _scheduler);
-                            return;
+                                var top = _stack[^1];
+                                _stack[^1] = _stack[^2];
+                                _stack[^2] = top;
+                            }
                         }
-                        if (task.GetType().IsGenericType)
-                        {
-                            var val = task.GetType().GetProperty("Result")!.GetValue(task);
-                            ClrBinder.PushValueOrStoreObject(interp, val);
-                        }
-                    };
-                    fiber.Instructions.Enqueue(instr);
+                        MarkResultConsumed(obj);
+                    }
                     continue;
                 }
                 if (tok.Equals("TASK?", StringComparison.OrdinalIgnoreCase))
                 {
-                    fiber.Instructions.Enqueue((interp,f) =>
-                    {
-                        EnsureStack(interp, 1, "TASK?");
-                        var id = interp.PopInternal();
-                        var obj = interp.GetObject(id);
-                        var t = obj as Task;
-                        interp.Push(t != null && t.IsCompleted ? 1 : 0);
-                        return Task.CompletedTask;
-                    });
+                    EnsureStack(this,1,"TASK?");
+                    var obj = PopInternal();
+                    var tt = obj as Task;
+                    Push(tt is not null && tt.IsCompleted ? 1L : 0L);
                     continue;
                 }
-                if (tok.Equals("YIELD", StringComparison.OrdinalIgnoreCase))
-                {
-                    fiber.Instructions.Enqueue(async (interp,f) => { await Task.Yield(); });
-                    continue;
-                }
-                if (tok.Equals("SPAWN", StringComparison.OrdinalIgnoreCase))
-                {
-                    fiber.Instructions.Enqueue((interp,f) =>
-                    {
-                        EnsureStack(interp, 1, "SPAWN");
-                        var id = interp.PopInternal();
-                        var obj = interp.GetObject(id) ?? throw new ForthException(ForthErrorCode.MemoryFault, $"No object for id {id}");
-                        if (obj is not Task original) throw new ForthException(ForthErrorCode.CompileError, "SPAWN expects a Task id");
-                        var spawned = Task.Run(async () => await original.ConfigureAwait(false));
-                        var newId = interp.StoreObject(spawned);
-                        interp.Push(newId);
-                        return Task.CompletedTask;
-                    });
-                    continue;
-                }
+                if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; continue; }
+                if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
 
-                if (TryParseNumber(tok, out var num))
-                {
-                    Push(num);
-                    continue;
-                }
-
-                if (_dict.TryGetValue(tok, out var w))
-                {
-                    await w.ExecuteAsync(this);
-                    continue;
-                }
-
+                if (TryParseNumber(tok, out var num)) { Push(num); continue; }
+                if (_dict.TryGetValue(tok, out var w)) { await w.ExecuteAsync(this); continue; }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
             }
             else
             {
-                // Compilation mode (still synchronous building of word body)
+                // Compilation mode
                 if (tok == ";")
                 {
                     if (_currentInstructions is null || string.IsNullOrEmpty(_currentDefName))
                         throw new ForthException(ForthErrorCode.CompileError, "No open definition to end");
                     if (_controlStack.Count != 0)
-                        throw new ForthException(ForthErrorCode.CompileError, "Unmatched control structure in definition");
-                    var compiledBody = _currentInstructions;
-                    var compiled = new Word(async interp =>
+                        throw new ForthException(ForthErrorCode.CompileError, "Unmatched control structure");
+                    var body = _currentInstructions;
+                    var compiled = new Word(async intr =>
                     {
                         try
                         {
-                            foreach (var instr in compiledBody)
-                                await instr(interp);
+                            foreach (var a in body)
+                                await a(intr);
                         }
                         catch (ExitWordException) { }
                     });
@@ -242,17 +207,12 @@ public class ForthInterpreter : IForthInterpreter
                     _currentInstructions = null;
                     continue;
                 }
-                if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase))
-                {
-                    _controlStack.Push(new IfFrame());
-                    continue;
-                }
+                if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new IfFrame()); continue; }
                 if (tok.Equals("ELSE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not IfFrame ifr)
                         throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF");
-                    if (ifr.ElsePart is not null)
-                        throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE in IF");
+                    if (ifr.ElsePart is not null) throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE");
                     ifr.ElsePart = new List<Func<ForthInterpreter, Task>>();
                     ifr.InElse = true;
                     continue;
@@ -264,34 +224,28 @@ public class ForthInterpreter : IForthInterpreter
                     _controlStack.Pop();
                     var thenPart = ifr.ThenPart;
                     var elsePart = ifr.ElsePart;
-                    Func<ForthInterpreter, Task> compiledIf = async interp =>
+                    CurrentList().Add(async intr =>
                     {
-                        EnsureStack(interp, 1, "IF");
-                        var flag = interp.PopInternal();
-                        if (flag != 0)
+                        EnsureStack(intr,1,"IF");
+                        var flagObj = intr.PopInternal();
+                        if (ToBool(flagObj))
                         {
-                            foreach (var a in thenPart) await a(interp);
+                            foreach (var a in thenPart) await a(intr);
                         }
                         else if (elsePart is not null)
                         {
-                            foreach (var a in elsePart) await a(interp);
+                            foreach (var a in elsePart) await a(intr);
                         }
-                    };
-                    CurrentList().Add(compiledIf);
+                    });
                     continue;
                 }
-                if (tok.Equals("BEGIN", StringComparison.OrdinalIgnoreCase))
-                {
-                    _controlStack.Push(new BeginFrame());
-                    continue;
-                }
+                if (tok.Equals("BEGIN", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new BeginFrame()); continue; }
                 if (tok.Equals("WHILE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
                         throw new ForthException(ForthErrorCode.CompileError, "WHILE without BEGIN");
-                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "Multiple WHILE in loop");
-                    bf.InWhile = true;
-                    continue;
+                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "Multiple WHILE");
+                    bf.InWhile = true; continue;
                 }
                 if (tok.Equals("REPEAT", StringComparison.OrdinalIgnoreCase))
                 {
@@ -299,123 +253,121 @@ public class ForthInterpreter : IForthInterpreter
                         throw new ForthException(ForthErrorCode.CompileError, "REPEAT without BEGIN");
                     if (!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "REPEAT requires WHILE");
                     _controlStack.Pop();
-                    var pre = bf.PrePart;
-                    var mid = bf.MidPart;
-                    Func<ForthInterpreter, Task> compiledLoop = async interp =>
+                    var pre = bf.PrePart; var mid = bf.MidPart;
+                    CurrentList().Add(async intr =>
                     {
                         while (true)
                         {
-                            foreach (var a in pre) await a(interp);
-                            EnsureStack(interp, 1, "WHILE");
-                            var flag = interp.PopInternal();
-                            if (flag == 0) break;
-                            foreach (var b in mid) await b(interp);
+                            foreach (var a in pre) await a(intr);
+                            EnsureStack(intr,1,"WHILE"); var flagObj = intr.PopInternal(); if (!ToBool(flagObj)) break;
+                            foreach (var b in mid) await b(intr);
                         }
-                    };
-                    CurrentList().Add(compiledLoop);
+                    });
                     continue;
                 }
                 if (tok.Equals("UNTIL", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
                         throw new ForthException(ForthErrorCode.CompileError, "UNTIL without BEGIN");
-                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "UNTIL not allowed after WHILE; use REPEAT");
+                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "UNTIL after WHILE use REPEAT");
                     _controlStack.Pop();
                     var body = bf.PrePart;
-                    Func<ForthInterpreter, Task> compiledUntil = async interp =>
+                    CurrentList().Add(async intr =>
                     {
                         while (true)
                         {
-                            foreach (var a in body) await a(interp);
-                            EnsureStack(interp, 1, "UNTIL");
-                            var flag = interp.PopInternal();
-                            if (flag != 0) break;
-                        }
-                    };
-                    CurrentList().Add(compiledUntil);
-                    continue;
-                }
-                if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
-                {
-                    // inside definitions treat as immediate await (blocking) for now
-                    _currentInstructions!.Add(async interp =>
-                    {
-                        EnsureStack(interp,1,"AWAIT");
-                        var id = interp.PopInternal();
-                        var obj = interp.GetObject(id) ?? throw new ForthException(ForthErrorCode.MemoryFault,$"No object for id {id}");
-                        if (obj is not Task task) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id");
-                        await task.ConfigureAwait(false);
-                        if (task.GetType().IsGenericType)
-                        {
-                            var val = task.GetType().GetProperty("Result")!.GetValue(task);
-                            ClrBinder.PushValueOrStoreObject(interp,val);
+                            foreach (var a in body) await a(intr);
+                            EnsureStack(intr,1,"UNTIL"); var flagObj = intr.PopInternal(); if (ToBool(flagObj)) break;
                         }
                     });
                     continue;
                 }
-                // Other compile tokens keep previous synchronous logic (numbers, words, control flow etc.)
+                if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
+                {
+                    _currentInstructions!.Add(async intr =>
+                    {
+                        EnsureStack(intr,1,"AWAIT");
+                        var obj = intr.PopInternal();
+                        if (obj is not Task t) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id");
+                        await t.ConfigureAwait(false);
+                        var tt = t.GetType();
+                        if (tt.IsGenericType && !intr.IsResultConsumed(obj))
+                        {
+                            var resultProp = tt.GetProperty("Result");
+                            var resultType = resultProp?.PropertyType;
+                            if (resultType?.FullName != "System.Threading.Tasks.VoidTaskResult")
+                            {
+                                var val = resultProp!.GetValue(t);
+                                intr.Push(Normalize(val));
+                                if (intr._stack.Count >= 2 && intr._stack[^2] is Task)
+                                {
+                                    var top = intr._stack[^1];
+                                    intr._stack[^1] = intr._stack[^2];
+                                    intr._stack[^2] = top;
+                                }
+                            }
+                            intr.MarkResultConsumed(obj);
+                        }
+                    });
+                    continue;
+                }
                 if (tok.Equals("LITERAL", StringComparison.OrdinalIgnoreCase))
                 {
                     EnsureStack(this,1,"LITERAL");
                     var value = PopInternal();
-                    _currentInstructions!.Add(interp => { interp.Push(value); return Task.CompletedTask; });
+                    _currentInstructions!.Add(intr => { intr.Push(value); return Task.CompletedTask; });
                     continue;
                 }
-                if (TryParseNumber(tok,out var lit))
-                {
-                    CurrentList().Add(interp => { interp.Push(lit); return Task.CompletedTask; });
-                    continue;
-                }
-                if (_dict.TryGetValue(tok,out var compiledWord))
-                {
-                    CurrentList().Add(async interp => await compiledWord.ExecuteAsync(interp));
-                    continue;
-                }
+                if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }
+                if (_dict.TryGetValue(tok, out var cw)) { CurrentList().Add(async intr => await cw.ExecuteAsync(intr)); continue; }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
             }
         }
-        // Run scheduled fiber instructions non-blocking
-        await _scheduler.RunAsync(this);
         return !_exitRequested;
     }
 
-    private static bool TryParseNumber(string token, out long value)
+    private static object Normalize(object? val)
     {
-        return long.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        return val switch
+        {
+            null => 0L,
+            int i => (long)i,
+            long l => l,
+            short s => (long)s,
+            byte b => (long)b,
+            char c => (long)c,
+            bool bo => bo ? 1L : 0L,
+            _ => val!
+        };
     }
+
+    private static bool TryParseNumber(string token, out long value) => long.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
 
     private void InstallPrimitives()
     {
-        _dict["+"] = new Word(interp => { EnsureStack(interp,2,"+"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a+b); });
-        _dict["-"] = new Word(interp => { EnsureStack(interp,2,"-"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a-b); });
-        _dict["*"] = new Word(interp => { EnsureStack(interp,2,"*"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a*b); });
-        _dict["/"] = new Word(interp => { EnsureStack(interp,2,"/"); var b=interp.PopInternal(); var a=interp.PopInternal(); if(b==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); interp.Push(a/b); });
-        _dict["<"] = new Word(interp => { EnsureStack(interp,2,"<"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a < b ? 1 : 0); });
-        _dict["="] = new Word(interp => { EnsureStack(interp,2,"="); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a == b ? 1 : 0); });
-        _dict[">"] = new Word(interp => { EnsureStack(interp,2,">"); var b=interp.PopInternal(); var a=interp.PopInternal(); interp.Push(a > b ? 1 : 0); });
-        _dict["@"]= new Word(interp => { EnsureStack(interp,1,"@"); var addr=interp.PopInternal(); interp._mem.TryGetValue(addr, out var val); interp.Push(val); });
-        _dict["!"]= new Word(interp => { EnsureStack(interp,2,"!"); var addr=interp.PopInternal(); var val=interp.PopInternal(); interp._mem[addr]=val; });
-        _dict["ROT"]= new Word(interp => { EnsureStack(interp,3,"ROT"); var last=interp._stack.Count-1; var a=interp._stack[last-2]; var b=interp._stack[last-1]; var c=interp._stack[last]; interp._stack[last-2]=b; interp._stack[last-1]=c; interp._stack[last]=a; });
-        _dict["-ROT"]= new Word(interp => { EnsureStack(interp,3,"-ROT"); var last=interp._stack.Count-1; var a=interp._stack[last-2]; var b=interp._stack[last-1]; var c=interp._stack[last]; interp._stack[last-2]=c; interp._stack[last-1]=a; interp._stack[last]=b; });
-        _dict["DUP"] = new Word(interp => { EnsureStack(interp,1,"DUP"); interp.Push(interp._stack[^1]); });
-        _dict["DROP"] = new Word(interp => { EnsureStack(interp,1,"DROP"); interp._stack.RemoveAt(interp._stack.Count-1); });
-        _dict["SWAP"] = new Word(interp => { EnsureStack(interp,2,"SWAP"); var last=interp._stack.Count-1; (interp._stack[last-1],interp._stack[last])=(interp._stack[last],interp._stack[last-1]); });
-        _dict["OVER"] = new Word(interp => { EnsureStack(interp,2,"OVER"); interp.Push(interp._stack[^2]); });
-        _dict["EXIT"] = new Word(interp => { throw new ExitWordException(); });
-        _dict["BYE"] = new Word(interp => { interp._exitRequested = true; });
-        _dict["QUIT"] = new Word(interp => { interp._exitRequested = true; });
-        _dict["."] = new Word(interp => { EnsureStack(interp,1,"."); var n=interp.PopInternal(); interp._io.PrintNumber(n); });
-        _dict["CR"] = new Word(interp => { interp._io.NewLine(); });
-        _dict["EMIT"] = new Word(interp => { EnsureStack(interp,1,"EMIT"); var n=interp.PopInternal(); char ch=(char)(n & 0xFFFF); interp._io.Print(ch.ToString()); });
-    }
-
-    private long PopInternal()
-    {
-        var idx = _stack.Count - 1;
-        if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
-        var v = _stack[idx];
-        _stack.RemoveAt(idx);
-        return v;
+        _dict["+"] = new Word(intr => { EnsureStack(intr,2,"+"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a+b); });
+        _dict["-"] = new Word(intr => { EnsureStack(intr,2,"-"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a-b); });
+        _dict["*"] = new Word(intr => { EnsureStack(intr,2,"*"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a*b); });
+        _dict["/"] = new Word(intr => { EnsureStack(intr,2,"/"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a/b); });
+        _dict["<"] = new Word(intr => { EnsureStack(intr,2,"<"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a < b ? 1L : 0L); });
+        _dict["="] = new Word(intr => { EnsureStack(intr,2,"="); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a == b ? 1L : 0L); });
+        _dict[">"] = new Word(intr => { EnsureStack(intr,2,">"); var b=ToLong(intr.PopInternal()); var a=ToLong(intr.PopInternal()); intr.Push(a > b ? 1L : 0L); });
+        _dict["ROT"] = new Word(intr => { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(b); intr.Push(c); intr.Push(a); });
+        _dict["-ROT"] = new Word(intr => { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(c); intr.Push(a); intr.Push(b); });
+        _dict["@"] = new Word(intr => { EnsureStack(intr,1,"@"); var addr=ToLong(intr.PopInternal()); intr._mem.TryGetValue(addr,out var v); intr.Push(v); });
+        _dict["!"] = new Word(intr => { EnsureStack(intr,2,"!"); var addr=ToLong(intr.PopInternal()); var val=ToLong(intr.PopInternal()); intr._mem[addr]=val; });
+        _dict["DUP"] = new Word(intr => { EnsureStack(intr,1,"DUP"); intr.Push(intr._stack[^1]); });
+        _dict["DROP"] = new Word(intr => { EnsureStack(intr,1,"DROP"); intr._stack.RemoveAt(intr._stack.Count-1); });
+        _dict["SWAP"] = new Word(intr => { EnsureStack(intr,2,"SWAP"); var last=intr._stack.Count-1; (intr._stack[last-1],intr._stack[last])=(intr._stack[last],intr._stack[last-1]); });
+        _dict["OVER"] = new Word(intr => { EnsureStack(intr,2,"OVER"); intr.Push(intr._stack[^2]); });
+        _dict["SPAWN"] = new Word(intr => { EnsureStack(intr,1,"SPAWN"); var obj=intr.PopInternal(); if (obj is not Task) throw new ForthException(ForthErrorCode.CompileError,"SPAWN expects a Task"); intr.Push(obj); });
+        _dict["YIELD"] = new Word(async intr => { await Task.Yield(); });
+        _dict["BYE"] = new Word(intr => { intr._exitRequested = true; });
+        _dict["QUIT"] = new Word(intr => { intr._exitRequested = true; });
+        _dict["."] = new Word(intr => { EnsureStack(intr,1,"."); var n=ToLong(intr.PopInternal()); intr._io.PrintNumber(n); });
+        _dict["CR"] = new Word(intr => { intr._io.NewLine(); });
+        _dict["EMIT"] = new Word(intr => { EnsureStack(intr,1,"EMIT"); var n=ToLong(intr.PopInternal()); char ch=(char)(n & 0xFFFF); intr._io.Print(ch.ToString()); });
+        _dict["EXIT"] = new Word(intr => { throw new ExitWordException(); });
     }
 
     private List<Func<ForthInterpreter, Task>> CurrentList()
@@ -427,15 +379,12 @@ public class ForthInterpreter : IForthInterpreter
     internal sealed class Word
     {
         private readonly Func<ForthInterpreter, Task> _run;
-        public Word(Action<ForthInterpreter> run) => _run = interp => { run(interp); return Task.CompletedTask; };
-        public Word(Func<ForthInterpreter, Task> run) => _run = run;
-        public Task ExecuteAsync(ForthInterpreter interp) => _run(interp);
+        public Word(Action<ForthInterpreter> sync) => _run = intr => { sync(intr); return Task.CompletedTask; };
+        public Word(Func<ForthInterpreter, Task> asyncRun) => _run = asyncRun;
+        public Task ExecuteAsync(ForthInterpreter intr) => _run(intr);
     }
 
-    private abstract class CompileFrame
-    {
-        public abstract List<Func<ForthInterpreter, Task>> GetCurrentList();
-    }
+    private abstract class CompileFrame { public abstract List<Func<ForthInterpreter, Task>> GetCurrentList(); }
     private sealed class IfFrame : CompileFrame
     {
         public List<Func<ForthInterpreter, Task>> ThenPart { get; } = new();
@@ -450,5 +399,5 @@ public class ForthInterpreter : IForthInterpreter
         public bool InWhile { get; set; }
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => InWhile ? MidPart : PrePart;
     }
-    private sealed class ExitWordException : Exception { }
+    private sealed class ExitWordException : Exception {}
 }

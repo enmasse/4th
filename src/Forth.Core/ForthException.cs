@@ -8,6 +8,7 @@ public enum ForthErrorCode
     CompileError = 3,
     DivideByZero = 4,
     MemoryFault = 5,
+    TypeError = 6,
 }
 
 public sealed class ForthException : Exception

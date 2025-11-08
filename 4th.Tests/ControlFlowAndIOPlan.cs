@@ -1,5 +1,6 @@
 using Forth;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Forth.Tests;
@@ -15,6 +16,8 @@ public class ControlFlowAndIOPlan
         public string? ReadLine() => null;
     }
 
+    private static long[] Longs(IForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
+
     [Fact]
     public void IfElseThen_Branching()
     {
@@ -22,9 +25,9 @@ public class ControlFlowAndIOPlan
         var forth = new ForthInterpreter(io);
         Assert.True(forth.Interpret(": FLOOR5 DUP 6 < IF DROP 5 ELSE 1 - THEN ;"));
         Assert.True(forth.Interpret("1 FLOOR5"));
-        Assert.Equal(new long[] { 5 }, forth.Stack);
+        Assert.Equal(new long[] { 5 }, Longs(forth));
         Assert.True(forth.Interpret("8 FLOOR5"));
-        Assert.Equal(new long[] { 5, 7 }, forth.Stack);
+        Assert.Equal(new long[] { 5, 7 }, Longs(forth));
     }
 
     [Fact]
