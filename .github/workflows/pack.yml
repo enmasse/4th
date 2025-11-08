@@ -51,6 +51,7 @@ jobs:
         if: ${{ github.event_name == 'push' && secrets.NUGET_API_KEY != '' }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        shell: pwsh
         run: |
-          for %f in (artifacts\*.nupkg) do dotnet nuget push "%f" --api-key "%NUGET_API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
-          for %f in (artifacts\*.snupkg) do dotnet nuget push "%f" --api-key "%NUGET_API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          Get-ChildItem artifacts -Filter *.nupkg | ForEach-Object { dotnet nuget push $_.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate }
+          Get-ChildItem artifacts -Filter *.snupkg | ForEach-Object { dotnet nuget push $_.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate }
