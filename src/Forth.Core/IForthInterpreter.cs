@@ -14,4 +14,10 @@ public interface IForthInterpreter
     /// Current parameter stack. Top of stack is the last element. Holds boxed numeric values and Task objects.
     /// </summary>
     IReadOnlyList<object> Stack { get; }
+    /// <summary>Push a value onto the parameter stack.</summary>
+    void Push(object value);
+    /// <summary>Pop and return the top value from the parameter stack.</summary>
+    object Pop();
+    /// <summary>Return the top value without removing it.</summary>
+    object Peek();
 }

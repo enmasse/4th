@@ -38,8 +38,11 @@ public class ForthInterpreter : IForthInterpreter
     /// <summary>Parameter stack (top is last element). Contains boxed numeric values and Task instances.</summary>
     public IReadOnlyList<object> Stack => _stack;
 
-    internal void Push(object v) => _stack.Add(v);
-    internal object PopInternal()
+    /// <summary>Push a value onto the parameter stack.</summary>
+    public void Push(object value) => _stack.Add(value);
+
+    /// <summary>Pop and return top-of-stack value.</summary>
+    public object Pop()
     {
         var idx = _stack.Count - 1;
         if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
@@ -47,7 +50,15 @@ public class ForthInterpreter : IForthInterpreter
         _stack.RemoveAt(idx);
         return v;
     }
-    internal object Pop() => PopInternal();
+
+    /// <summary>Return top-of-stack value without removing it.</summary>
+    public object Peek()
+    {
+        if (_stack.Count == 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
+        return _stack[^1];
+    }
+
+    internal object PopInternal() => Pop();
 
     internal static void EnsureStack(ForthInterpreter interp, int needed, string word)
     {
