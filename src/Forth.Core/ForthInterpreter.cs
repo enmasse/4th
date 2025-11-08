@@ -58,6 +58,22 @@ public class ForthInterpreter : IForthInterpreter
         return _stack[^1];
     }
 
+    /// <summary>Register a new synchronous word by name.</summary>
+    public void AddWord(string name, Action<IForthInterpreter> body)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(body);
+        _dict[name] = new Word(intr => body(intr));
+    }
+
+    /// <summary>Register a new asynchronous word by name.</summary>
+    public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(body);
+        _dict[name] = new Word(intr => body(intr));
+    }
+
     internal object PopInternal() => Pop();
 
     internal static void EnsureStack(ForthInterpreter interp, int needed, string word)

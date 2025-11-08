@@ -20,4 +20,8 @@ public interface IForthInterpreter
     object Pop();
     /// <summary>Return the top value without removing it.</summary>
     object Peek();
+    /// <summary>Register a new synchronous word implemented as an Action.</summary>
+    void AddWord(string name, Action<IForthInterpreter> body);
+    /// <summary>Register a new asynchronous word implemented as a Func returning Task.</summary>
+    void AddWordAsync(string name, Func<IForthInterpreter, System.Threading.Tasks.Task> body);
 }
