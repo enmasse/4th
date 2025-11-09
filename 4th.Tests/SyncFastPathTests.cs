@@ -5,8 +5,11 @@ namespace Forth.Tests;
 
 public class SyncFastPathTests
 {
+    /// <summary>
+    /// Verifies arithmetic-only line uses fast path and computes correct result.
+    /// </summary>
     [Fact]
-    public async void ArithmeticFastPathWorks()
+    public async Task ArithmeticFastPathWorks()
     {
         var f = new ForthInterpreter();
         Assert.True(await f.EvalAsync("5 7 + 2 *"));
@@ -14,8 +17,11 @@ public class SyncFastPathTests
         Assert.Equal(24L, (long)f.Stack[0]);
     }
 
+    /// <summary>
+    /// Verifies CHAR and quoted string literals are handled by sync IR fast path.
+    /// </summary>
     [Fact]
-    public async void StringAndCharFastPathWorks()
+    public async Task StringAndCharFastPathWorks()
     {
         var f = new ForthInterpreter();
         Assert.True(await f.EvalAsync("CHAR A \"hello\""));
@@ -24,11 +30,13 @@ public class SyncFastPathTests
         Assert.Equal("hello", (string)f.Stack[1]);
     }
 
+    /// <summary>
+    /// Ensures a line with AWAIT falls back and surfaces proper error when task missing.
+    /// </summary>
     [Fact]
-    public async void FallsBackForAwait()
+    public async Task FallsBackForAwait()
     {
         var f = new ForthInterpreter();
-        // Should hit fallback and throw since AWAIT needs task; ensure normal behavior preserved
         var ex = await Assert.ThrowsAsync<ForthException>(async () => await f.EvalAsync("0 AWAIT"));
         Assert.Equal(ForthErrorCode.CompileError, ex.Code);
     }

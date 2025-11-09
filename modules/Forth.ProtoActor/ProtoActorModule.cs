@@ -6,11 +6,17 @@ using Proto;
 
 namespace Forth.ProtoActor;
 
+/// <summary>
+/// Proto.Actor integration words under the <c>Proto</c> module (e.g. SPAWN-ECHO, ASK-LONG, SPAWN-FORTH, FORTH-EVAL).
+/// </summary>
 [ForthModule("Proto")] // USAGE: USING Proto ...
 public sealed class ProtoActorModule : IForthWordModule
 {
     private static readonly ConcurrentDictionary<PID, ActorSystem> _systems = new();
 
+    /// <summary>
+    /// Registers Proto.Actor related words on the interpreter.
+    /// </summary>
     public void Register(IForthInterpreter forth)
     {
         // START (placeholder) ? pushes 0
@@ -71,10 +77,7 @@ public sealed class ProtoActorModule : IForthWordModule
             if (pidObj is not PID pid) throw new ForthException(ForthErrorCode.TypeError, "FORTH-EVAL expects PID then source");
             if (!_systems.TryGetValue(pid, out var system)) throw new ForthException(ForthErrorCode.TypeError, "Unknown PID (no system)");
             var raw = srcObj?.ToString() ?? string.Empty;
-            if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"')
-            {
-                raw = raw.Substring(1, raw.Length - 2); // strip surrounding quotes
-            }
+            if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"') raw = raw.Substring(1, raw.Length - 2);
             var req = new ForthEvalRequest(raw);
             var task = system.Root.RequestAsync<ForthEvalResponse>(pid, req);
             i.Push(task);

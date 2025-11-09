@@ -4,10 +4,14 @@ using Proto;
 
 namespace Forth.ProtoActor;
 
+/// <summary>
+/// Proto.Actor actor that hosts a Forth interpreter and evaluates received code.
+/// </summary>
 public sealed class ForthInterpreterActor : IActor
 {
     private readonly ForthInterpreter _forth = new();
 
+    /// <inheritdoc />
     public Task ReceiveAsync(IContext context)
     {
         var msg = context.Message;

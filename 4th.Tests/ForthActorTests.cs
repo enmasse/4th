@@ -7,6 +7,9 @@ namespace Forth.Tests;
 
 public class ForthActorTests
 {
+    /// <summary>
+    /// Spawns a Forth interpreter actor and evaluates an addition expression through FORTH-EVAL.
+    /// </summary>
     [Fact]
     public async Task SpawnForthAndEvalAdds()
     {

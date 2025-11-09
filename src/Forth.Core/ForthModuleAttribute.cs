@@ -9,7 +9,16 @@ namespace Forth;
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public sealed class ForthModuleAttribute : Attribute
 {
+    /// <summary>
+    /// Gets the declared module name used to scope registered words.
+    /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ForthModuleAttribute"/> class.
+    /// </summary>
+    /// <param name="name">The module name under which words will be registered.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is null.</exception>
     public ForthModuleAttribute(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));

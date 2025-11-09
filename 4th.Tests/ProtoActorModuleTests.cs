@@ -7,6 +7,9 @@ namespace Forth.Tests;
 
 public class ProtoActorModuleTests
 {
+    /// <summary>
+    /// Loads the Proto module and verifies SPAWN-ECHO pushes a PID on the stack.
+    /// </summary>
     [Fact]
     public async Task LoadProtoActorModuleAndSpawnEcho()
     {
@@ -17,6 +20,9 @@ public class ProtoActorModuleTests
         Assert.Equal("Proto.PID", f.Stack[0].GetType().FullName);
     }
 
+    /// <summary>
+    /// Verifies ASK-LONG + AWAIT returns the same value from the echo actor.
+    /// </summary>
     [Fact]
     public async Task AskLongReturnsValue()
     {
