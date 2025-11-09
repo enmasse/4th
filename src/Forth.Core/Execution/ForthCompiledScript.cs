@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace Forth;
 
-/// <summary>
-/// Represents a synchronously executable compiled Forth script (single line or definition body) made of sync instructions.
-/// </summary>
 internal sealed class ForthCompiledScript
 {
     private readonly List<Action<ForthInterpreter>> _steps;

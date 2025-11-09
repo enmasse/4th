@@ -113,7 +113,6 @@ internal static class ClrBinder
         if (target.IsInstanceOfType(raw)) return raw;
         try
         {
-            // Handle numeric coercions from boxed longs/ints
             if (raw is long l)
             {
                 if (target == typeof(int)) return (int)l;

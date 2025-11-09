@@ -26,7 +26,6 @@ public static class Tokenizer
             {
                 if (c == '"')
                 {
-                    // end string
                     current.Add('"');
                     list.Add(new string(current.ToArray()));
                     current.Clear();
@@ -48,11 +47,7 @@ public static class Tokenizer
                 inComment = true;
                 continue;
             }
-            if (c == '\\') // line comment
-            {
-                // stop tokenizing rest of the line unless we are in a quoted string
-                break;
-            }
+            if (c == '\\') break; // line comment
             if (char.IsWhiteSpace(c))
             {
                 if (current.Count > 0)
@@ -76,7 +71,6 @@ public static class Tokenizer
             {
                 if (current.Count > 0)
                 {
-                    // flush previous token then start string
                     list.Add(new string(current.ToArray()));
                     current.Clear();
                 }

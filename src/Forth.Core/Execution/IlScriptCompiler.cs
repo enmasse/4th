@@ -5,16 +5,11 @@ using System.Threading.Tasks;
 
 namespace Forth;
 
-/// <summary>
-/// Very small IL compiler for trivial one-line scripts with only numbers and + - * /.
-/// Produces a delegate (ForthInterpreter -> Task) that manipulates the interpreter stack directly.
-/// </summary>
 internal static class IlScriptCompiler
 {
     public static bool TryCompile(IReadOnlyList<string> tokens, out Func<ForthInterpreter, Task> runner)
     {
         runner = null!;
-        // Only allow numbers and + - * /
         foreach (var t in tokens)
         {
             if (t.Length == 0) return false;
@@ -24,7 +19,6 @@ internal static class IlScriptCompiler
         }
         var dm = new DynamicMethod("ForthIL", typeof(Task), new[] { typeof(ForthInterpreter) }, typeof(IlScriptCompiler).Module, skipVisibility: true);
         var il = dm.GetILGenerator();
-        // Stack discipline: push numbers using interp.Push, for ops call helpers that pop two longs and push result
         foreach (var t in tokens)
         {
             if (t == "+" || t == "-" || t == "*" || t == "/")

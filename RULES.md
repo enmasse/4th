@@ -60,6 +60,9 @@
 - Add XML documentation comments for all public types and members.
 - Apply the Single Responsibility Principle pragmatically: keep classes and methods focused, but avoid over-fragmentation when cohesion would suffer.
 
+## Process & Planning
+- Always update the plan status when you complete work. If no further updates are needed, the plan is done for real.
+
 ## Security
 - Disallow untrusted assembly paths; validate existence before load.
 - Reflection binding restricted to methods with expected arity.

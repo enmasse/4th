@@ -6,17 +6,8 @@ using System.Runtime.Loader;
 
 namespace Forth;
 
-/// <summary>
-/// Reflection-based loader for word modules from .NET assemblies.
-/// </summary>
 public static class AssemblyWordLoader
 {
-    /// <summary>
-    /// Load an assembly from a path and register any discovered <see cref="IForthWordModule"/> implementations.
-    /// </summary>
-    /// <param name="interpreter">Target interpreter.</param>
-    /// <param name="path">Assembly file path.</param>
-    /// <returns>Count of modules registered.</returns>
     public static int Load(IForthInterpreter interpreter, string path)
     {
         ArgumentNullException.ThrowIfNull(interpreter);
@@ -27,9 +18,6 @@ public static class AssemblyWordLoader
         return RegisterFromAssembly(interpreter, asm);
     }
 
-    /// <summary>
-    /// Register modules from an already loaded assembly.
-    /// </summary>
     public static int RegisterFromAssembly(IForthInterpreter interpreter, Assembly asm)
     {
         ArgumentNullException.ThrowIfNull(interpreter);
@@ -42,7 +30,6 @@ public static class AssemblyWordLoader
             var instance = (IForthWordModule)Activator.CreateInstance(t)!;
             if (interpreter is ForthInterpreter impl && !string.IsNullOrWhiteSpace(moduleName))
             {
-                // Scope registration into a module
                 impl.WithModule(moduleName!, () => instance.Register(interpreter));
             }
             else
