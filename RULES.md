@@ -62,6 +62,9 @@
 
 ## Process & Planning
 - Always update the plan status when you complete work. If no further updates are needed, the plan is done for real.
+- Include explicit last steps for "run build", "run tests", "commit and push", and "finalize plan".
+- If a step has no work (e.g., nothing to commit), still mark it completed with a short note ("clean").
+- After the last step, finalize/close the plan so progress is 100%. If progress is <100%, complete or skip remaining steps explicitly.
 
 ## Security
 - Disallow untrusted assembly paths; validate existence before load.

@@ -1,4 +1,6 @@
-using Forth;
+using Forth.Core;
+using Forth.Core.Modules;
+using Forth.Core.Interpreter;
 using System.Threading.Tasks;
 
 namespace Forth.Tests.DynamicModules;

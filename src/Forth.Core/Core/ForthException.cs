@@ -1,4 +1,4 @@
-namespace Forth;
+namespace Forth.Core;
 
 /// <summary>
 /// Error codes thrown by the Forth interpreter when encountering runtime or compile-time issues.

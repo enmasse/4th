@@ -1,17 +1,18 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Linq;
+using Forth.Core.Interpreter;
 
-namespace Forth;
+namespace Forth.Core.Binding;
 
 internal static class ClrBinder
 {
     public static ForthInterpreter.Word CreateBoundWord(string typeName, string methodName, int argCount)
     {
-        var type = ResolveType(typeName) ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
+        var type = ResolveType(typeName) ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
         var target = methods.FirstOrDefault(m => m.Name == methodName && m.GetParameters().Length == argCount)
-            ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
+            ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
         bool isStatic = target.IsStatic;
         var pars = target.GetParameters();
         var returnType = target.ReturnType;
@@ -33,7 +34,7 @@ internal static class ClrBinder
             if (!isStatic)
             {
                 var rawInst = interp.Pop();
-                instance = rawInst; // allow instance object directly
+                instance = rawInst;
             }
             object? result = target.Invoke(instance, argVals);
             if (isTask)
@@ -67,16 +68,16 @@ internal static class ClrBinder
 
     public static ForthInterpreter.Word CreateBoundTaskWord(string typeName, string methodName, int argCount)
     {
-        var type = ResolveType(typeName) ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
+        var type = ResolveType(typeName) ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
         var target = methods.FirstOrDefault(m => m.Name == methodName && m.GetParameters().Length == argCount)
-            ?? throw new ForthException(ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
+            ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
         bool isStatic = target.IsStatic;
         var pars = target.GetParameters();
         var returnType = target.ReturnType;
         bool returnsTaskLike = typeof(Task).IsAssignableFrom(returnType) || returnType == typeof(ValueTask) || (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
         if (!returnsTaskLike)
-            throw new ForthException(ForthErrorCode.CompileError, $"{typeName}.{methodName} does not return Task/ValueTask");
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, $"{typeName}.{methodName} does not return Task/ValueTask");
         return new ForthInterpreter.Word(interp =>
         {
             int totalPop = argCount + (isStatic ? 0 : 1);
@@ -93,15 +94,7 @@ internal static class ClrBinder
                 instance = interp.Pop();
             }
             object? result = target.Invoke(instance, argVals);
-            Task toPush;
-            if (result is Task t)
-            {
-                toPush = t;
-            }
-            else
-            {
-                toPush = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-            }
+            Task toPush = result is Task t ? t : (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
             interp.Push(toPush);
             return Task.CompletedTask;
         });

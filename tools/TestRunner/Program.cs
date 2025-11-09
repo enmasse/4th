@@ -1,4 +1,5 @@
-using Forth;
+using Forth.Core;
+using Forth.Core.Interpreter;
 using System;
 
 Console.WriteLine("Manual test runner: exercise interpreter");

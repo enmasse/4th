@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
-using Forth;
+using Forth.Core;
+using Forth.Core.Interpreter;
 using Xunit;
 
 namespace Forth.Tests;

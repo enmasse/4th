@@ -1,6 +1,6 @@
-namespace Forth;
+namespace Forth.Core.Modules;
 
 public interface IForthWordModule
 {
-    void Register(IForthInterpreter forth);
+    void Register(Forth.Core.IForthInterpreter forth);
 }

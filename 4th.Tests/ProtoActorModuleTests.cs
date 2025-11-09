@@ -1,7 +1,8 @@
 using System.Threading.Tasks;
-using Forth;
+using Forth.Core;
+using Forth.Core.Interpreter;
 using Xunit;
-using Forth.ProtoActor; // reference for typeof
+using Forth.ProtoActor;
 
 namespace Forth.Tests;
 

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Forth.Core.Interpreter;
 
-namespace Forth;
+namespace Forth.Core.Execution;
 
 internal sealed class ForthCompiledScript
 {

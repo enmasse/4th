@@ -1,4 +1,4 @@
-namespace Forth;
+namespace Forth.Core.Interpreter;
 
 /// <summary>
 /// Encapsulates the parameter stack for the Forth interpreter.
@@ -23,7 +23,7 @@ internal sealed class ForthStack
     public object Pop()
     {
         var idx = _items.Count - 1;
-        if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
+        if (idx < 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
         var v = _items[idx];
         _items.RemoveAt(idx);
         return v;
@@ -33,7 +33,7 @@ internal sealed class ForthStack
     /// <exception cref="ForthException">Thrown when stack is empty.</exception>
     public object Peek()
     {
-        if (_items.Count == 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow");
+        if (_items.Count == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
         return _items[^1];
     }
 

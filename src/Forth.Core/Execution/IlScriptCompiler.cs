@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
+using Forth.Core.Interpreter;
 
-namespace Forth;
+namespace Forth.Core.Execution;
 
 internal static class IlScriptCompiler
 {
@@ -53,7 +54,7 @@ internal static class IlScriptCompiler
             "+" => a + b,
             "-" => a - b,
             "*" => a * b,
-            "/" => b == 0 ? throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero") : a / b,
+            "/" => b == 0 ? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.DivideByZero, "Divide by zero") : a / b,
             _ => throw new InvalidOperationException()
         };
         i.Push(r);

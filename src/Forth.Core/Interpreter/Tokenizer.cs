@@ -1,4 +1,4 @@
-namespace Forth;
+namespace Forth.Core.Interpreter;
 
 /// <summary>
 /// Tokenizes a single line of Forth source into whitespace-delimited tokens, supporting

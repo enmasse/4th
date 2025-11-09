@@ -1,4 +1,4 @@
-namespace Forth;
+namespace Forth.Core;
 
 /// <summary>
 /// Public surface for the Forth interpreter. Executes single lines of Forth source code and

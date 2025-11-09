@@ -1,9 +1,10 @@
 using System;
 using System.Reflection;
+using Forth.Core.Binding;
 
-namespace Forth;
+namespace Forth.Core.Interpreter;
 
-public partial class ForthInterpreter // split to add dynamic module helpers
+public partial class ForthInterpreter // dynamic module helpers
 {
     internal void WithModule(string name, Action action)
     {
@@ -13,15 +14,8 @@ public partial class ForthInterpreter // split to add dynamic module helpers
         finally { _currentModule = previous; }
     }
 
-    /// <summary>
-    /// Load words from a loaded assembly (C# API) using reflection module discovery.
-    /// Returns number of modules registered.
-    /// </summary>
     public int LoadAssemblyWords(Assembly asm) => AssemblyWordLoader.RegisterFromAssembly(this, asm);
 
-    /// <summary>
-    /// Temporarily begin a module scope for programmatic word registration.
-    /// </summary>
     public void BeginModuleScope(string moduleName, Action register)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(moduleName);

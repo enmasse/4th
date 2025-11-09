@@ -2,18 +2,21 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System; // added for Type reflection
 using System.Collections.Concurrent; // added for IL cache
+using Forth.Core;
+using Forth.Core.Binding;
+using Forth.Core.Execution;
 
-namespace Forth;
+namespace Forth.Core.Interpreter;
 
 /// <summary>
 /// Minimal Forth interpreter core. Supports async words, definitions, simple variables/constants,
 /// optional modules, and a public API to manipulate the stack and register words.
 /// </summary>
-public partial class ForthInterpreter : IForthInterpreter
+public partial class ForthInterpreter : Forth.Core.IForthInterpreter
 {
     private readonly ForthStack _stack = new();
     private readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
-    private readonly IForthIO _io;
+    private readonly Forth.Core.IForthIO _io;
     private bool _exitRequested;
     private bool _isCompiling;
     private string? _currentDefName;
@@ -31,31 +34,24 @@ public partial class ForthInterpreter : IForthInterpreter
     private readonly ConcurrentDictionary<string, Func<ForthInterpreter, Task>> _ilCache = new();
 
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
-    public ForthInterpreter(IForthIO? io = null)
+    public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
-        _io = io ?? new ConsoleForthIO();
+        _io = io ?? new Forth.Core.ConsoleForthIO();
         InstallPrimitives();
     }
 
-    /// <summary>Gets the current parameter stack (top is last element).</summary>
     public IReadOnlyList<object> Stack => _stack.AsReadOnly();
-
-    /// <summary>Push a value onto the parameter stack.</summary>
     public void Push(object value) => _stack.Push(value);
-    /// <summary>Pop and return the top-most value from the parameter stack.</summary>
     public object Pop() => _stack.Pop();
-    /// <summary>Return the top-most value from the parameter stack without removing it.</summary>
     public object Peek() => _stack.Peek();
 
-    /// <summary>Register a new synchronous word by name.</summary>
-    public void AddWord(string name, Action<IForthInterpreter> body)
+    public void AddWord(string name, Action<Forth.Core.IForthInterpreter> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
         TargetDict()[name] = new Word(intr => body(intr));
     }
-    /// <summary>Register a new asynchronous word by name.</summary>
-    public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
+    public void AddWordAsync(string name, Func<Forth.Core.IForthInterpreter, Task> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
@@ -78,7 +74,6 @@ public partial class ForthInterpreter : IForthInterpreter
 
     private bool TryResolveWord(string token, out Word? word)
     {
-        // Qualified Module:Word
         var idx = token.IndexOf(':');
         if (idx > 0)
         {
@@ -92,13 +87,11 @@ public partial class ForthInterpreter : IForthInterpreter
             word = null;
             return false;
         }
-        // Current module
         if (!string.IsNullOrWhiteSpace(_currentModule) && _modules.TryGetValue(_currentModule!, out var cur) && cur.TryGetValue(token, out var wc))
         {
             word = wc;
             return true;
         }
-        // Using modules in order
         for (int i = _usingModules.Count - 1; i >= 0; i--)
         {
             var mn = _usingModules[i];
@@ -108,7 +101,6 @@ public partial class ForthInterpreter : IForthInterpreter
                 return true;
             }
         }
-        // Core dict
         return _dict.TryGetValue(token, out word);
     }
 
@@ -116,7 +108,7 @@ public partial class ForthInterpreter : IForthInterpreter
     internal static void EnsureStack(ForthInterpreter interp, int needed, string word)
     {
         if (interp._stack.Count < needed)
-            throw new ForthException(ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
     }
 
     internal static long ToLongPublic(object v) => ToLong(v);
@@ -128,7 +120,7 @@ public partial class ForthInterpreter : IForthInterpreter
         byte b => b,
         char c => c,
         bool bo => bo ? 1L : 0L,
-        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
+        _ => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
     };
     private static bool ToBool(object v) => v switch
     {
@@ -138,7 +130,7 @@ public partial class ForthInterpreter : IForthInterpreter
         short s => s != 0,
         byte b8 => b8 != 0,
         char c => c != '\0',
-        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
+        _ => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
     };
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
@@ -191,23 +183,23 @@ public partial class ForthInterpreter : IForthInterpreter
                 // Module management (immediate)
                 if (tok.Equals("MODULE", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after MODULE");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after MODULE");
                     _currentModule = tokens[i++];
-                    if (string.IsNullOrWhiteSpace(_currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name");
+                    if (string.IsNullOrWhiteSpace(_currentModule)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Invalid module name");
                     if (!_modules.ContainsKey(_currentModule)) _modules[_currentModule] = new(StringComparer.OrdinalIgnoreCase);
                     continue;
                 }
                 if (tok.Equals("END-MODULE", StringComparison.OrdinalIgnoreCase)) { _currentModule = null; continue; }
                 if (tok.Equals("USING", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after USING");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after USING");
                     var m = tokens[i++];
                     if (!_usingModules.Contains(m)) _usingModules.Add(m);
                     continue;
                 }
                 if (tok.Equals("LOAD-ASM", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected path after LOAD-ASM");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected path after LOAD-ASM");
                     var path = tokens[i++];
                     var count = AssemblyWordLoader.Load(this, path);
                     Push((long)count); // push number of modules loaded
@@ -215,7 +207,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 }
                 if (tok.Equals("LOAD-ASM-TYPE", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected type after LOAD-ASM-TYPE");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected type after LOAD-ASM-TYPE");
                     var typeName = tokens[i++];
                     Type? t = Type.GetType(typeName, throwOnError:false, ignoreCase:false);
                     if (t == null)
@@ -226,7 +218,7 @@ public partial class ForthInterpreter : IForthInterpreter
                             if (t != null) break;
                         }
                     }
-                    if (t == null) throw new ForthException(ForthErrorCode.CompileError, $"Type not found: {typeName}");
+                    if (t == null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, $"Type not found: {typeName}");
                     var count = LoadAssemblyWords(t.Assembly);
                     Push((long)count);
                     continue;
@@ -235,9 +227,9 @@ public partial class ForthInterpreter : IForthInterpreter
                 // Immediate (interpret) mode
                 if (tok == ":")
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after ':'");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after ':'");
                     _currentDefName = tokens[i++];
-                    if (string.IsNullOrWhiteSpace(_currentDefName)) throw new ForthException(ForthErrorCode.CompileError, "Invalid word name");
+                    if (string.IsNullOrWhiteSpace(_currentDefName)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Invalid word name");
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
                     _controlStack.Clear();
                     _isCompiling = true;
@@ -245,7 +237,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 }
                 if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after VARIABLE");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after VARIABLE");
                     var name = tokens[i++];
                     var addr = _nextAddr++;
                     _mem[addr] = 0;
@@ -254,7 +246,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 }
                 if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after CONSTANT");
                     var name = tokens[i++];
                     EnsureStack(this,1,"CONSTANT");
                     var value = PopInternal();
@@ -263,7 +255,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, "Expected char after CHAR");
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected char after CHAR");
                     var s = tokens[i++];
                     Push(s.Length > 0 ? (long)s[0] : 0L);
                     continue;
@@ -278,11 +270,11 @@ public partial class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
                 {
                     bool asyncBind = tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase);
-                    if (i + 3 >= tokens.Count) throw new ForthException(ForthErrorCode.CompileError, (asyncBind?"BINDASYNC":"BIND") + " requires: type method argCount name");
+                    if (i + 3 >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, (asyncBind?"BINDASYNC":"BIND") + " requires: type method argCount name");
                     var typeName = tokens[i++];
                     var methodName = tokens[i++];
                     if (!int.TryParse(tokens[i++], NumberStyles.Integer, CultureInfo.InvariantCulture, out var argCount))
-                        throw new ForthException(ForthErrorCode.CompileError, "Invalid arg count");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Invalid arg count");
                     var forthName = tokens[i++];
                     TargetDict()[forthName] = asyncBind ? ClrBinder.CreateBoundTaskWord(typeName, methodName, argCount) : ClrBinder.CreateBoundWord(typeName, methodName, argCount);
                     continue;
@@ -291,7 +283,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 {
                     EnsureStack(this,1,"AWAIT");
                     var obj = PopInternal();
-                    if (obj is not Task t) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id");
+                    if (obj is not Task t) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"AWAIT expects a Task id");
                     await t.ConfigureAwait(false);
                     var tt = t.GetType();
                     if (tt.IsGenericType && !IsResultConsumed(obj))
@@ -327,16 +319,16 @@ public partial class ForthInterpreter : IForthInterpreter
 
                 if (TryParseNumber(tok, out var num)) { Push(num); continue; }
                 if (TryResolveWord(tok, out var w) && w is not null) { await w.ExecuteAsync(this); continue; }
-                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
             }
             else
             {
                 if (tok == ";")
                 {
                     if (_currentInstructions is null || string.IsNullOrEmpty(_currentDefName))
-                        throw new ForthException(ForthErrorCode.CompileError, "No open definition to end");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "No open definition to end");
                     if (_controlStack.Count != 0)
-                        throw new ForthException(ForthErrorCode.CompileError, "Unmatched control structure");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Unmatched control structure");
                     var body = _currentInstructions;
                     var compiled = new Word(async intr =>
                     {
@@ -357,8 +349,8 @@ public partial class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("ELSE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not IfFrame ifr)
-                        throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF");
-                    if (ifr.ElsePart is not null) throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "ELSE without IF");
+                    if (ifr.ElsePart is not null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Multiple ELSE");
                     ifr.ElsePart = new List<Func<ForthInterpreter, Task>>();
                     ifr.InElse = true;
                     continue;
@@ -366,7 +358,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("THEN", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not IfFrame ifr)
-                        throw new ForthException(ForthErrorCode.CompileError, "THEN without IF");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "THEN without IF");
                     _controlStack.Pop();
                     var thenPart = ifr.ThenPart; var elsePart = ifr.ElsePart;
                     CurrentList().Add(async intr =>
@@ -388,15 +380,15 @@ public partial class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("WHILE", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
-                        throw new ForthException(ForthErrorCode.CompileError, "WHILE without BEGIN");
-                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "Multiple WHILE");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "WHILE without BEGIN");
+                    if (bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Multiple WHILE");
                     bf.InWhile = true; continue;
                 }
                 if (tok.Equals("REPEAT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
-                        throw new ForthException(ForthErrorCode.CompileError, "REPEAT without BEGIN");
-                    if (!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "REPEAT requires WHILE");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "REPEAT without BEGIN");
+                    if (!bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "REPEAT requires WHILE");
                     _controlStack.Pop();
                     var pre = bf.PrePart; var mid = bf.MidPart;
                     CurrentList().Add(async intr =>
@@ -413,8 +405,8 @@ public partial class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("UNTIL", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_controlStack.Count == 0 || _controlStack.Peek() is not BeginFrame bf)
-                        throw new ForthException(ForthErrorCode.CompileError, "UNTIL without BEGIN");
-                    if (bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "UNTIL after WHILE use REPEAT");
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "UNTIL without BEGIN");
+                    if (bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "UNTIL after WHILE use REPEAT");
                     _controlStack.Pop();
                     var body = bf.PrePart;
                     CurrentList().Add(async intr =>
@@ -433,7 +425,7 @@ public partial class ForthInterpreter : IForthInterpreter
                     {
                         EnsureStack(intr,1,"AWAIT");
                         var obj = intr.PopInternal();
-                        if (obj is not Task t) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id");
+                        if (obj is not Task t) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"AWAIT expects a Task id");
                         await t.ConfigureAwait(false);
                         var tt = t.GetType();
                         if (tt.IsGenericType && !intr.IsResultConsumed(obj))
@@ -464,7 +456,6 @@ public partial class ForthInterpreter : IForthInterpreter
                     _currentInstructions!.Add(intr => { intr.Push(value); return Task.CompletedTask; });
                     continue;
                 }
-                // double-quoted string literal in compile mode
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     var s = tok.Substring(1, tok.Length - 2);
@@ -473,7 +464,7 @@ public partial class ForthInterpreter : IForthInterpreter
                 }
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }
                 if (TryResolveWord(tok, out var cw) && cw is not null) { CurrentList().Add(async intr => await cw.ExecuteAsync(intr)); continue; }
-                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
             }
         }
         return !_exitRequested;
@@ -507,10 +498,7 @@ public partial class ForthInterpreter : IForthInterpreter
 
     private List<Func<ForthInterpreter, Task>> CurrentList() => _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
-    /// <summary>
-    /// Compile a single-line script into a synchronous instruction list. Returns null if async or unsupported tokens are present.
-    /// </summary>
-    internal ForthCompiledScript? CompileSync(string line)
+    internal Forth.Core.Execution.ForthCompiledScript? CompileSync(string line)
     {
         var tokens = Tokenizer.Tokenize(line);
         var steps = new List<Action<ForthInterpreter>>();
@@ -545,7 +533,7 @@ public partial class ForthInterpreter : IForthInterpreter
                     case "+": steps.Add(intr => { EnsureStack(intr,2,"+"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a+b); }); break;
                     case "-": steps.Add(intr => { EnsureStack(intr,2,"-"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a-b); }); break;
                     case "*": steps.Add(intr => { EnsureStack(intr,2,"*"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a*b); }); break;
-                    case "/": steps.Add(intr => { EnsureStack(intr,2,"/"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a/b); }); break;
+                    case "/": steps.Add(intr => { EnsureStack(intr,2,"/"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); if (b==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a/b); }); break;
                     case "DUP": steps.Add(intr => { EnsureStack(intr,1,"DUP"); intr.Push(intr.StackTop()); }); break;
                     case "DROP": steps.Add(intr => { EnsureStack(intr,1,"DROP"); intr.DropTop(); }); break;
                     case "SWAP": steps.Add(intr => { EnsureStack(intr,2,"SWAP"); intr.SwapTop2(); }); break;
@@ -560,7 +548,7 @@ public partial class ForthInterpreter : IForthInterpreter
             }
             return null;
         }
-        return new ForthCompiledScript(steps);
+        return new Forth.Core.Execution.ForthCompiledScript(steps);
     }
 
     internal sealed class Word

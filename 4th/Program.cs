@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using Forth;
+using Forth.Core;
+using Forth.Core.Interpreter;
 
 Console.WriteLine("Forth REPL - type BYE to exit");
 var interp = new ForthInterpreter();

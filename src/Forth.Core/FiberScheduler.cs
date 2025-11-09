@@ -1,7 +1,10 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Forth.Core.Interpreter;
+using System;
+using System.Threading;
 
-namespace Forth;
+namespace Forth.Core.Scheduling;
 
 internal sealed class Fiber
 {
@@ -11,10 +14,7 @@ internal sealed class Fiber
     public bool Waiting { get; set; }
     public bool Completed { get; set; }
 
-    internal Fiber(int id)
-    {
-        Id = id;
-    }
+    internal Fiber(int id) => Id = id;
 
     public void WaitOn(Task task, FiberScheduler scheduler)
     {
@@ -62,15 +62,8 @@ internal sealed class FiberScheduler
             _runQueue.Enqueue(fiber);
     }
 
-    internal void RegisterWait(Fiber fiber, Task task)
-    {
-        _waiting[fiber.Id] = task;
-    }
-
-    internal void CompleteWait(Fiber fiber)
-    {
-        _waiting.TryRemove(fiber.Id, out _);
-    }
+    internal void RegisterWait(Fiber fiber, Task task) => _waiting[fiber.Id] = task;
+    internal void CompleteWait(Fiber fiber) => _waiting.TryRemove(fiber.Id, out _);
 
     public async Task RunAsync(ForthInterpreter interp, CancellationToken ct = default)
     {
@@ -102,8 +95,7 @@ internal sealed class FiberScheduler
             else
             {
                 if (_waiting.IsEmpty)
-                    break; // no runnable or waiting fibers
-                // wait for any waiting task to complete, then loop to pick re-enqueued fibers
+                    break;
                 var tasks = _waiting.Values.ToArray();
                 if (tasks.Length == 0) continue;
                 await Task.WhenAny(tasks).ConfigureAwait(false);

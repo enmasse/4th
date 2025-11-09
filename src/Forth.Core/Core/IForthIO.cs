@@ -1,4 +1,4 @@
-namespace Forth;
+namespace Forth.Core;
 
 /// <summary>
 /// Abstraction over I/O used by the Forth interpreter for printing, newlines and reading input.

@@ -1,4 +1,5 @@
-using Forth;
+using Forth.Core.Interpreter;
+using Forth.Core;
 using System.Threading.Tasks;
 using Xunit;
 

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
-using Forth;
+using Forth.Core;
+using Forth.Core.Interpreter;
 using Xunit;
 using System.Linq;
 
@@ -8,7 +9,6 @@ namespace Forth.Tests;
 public class AsyncAwaitTests
 {
     private static ForthInterpreter New() => new();
-
     private static long[] Longs(ForthInterpreter f) => f.Stack.Select(o => o is long l ? l : o is int i ? (long)i : 0L).ToArray();
 
     [Fact]

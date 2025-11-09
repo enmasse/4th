@@ -1,7 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using Forth;
+using Forth.Core;
+using Forth.Core.Modules;
+using Forth.Core.Interpreter;
+using Forth.Core.Binding;
 using Proto;
 
 namespace Forth.ProtoActor;
