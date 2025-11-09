@@ -6,6 +6,9 @@ namespace Forth.Tests;
 
 public class ReplExitTests
 {
+    /// <summary>
+    /// Verifies BYE requests interpreter exit (EvalAsync returns false).
+    /// </summary>
     [Fact]
     public async Task Bye_ReturnsFalse()
     {
@@ -13,6 +16,9 @@ public class ReplExitTests
         Assert.False(await forth.EvalAsync("BYE"));
     }
 
+    /// <summary>
+    /// Verifies QUIT requests interpreter exit (EvalAsync returns false).
+    /// </summary>
     [Fact]
     public async Task Quit_ReturnsFalse()
     {

@@ -1,27 +1,46 @@
 namespace Forth;
 
 /// <summary>
-/// Public surface for the Forth interpreter. Interpret executes a single line of Forth source.
-/// The parameter stack is exposed for test inspection as a list of objects.
+/// Public surface for the Forth interpreter. Executes single lines of Forth source code and
+/// exposes the parameter stack for inspection (top of stack is the last element).
 /// </summary>
 public interface IForthInterpreter
 {
     /// <summary>
-    /// Interpret a line asynchronously (awaits any async words such as AWAIT). Returns false if exit requested.
+    /// Interpret a line asynchronously (awaits any async words such as <c>AWAIT</c>).
     /// </summary>
+    /// <param name="line">Single line of Forth source to evaluate.</param>
+    /// <returns><c>true</c> if the interpreter should continue running; <c>false</c> if an exit was requested (BYE/QUIT).</returns>
     System.Threading.Tasks.Task<bool> EvalAsync(string line);
+
     /// <summary>
-    /// Current parameter stack. Top of stack is the last element. Holds boxed numeric values and Task objects.
+    /// Current parameter stack (top is last element). Contains boxed numeric values, strings, tasks, and other objects pushed by words.
     /// </summary>
     IReadOnlyList<object> Stack { get; }
+
     /// <summary>Push a value onto the parameter stack.</summary>
+    /// <param name="value">The value to push (boxed if primitive).</param>
     void Push(object value);
+
     /// <summary>Pop and return the top value from the parameter stack.</summary>
+    /// <returns>The top-most value.</returns>
     object Pop();
-    /// <summary>Return the top value without removing it.</summary>
+
+    /// <summary>Return (peek) the top value without removing it.</summary>
+    /// <returns>The top-most value.</returns>
     object Peek();
-    /// <summary>Register a new synchronous word implemented as an Action.</summary>
+
+    /// <summary>
+    /// Register a new synchronous word.
+    /// </summary>
+    /// <param name="name">The Forth word name.</param>
+    /// <param name="body">The action to execute when the word runs.</param>
     void AddWord(string name, Action<IForthInterpreter> body);
-    /// <summary>Register a new asynchronous word implemented as a Func returning Task.</summary>
+
+    /// <summary>
+    /// Register a new asynchronous word.
+    /// </summary>
+    /// <param name="name">The Forth word name.</param>
+    /// <param name="body">The asynchronous function returning a task that will be awaited.</param>
     void AddWordAsync(string name, Func<IForthInterpreter, System.Threading.Tasks.Task> body);
 }

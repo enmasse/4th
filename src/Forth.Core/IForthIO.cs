@@ -7,12 +7,15 @@ namespace Forth;
 public interface IForthIO
 {
     /// <summary>Write raw text (no newline).</summary>
+    /// <param name="text">Text to print verbatim.</param>
     void Print(string text);
     /// <summary>Write a number using invariant formatting (no newline).</summary>
+    /// <param name="number">Numeric value to print.</param>
     void PrintNumber(long number);
-    /// <summary>Write a newline.</summary>
+    /// <summary>Write a newline terminator.</summary>
     void NewLine();
-    /// <summary>Read a line from input; may return null on EOF.</summary>
+    /// <summary>Read a line from input; may return <c>null</c> on EOF.</summary>
+    /// <returns>The line read or <c>null</c> at end of input.</returns>
     string? ReadLine();
 }
 

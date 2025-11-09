@@ -23,7 +23,7 @@ public sealed class ProtoActorModule : IForthWordModule
         forth.AddWord("START", i => { i.Push(0L); });
 
         // SPAWN-ECHO ? pid (actor echoes number replies with same number)
-        forth.AddWordAsync("SPAWN-ECHO", async i =>
+        forth.AddWord("SPAWN-ECHO", i =>
         {
             var system = new ActorSystem();
             var props = Props.FromFunc(ctx =>
@@ -34,7 +34,6 @@ public sealed class ProtoActorModule : IForthWordModule
             var pid = system.Root.Spawn(props);
             _systems[pid] = system;
             i.Push(pid);
-            await Task.CompletedTask;
         });
 
         // ASK-LONG: pid n -> task<long>
@@ -59,14 +58,13 @@ public sealed class ProtoActorModule : IForthWordModule
         });
 
         // SPAWN-FORTH ? pid
-        forth.AddWordAsync("SPAWN-FORTH", async i =>
+        forth.AddWord("SPAWN-FORTH", i =>
         {
             var system = new ActorSystem();
             var props = Props.FromProducer(() => new ForthInterpreterActor());
             var pid = system.Root.Spawn(props);
             _systems[pid] = system;
             i.Push(pid);
-            await Task.CompletedTask;
         });
 
         // FORTH-EVAL: pid "source" -- task<ForthEvalResponse>

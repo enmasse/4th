@@ -6,6 +6,9 @@ namespace Forth.Tests;
 
 public class PublicStackApiTests
 {
+    /// <summary>
+    /// Validates Push/Pop/Peek semantics and underflow behavior.
+    /// </summary>
     [Fact]
     public void PushPopPeekWorks()
     {
@@ -20,6 +23,9 @@ public class PublicStackApiTests
         Assert.Throws<ForthException>(() => forth.Peek());
     }
 
+    /// <summary>
+    /// Ensures values pushed from host are consumed by EvalAsync.
+    /// </summary>
     [Fact]
     public async Task PushThenEvalAsyncUsesValues()
     {
@@ -33,6 +39,9 @@ public class PublicStackApiTests
 
     private sealed class Custom { public int Value { get; } public Custom(int v) { Value = v; } }
 
+    /// <summary>
+    /// Verifies arbitrary reference types can be pushed and retrieved intact.
+    /// </summary>
     [Fact]
     public void PushCustomObjectAndRetrieve()
     {

@@ -11,8 +11,8 @@ public static class Tokenizer
     /// Split input into tokens. Semicolons are returned as standalone tokens to simplify
     /// end-of-definition handling.
     /// </summary>
-    /// <param name="input">Single line of Forth source.</param>
-    /// <returns>List of token strings in order.</returns>
+    /// <param name="input">A single line of Forth source (no trailing newline required).</param>
+    /// <returns>List of token strings in order (may be empty).</returns>
     public static List<string> Tokenize(string input)
     {
         var list = new List<string>();

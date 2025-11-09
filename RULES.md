@@ -36,6 +36,7 @@
 - Avoid `async void` in all production code; prefer `Task`/`ValueTask`.
 - Words returning Task must push the Task (unless awaited internally) and be awaited via AWAIT.
 - Do not hide long-running synchronous operations in a sync word; prefer async pattern.
+- Discourage returning `Task.CompletedTask` for non-trivial work; wrap synchronous CPU-bound operations in `Task.Run` to avoid blocking callers.
 
 ## Memory
 - VARIABLE allocates address; use `!` (store) and `@` (fetch) words (provided by primitives).

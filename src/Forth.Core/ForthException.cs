@@ -30,6 +30,8 @@ public sealed class ForthException : Exception
     public ForthErrorCode Code { get; }
 
     /// <summary>Create a new exception with a code and message.</summary>
+    /// <param name="code">The error code classification.</param>
+    /// <param name="message">Human-readable message describing the failure.</param>
     public ForthException(ForthErrorCode code, string message) : base(message)
     {
         Code = code;
