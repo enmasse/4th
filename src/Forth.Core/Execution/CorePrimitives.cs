@@ -74,6 +74,22 @@ internal static class CorePrimitives
             if (u < 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Negative ERASE length");
             for (long k = 0; k < u; k++) i.MemSet(addr + k, 0);
         });
+        // Introspection: DUMP (addr u --) prints u bytes starting at addr as two-digit hex separated by spaces
+        dict["DUMP"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,2,"DUMP");
+            var u = ToLong(i.PopInternal());
+            var addr = ToLong(i.PopInternal());
+            if (u < 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Negative DUMP length");
+            var sb = new StringBuilder();
+            for (long k = 0; k < u; k++)
+            {
+                if (k > 0) sb.Append(' ');
+                i.MemTryGet(addr + k, out var v);
+                var b = (byte)v;
+                sb.Append(b.ToString("X2"));
+            }
+            i.WriteText(sb.ToString());
+        });
         dict[">R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,">R"); var a=i.PopInternal(); i.RPush(a); });
         dict["R>"] = new ForthInterpreter.Word(i => { if (i.RCount==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,"Return stack underflow in R>"); var a=i.RPop(); i.Push(a); });
         dict["2>R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"2>R"); var b=i.PopInternal(); var a=i.PopInternal(); i.RPush(a); i.RPush(b); });

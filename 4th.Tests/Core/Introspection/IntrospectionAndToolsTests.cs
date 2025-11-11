@@ -62,10 +62,19 @@ public class IntrospectionAndToolsTests
     /// Intention: Validate DUMP outputs raw memory contents for a given address range.
     /// Expected: Output shows hex/character pairs for requested cell span.
     /// </summary>
-    [Fact(Skip = "DUMP (memory dump) not implemented yet")] 
-    public void Dump_Memory()
+    [Fact]
+    public async Task Dump_Memory()
     {
-        var forth = new ForthInterpreter();
-        // HERE 16 DUMP
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        // Allocate buffer and fill with pattern 0..15
+        Assert.True(await forth.EvalAsync("CREATE BUF 16 ALLOT"));
+        for (int n = 0; n < 16; n++)
+        {
+            Assert.True(await forth.EvalAsync($"{n} BUF {n} + C!"));
+        }
+        Assert.True(await forth.EvalAsync("BUF 16 DUMP"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F", io.Outputs[0]);
     }
 }
