@@ -20,23 +20,25 @@ public class DoLoopTests
     }
 
     /// <summary>
-    /// Intention: Validate +LOOP stepping and LEAVE to break out early from a loop.
-    /// Expected: Loop exits when I=5 via LEAVE and accumulator reflects iterations before exit.
+    /// Intention: Validate LEAVE breaks out early from a loop when a condition is met.
+    /// Expected: Accumulator stops updating once index reaches 5, producing 0+1+2+3+4 = 10.
     /// </summary>
-    [Fact(Skip = "+LOOP and LEAVE not implemented yet")] 
-    public void DoPlusLoop_AndLeave()
+    [Fact]
+    public void DoLoop_LeaveEarly()
     {
         var forth = new ForthInterpreter();
-        // : T 0 0 10 DO I 5 = IF LEAVE THEN 1 + LOOP ;
-        // forth.Interpret(": T 0 0 10 DO I 5 = IF LEAVE THEN 1 + LOOP ;");
-        // forth.Interpret("T");
+        // : SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ; -> pushes 10
+        Assert.True(forth.Interpret(": SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ;"));
+        Assert.True(forth.Interpret("SUM5"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(10L, (long)forth.Stack[0]);
     }
 
     /// <summary>
     /// Intention: Ensure UNLOOP correctly cleans loop parameters when exiting early (e.g., via EXIT).
     /// Expected: No stack corruption or runtime error when exiting loop prematurely.
     /// </summary>
-    [Fact(Skip = "UNLOOP not implemented yet")] 
+    [Fact(Skip = "UNLOOP not implemented yet")]
     public void Unloop_InsideExit()
     {
         var forth = new ForthInterpreter();

@@ -491,12 +491,30 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                             {
                                 foreach (var a in body) await a(intr);
                             }
+                            catch (LoopLeaveException)
+                            {
+                                // Exit the nearest loop
+                                break;
+                            }
                             finally
                             {
                                 intr.PopLoopIndex();
                             }
                         }
                     });
+                    continue;
+                }
+                if (tok.Equals("LEAVE", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Validate that we're inside some DO...LOOP, not necessarily the top frame
+                    bool insideDo = false;
+                    foreach (var frame in _controlStack)
+                    {
+                        if (frame is DoFrame) { insideDo = true; break; }
+                    }
+                    if (!insideDo)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LEAVE used outside DO...LOOP");
+                    CurrentList().Add(intr => { throw new LoopLeaveException(); });
                     continue;
                 }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
@@ -660,4 +678,5 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => Body;
     }
     private sealed class ExitWordException : Exception {}
+    private sealed class LoopLeaveException : Exception {}
 }
