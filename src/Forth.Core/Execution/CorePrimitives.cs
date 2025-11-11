@@ -31,6 +31,8 @@ internal static class CorePrimitives
         dict["CR"] = new ForthInterpreter.Word(i => { i.NewLine(); });
         dict["EMIT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
         dict["EXIT"] = new ForthInterpreter.Word(i => { i.ThrowExit(); });
+        // Introspection
+        dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);

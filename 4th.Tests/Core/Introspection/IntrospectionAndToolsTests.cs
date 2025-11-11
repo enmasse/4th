@@ -20,11 +20,16 @@ public class IntrospectionAndToolsTests
     /// Intention: Ensure DEPTH pushes current stack depth count without modifying existing items.
     /// Expected: 1 2 3 DEPTH -> 1 2 3 3.
     /// </summary>
-    [Fact(Skip = "DEPTH not implemented yet")] 
+    [Fact] 
     public void Depth_Word()
     {
         var forth = new ForthInterpreter();
-        // 1 2 3 DEPTH -> 1 2 3 3
+        Assert.True(forth.Interpret("1 2 3 DEPTH"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.Equal(2L, (long)forth.Stack[1]);
+        Assert.Equal(3L, (long)forth.Stack[2]);
+        Assert.Equal(3L, (long)forth.Stack[3]);
     }
 
     /// <summary>
