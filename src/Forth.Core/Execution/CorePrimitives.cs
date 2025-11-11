@@ -85,6 +85,9 @@ internal static class CorePrimitives
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
         dict["RP@"] = new ForthInterpreter.Word(i => { i.Push((long)i.RCount); });
         dict["STATE"] = new ForthInterpreter.Word(i => { i.Push(i.StateAddr); });
+        dict["BASE"] = new ForthInterpreter.Word(i => { i.Push(i.BaseAddr); });
+        dict["DECIMAL"] = new ForthInterpreter.Word(i => { i.MemSet(i.BaseAddr, 10); });
+        dict["HEX"] = new ForthInterpreter.Word(i => { i.MemSet(i.BaseAddr, 16); });
         // Loop index
         dict["I"] = new ForthInterpreter.Word(i => { i.Push(i.CurrentLoopIndex()); });
     }

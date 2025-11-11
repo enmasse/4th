@@ -37,17 +37,21 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private readonly Stack<long> _loopIndexStack = new();
     private int _unloopPending; // counts iterations where UNLOOP already removed loop index
 
-    // STATE cell (0 while interpreting, nonzero while compiling inside a definition)
+    // STATE and BASE cells
     private readonly long _stateAddr;
     internal long StateAddr => _stateAddr;
+    private readonly long _baseAddr;
+    internal long BaseAddr => _baseAddr;
 
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
         _io = io ?? new Forth.Core.ConsoleForthIO();
-        // Allocate STATE before installing primitives so the word can reference it
+        // Allocate special cells before installing primitives
         _stateAddr = _nextAddr++;
-        _mem[_stateAddr] = 0; // start in interpret state
+        _mem[_stateAddr] = 0; // interpret by default
+        _baseAddr = _nextAddr++;
+        _mem[_baseAddr] = 10; // decimal by default
         InstallPrimitives();
     }
 
@@ -284,8 +288,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
                     _controlStack.Clear();
                     _isCompiling = true;
-                    // Enter compile state
-                    _mem[_stateAddr] = 1;
+                    _mem[_stateAddr] = 1; // compiling
                     continue;
                 }
                 if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
@@ -396,8 +399,8 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push(tt is not null && tt.IsCompleted ? 1L : 0L);
                     continue;
                 }
-                if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; continue; }
-                if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; continue; }
+                if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; _mem[_stateAddr] = 0; continue; }
+                if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; _mem[_stateAddr] = 1; continue; }
 
                 if (TryParseNumber(tok, out var num)) { Push(num); continue; }
                 if (TryResolveWord(tok, out var w) && w is not null) { await w.ExecuteAsync(this); continue; }
@@ -423,7 +426,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     });
                     TargetDict()[_currentDefName] = compiled;
                     _isCompiling = false;
-                    _mem[_stateAddr] = 0; // return to interpret state
+                    _mem[_stateAddr] = 0; // back to interpret
                     _currentDefName = null;
                     _currentInstructions = null;
                     continue;
@@ -627,7 +630,47 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
         bool bo => bo ? 1L : 0L,
         _ => val!
     };
-    private static bool TryParseNumber(string token, out long value) => long.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+
+    private bool TryParseNumber(string token, out long value)
+    {
+        value = 0;
+        if (string.IsNullOrEmpty(token)) return false;
+        bool neg = false;
+        int pos = 0;
+        if (token[0] == '+' || token[0] == '-')
+        {
+            neg = token[0] == '-';
+            pos = 1;
+            if (token.Length == 1) return false;
+        }
+        MemTryGet(_baseAddr, out var b);
+        int @base = (int)(b <= 0 ? 10 : b);
+        long acc = 0;
+        for (; pos < token.Length; pos++)
+        {
+            char c = token[pos];
+            int digit = c switch
+            {
+                >= '0' and <= '9' => c - '0',
+                >= 'A' and <= 'Z' => 10 + (c - 'A'),
+                >= 'a' and <= 'z' => 10 + (c - 'a'),
+                _ => -1
+            };
+            if (digit < 0 || digit >= @base)
+                return false;
+            try
+            {
+                checked { acc = acc * @base + digit; }
+            }
+            catch (OverflowException)
+            {
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "Number out of range");
+            }
+        }
+        value = neg ? -acc : acc;
+        return true;
+    }
+
     private void InstallPrimitives() => CorePrimitives.Install(this, _dict);
 
     internal object StackTop() => _stack.Top();
@@ -673,22 +716,20 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
             // Inline known core synchronous words if present
             if (TryResolveWord(tok, out var w) && w is not null && !w.IsAsync)
             {
-                // Special-case core stack ops by name to avoid delegate await overhead
                 switch (tok.ToUpperInvariant())
                 {
-                    case "+": steps.Add(intr => { EnsureStack(intr,2,"+"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a+b); }); break;
-                    case "-": steps.Add(intr => { EnsureStack(intr,2,"-"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a-b); }); break;
-                    case "*": steps.Add(intr => { EnsureStack(intr,2,"*"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); intr.Push(a*b); }); break;
-                    case "/": steps.Add(intr => { EnsureStack(intr,2,"/"); var b=ToLongPublic(intr.Pop()); var a=ToLongPublic(intr.Pop()); if (b==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a/b); }); break;
+                    case "+": steps.Add(intr => { EnsureStack(intr,2,"+"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2+b2); }); break;
+                    case "-": steps.Add(intr => { EnsureStack(intr,2,"-"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2-b2); }); break;
+                    case "*": steps.Add(intr => { EnsureStack(intr,2,"*"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2*b2); }); break;
+                    case "/": steps.Add(intr => { EnsureStack(intr,2,"/"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); if (b2==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a2/b2); }); break;
                     case "DUP": steps.Add(intr => { EnsureStack(intr,1,"DUP"); intr.Push(intr.StackTop()); }); break;
                     case "DROP": steps.Add(intr => { EnsureStack(intr,1,"DROP"); intr.DropTop(); }); break;
                     case "SWAP": steps.Add(intr => { EnsureStack(intr,2,"SWAP"); intr.SwapTop2(); }); break;
                     case "OVER": steps.Add(intr => { EnsureStack(intr,2,"OVER"); intr.Push(intr.StackNthFromTop(2)); }); break;
-                    case "ROT": steps.Add(intr => { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(b); intr.Push(c); intr.Push(a); }); break;
-                    case "-ROT": steps.Add(intr => { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b=intr.PopInternal(); var a=intr.PopInternal(); intr.Push(c); intr.Push(a); intr.Push(b); }); break;
+                    case "ROT": steps.Add(intr => { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(b3); intr.Push(c); intr.Push(a3); }); break;
+                    case "-ROT": steps.Add(intr => { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(c); intr.Push(a3); intr.Push(b3); }); break;
                     default:
-                        steps.Add(intr => w.ExecuteAsync(intr).GetAwaiter().GetResult());
-                        break;
+                        return null; // do not inline other words
                 }
                 continue;
             }

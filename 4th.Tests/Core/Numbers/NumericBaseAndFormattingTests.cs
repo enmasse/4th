@@ -9,11 +9,21 @@ public class NumericBaseAndFormattingTests
     /// Intention: Confirm BASE changes affect number parsing and printing (DECIMAL vs HEX).
     /// Expected: Values entered after switching base interpret correctly (e.g., HEX A equals 10 decimal).
     /// </summary>
-    [Fact(Skip = "BASE/DECIMAL/HEX not implemented yet")] 
+    [Fact]
     public void BaseSwitching()
     {
         var forth = new ForthInterpreter();
-        // DECIMAL 10  HEX  A  should parse in selected base
+        Assert.True(forth.Interpret("DECIMAL 10"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(10L, (long)forth.Stack[0]);
+
+        Assert.True(forth.Interpret("HEX A"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(10L, (long)forth.Stack[^1]);
+
+        Assert.True(forth.Interpret("DECIMAL 10"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(10L, (long)forth.Stack[^1]);
     }
 
     /// <summary>
