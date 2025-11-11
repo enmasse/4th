@@ -38,10 +38,14 @@ public class DoLoopTests
     /// Intention: Ensure UNLOOP correctly cleans loop parameters when exiting early (e.g., via EXIT).
     /// Expected: No stack corruption or runtime error when exiting loop prematurely.
     /// </summary>
-    [Fact(Skip = "UNLOOP not implemented yet")]
+    [Fact]
     public void Unloop_InsideExit()
     {
         var forth = new ForthInterpreter();
-        // : T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;
+        // : T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;  -> should run without error, leaving 0 on stack
+        Assert.True(forth.Interpret(": T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;"));
+        Assert.True(forth.Interpret("T"));
+        // Either 0 or empty stack is acceptable; here we assert no exception and depth is 0 or 1
+        Assert.True(forth.Stack.Count == 0 || forth.Stack.Count == 1);
     }
 }

@@ -79,6 +79,7 @@ internal static class CorePrimitives
         dict["LSHIFT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"LSHIFT"); var u=ToLong(i.PopInternal()); var x=ToLong(i.PopInternal()); i.Push((long)((ulong)x << (int)u)); });
         dict["RSHIFT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"RSHIFT"); var u=ToLong(i.PopInternal()); var x=ToLong(i.PopInternal()); i.Push((long)((ulong)x >> (int)u)); });
         dict["EXIT"] = new ForthInterpreter.Word(i => { i.ThrowExit(); });
+        dict["UNLOOP"] = new ForthInterpreter.Word(i => { i.Unloop(); });
         // Introspection
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
         dict["RP@"] = new ForthInterpreter.Word(i => { i.Push((long)i.RCount); });

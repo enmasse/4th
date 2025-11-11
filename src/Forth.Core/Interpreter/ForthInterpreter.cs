@@ -8,10 +8,6 @@ using Forth.Core.Execution;
 
 namespace Forth.Core.Interpreter;
 
-/// <summary>
-/// Minimal Forth interpreter core. Supports async words, definitions, simple variables/constants,
-/// optional modules, and a public API to manipulate the stack and register words.
-/// </summary>
 public partial class ForthInterpreter : Forth.Core.IForthInterpreter
 {
     private readonly ForthStack _stack = new();
@@ -39,6 +35,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
 
     // DO..LOOP index stack for nested loops (innermost at top)
     private readonly Stack<long> _loopIndexStack = new();
+    private int _unloopPending; // counts iterations where UNLOOP already removed loop index
 
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
@@ -158,6 +155,22 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
         if (_loopIndexStack.Count == 0)
             throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LOOP index stack underflow");
         _loopIndexStack.Pop();
+    }
+    internal void PopLoopIndexMaybe()
+    {
+        if (_unloopPending > 0)
+        {
+            _unloopPending--;
+            return;
+        }
+        PopLoopIndex();
+    }
+    internal void Unloop()
+    {
+        if (_loopIndexStack.Count == 0)
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "UNLOOP used outside DO...LOOP");
+        _loopIndexStack.Pop();
+        _unloopPending++;
     }
     internal long CurrentLoopIndex()
     {
@@ -493,12 +506,11 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                             }
                             catch (LoopLeaveException)
                             {
-                                // Exit the nearest loop
                                 break;
                             }
                             finally
                             {
-                                intr.PopLoopIndex();
+                                intr.PopLoopIndexMaybe();
                             }
                         }
                     });
