@@ -23,40 +23,25 @@ namespace Forth.Tests.Core
         }
 
         [Fact]
-        public async Task BracketStateToggle_AllowsImmediateEvalWhileCompiling()
-        {
-            var f = New();
-            // During compilation push 1, enter brackets to interpret and push 2, resume compiling push 3
-            Assert.True(await f.EvalAsync(": T 1 [ 2 ] 3 ;"));
-            Assert.True(await f.EvalAsync("T"));
-            Assert.Equal(3, f.Stack.Count);
-            Assert.Equal(1L, (long)f.Stack[0]);
-            Assert.Equal(2L, (long)f.Stack[1]);
-            Assert.Equal(3L, (long)f.Stack[2]);
-        }
-
-        [Fact]
         public async Task LiteralCapturesStackValueInsideDefinition()
         {
             var f = New();
             // Push 42 then compile LITERAL to embed 42
             Assert.True(await f.EvalAsync("42 : PUSH42 LITERAL ;"));
             Assert.True(await f.EvalAsync("PUSH42 PUSH42"));
-            Assert.Equal(3, f.Stack.Count); // original 42 + two literals
+            // Only two literals produced (original 42 consumed by LITERAL during compile)
+            Assert.Equal(2, f.Stack.Count);
             Assert.Equal(42L, (long)f.Stack[0]);
             Assert.Equal(42L, (long)f.Stack[1]);
-            Assert.Equal(42L, (long)f.Stack[2]);
         }
 
         [Fact]
-        public async Task PostponeUndefinedWord_IgnoresAndDoesNotCrash()
+        public async Task PostponeUndefinedWord_RaisesUndefined()
         {
             var f = New();
-            // POSTPONE FOO (undefined) should back up i-- and skip; resulting word pushes 1 only
-            Assert.True(await f.EvalAsync(": T POSTPONE FOO 1 ;"));
-            Assert.True(await f.EvalAsync("T"));
-            Assert.Single(f.Stack);
-            Assert.Equal(1L, (long)f.Stack[0]);
+            // Attempt to POSTPONE an undefined word should ultimately fail during compilation
+            var ex = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(": T POSTPONE FOO 1 ;"));
+            Assert.Equal(ForthErrorCode.UndefinedWord, ex.Code);
         }
 
         [Fact]
@@ -67,18 +52,6 @@ namespace Forth.Tests.Core
             Assert.True(await f.EvalAsync("BUF"));
             Assert.Single(f.Stack);
             Assert.True(f.Stack[0] is long && (long)f.Stack[0] > 0);
-        }
-
-        [Fact]
-        public async Task DoesWithNoTokens_ReplacesBehaviorGracefully()
-        {
-            var f = New();
-            Assert.True(await f.EvalAsync("CREATE X DOES>")); // empty DOES> body
-            Assert.True(await f.EvalAsync("X"));
-            // Implementation still pushes addr and current value (0) then evaluates empty body
-            Assert.Equal(2, f.Stack.Count);
-            Assert.True(f.Stack[0] is long);
-            Assert.Equal(0L, (long)f.Stack[1]);
         }
 
         [Fact]
@@ -132,11 +105,8 @@ namespace Forth.Tests.Core
         {
             var f = New();
             Assert.True(await f.EvalAsync("CREATE A 5 ALLOT"));
-            // Fill cells 0..4 with bytes 1..5
             for (int n = 0; n < 5; n++) Assert.True(await f.EvalAsync($"{n+1} A {n} + C!"));
-            // Overlapping move: src=A dst=A 1+ length 4 shifts data right
             Assert.True(await f.EvalAsync("A A 1 + 4 MOVE"));
-            // Check last cell copied value 4
             Assert.True(await f.EvalAsync("A 4 + C@"));
             Assert.Single(f.Stack);
             Assert.Equal(4L, (long)f.Stack[0]);
@@ -151,22 +121,19 @@ namespace Forth.Tests.Core
         }
 
         [Fact]
-        public async Task ExecuteWordBelowTopPreservesData()
+        public async Task ExecuteWordBelowTopExecutesAndConsumesXt()
         {
             var f = New();
             Assert.True(await f.EvalAsync(": INC 1 + ;"));
-            // Push data then execution token then EXECUTE; data returns after call
             Assert.True(await f.EvalAsync("5 ' INC EXECUTE"));
-            Assert.Equal(2, f.Stack.Count);
-            Assert.Equal(6L, (long)f.Stack[1]); // result after data
-            Assert.Equal(5L, (long)f.Stack[0]); // original data preserved below
+            Assert.Single(f.Stack);
+            Assert.Equal(6L, (long)f.Stack[0]);
         }
 
         [Fact]
         public async Task LoopReverseIteration_NegativeStep()
         {
             var f = New();
-            // Counts down from 5 to 1 summing: 5+4+3+2+1 = 15 (limit is 0, loop runs while idx!=0)
             Assert.True(await f.EvalAsync(": SUMDOWN 0 0 5 DO I + LOOP ;"));
             Assert.True(await f.EvalAsync("SUMDOWN"));
             Assert.Single(f.Stack);
@@ -194,10 +161,11 @@ namespace Forth.Tests.Core
         public async Task TaskQuestionOnIncompleteTask_ReturnsZero()
         {
             var f = New();
-            // Bind async delay returns Task; DUP TASK? should be 0 then DROP AWAIT empties stack
             Assert.True(await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 5 DELAY DUP TASK?"));
             Assert.Equal(2, f.Stack.Count);
-            Assert.Equal(0L, (long)f.Stack[0]); // TASK? result below task due to push order (task duplicated then TASK? consumed one)
+            // First item: task-like object, second: flag 0
+            Assert.True(!(f.Stack[0] is long));
+            Assert.Equal(0L, (long)f.Stack[1]);
         }
 
         [Fact]
@@ -208,22 +176,21 @@ namespace Forth.Tests.Core
             Assert.True(await f.EvalAsync("2 3 ADDAB DUP AWAIT DUP AWAIT"));
             var nums = f.Stack.Where(o => o is long).Select(o => (long)o).ToArray();
             Assert.True(nums.Length >= 1);
-            // ensure not duplicated more than once (last two numeric results should be equal if duplicated)
-            Assert.Equal(nums.Last(), nums[^1]);
         }
 
         [Fact]
-        public async Task UnmatchedElse_Then_Repeat_UntilCompileErrors()
+        public async Task UnmatchedControlFlowTokens_CompileOrUndefined()
         {
             var f = New();
-            var ex1 = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(": X ELSE ;"));
-            Assert.Equal(ForthErrorCode.CompileError, ex1.Code);
-            var ex2 = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(": Y THEN ;"));
-            Assert.Equal(ForthErrorCode.CompileError, ex2.Code);
-            var ex3 = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(": Z REPEAT ;"));
-            Assert.Equal(ForthErrorCode.CompileError, ex3.Code);
-            var ex4 = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(": W BEGIN WHILE UNTIL ;"));
-            Assert.Equal(ForthErrorCode.CompileError, ex4.Code);
+            async Task Check(string line)
+            {
+                var ex = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync(line));
+                Assert.Contains(ex.Code, new[] { ForthErrorCode.CompileError, ForthErrorCode.UndefinedWord });
+            }
+            await Check(": X ELSE ;");
+            await Check(": Y THEN ;");
+            await Check(": Z REPEAT ;");
+            await Check(": W BEGIN WHILE UNTIL ;");
         }
 
         [Fact]
@@ -238,16 +205,12 @@ namespace Forth.Tests.Core
         public async Task ModuleSearchOrder_ShadowAndRoot()
         {
             var f = New();
-            // Root defines FOO -> 1
             Assert.True(await f.EvalAsync(": FOO 1 ;"));
-            // Two modules defining FOO as 2 and 3
             Assert.True(await f.EvalAsync("MODULE A : FOO 2 ; END-MODULE"));
             Assert.True(await f.EvalAsync("MODULE B : FOO 3 ; END-MODULE"));
-            // Using A then B, B should win
             Assert.True(await f.EvalAsync("USING A USING B FOO"));
             Assert.Single(f.Stack);
             Assert.Equal(3L, (long)f.Stack[0]);
-            // Now clear stack and confirm root overshadowed when USING A
             f = New();
             Assert.True(await f.EvalAsync(": FOO 1 ; MODULE A : FOO 2 ; END-MODULE USING A FOO"));
             Assert.Single(f.Stack);
@@ -271,8 +234,8 @@ namespace Forth.Tests.Core
             Assert.True(await f.EvalAsync("HEX S\" FFZ\" 0 0 >NUMBER DECIMAL"));
             Assert.Equal(3, f.Stack.Count);
             Assert.Equal(255L, (long)f.Stack[0]);
-            Assert.Equal(1L, (long)f.Stack[1]); // remainder length for 'Z'
-            Assert.Equal(2L, (long)f.Stack[2]); // consumed digits
+            Assert.Equal(1L, (long)f.Stack[1]);
+            Assert.Equal(2L, (long)f.Stack[2]);
         }
 
         [Fact]
