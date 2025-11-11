@@ -50,6 +50,8 @@ internal static class CorePrimitives
         // Introspection
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
         dict["RP@"] = new ForthInterpreter.Word(i => { i.Push((long)i.RCount); });
+        // Loop index
+        dict["I"] = new ForthInterpreter.Word(i => { i.Push(i.CurrentLoopIndex()); });
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);

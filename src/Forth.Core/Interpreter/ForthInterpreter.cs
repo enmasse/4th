@@ -37,6 +37,9 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
 
     private readonly ConcurrentDictionary<string, Func<ForthInterpreter, Task>> _ilCache = new();
 
+    // DO..LOOP index stack for nested loops (innermost at top)
+    private readonly Stack<long> _loopIndexStack = new();
+
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
@@ -147,6 +150,22 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     // VALUE helpers
     internal long ValueGet(string name) => _values.TryGetValue(name, out var v) ? v : 0L;
     internal void ValueSet(string name, long v) => _values[name] = v;
+
+    // Loop index helpers
+    internal void PushLoopIndex(long idx) => _loopIndexStack.Push(idx);
+    internal void PopLoopIndex()
+    {
+        if (_loopIndexStack.Count == 0)
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LOOP index stack underflow");
+        _loopIndexStack.Pop();
+    }
+    internal long CurrentLoopIndex()
+    {
+        if (_loopIndexStack.Count == 0)
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "I used outside DO...LOOP");
+        return _loopIndexStack.Peek();
+    }
+
     /// <summary>
     /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
     /// </summary>
@@ -448,6 +467,38 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     });
                     continue;
                 }
+                if (tok.Equals("DO", StringComparison.OrdinalIgnoreCase))
+                {
+                    _controlStack.Push(new DoFrame());
+                    continue;
+                }
+                if (tok.Equals("LOOP", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_controlStack.Count == 0 || _controlStack.Peek() is not DoFrame df)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LOOP without DO");
+                    _controlStack.Pop();
+                    var body = df.Body;
+                    CurrentList().Add(async intr =>
+                    {
+                        EnsureStack(intr,2,"DO");
+                        var start = ToLongPublic(intr.Pop());
+                        var limit = ToLongPublic(intr.Pop());
+                        long step = start <= limit ? 1L : -1L;
+                        for (long idx = start; idx != limit; idx += step)
+                        {
+                            intr.PushLoopIndex(idx);
+                            try
+                            {
+                                foreach (var a in body) await a(intr);
+                            }
+                            finally
+                            {
+                                intr.PopLoopIndex();
+                            }
+                        }
+                    });
+                    continue;
+                }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))
                 {
                     _currentInstructions!.Add(async intr =>
@@ -602,6 +653,11 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
         public List<Func<ForthInterpreter, Task>> MidPart { get; } = new();
         public bool InWhile { get; set; }
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => InWhile ? MidPart : PrePart;
+    }
+    private sealed class DoFrame : CompileFrame
+    {
+        public List<Func<ForthInterpreter, Task>> Body { get; } = new();
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => Body;
     }
     private sealed class ExitWordException : Exception {}
 }

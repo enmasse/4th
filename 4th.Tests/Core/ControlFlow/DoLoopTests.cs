@@ -9,13 +9,14 @@ public class DoLoopTests
     /// Intention: Verify simple DO ... LOOP iteration with I as loop index accumulates correct sum.
     /// Expected: ": SUM10 0 10 0 DO I + LOOP ; SUM10" leaves 45 on the stack (0+1+..+9).
     /// </summary>
-    [Fact(Skip = "DO/LOOP not implemented yet")] 
+    [Fact]
     public void DoLoop_Basic()
     {
         var forth = new ForthInterpreter();
-        // : SUM10 0 10 0 DO I + LOOP ;  SUM10  should push 45
-        // forth.Interpret(": SUM10 0 10 0 DO I + LOOP ;");
-        // forth.Interpret("SUM10");
+        Assert.True(forth.Interpret(": SUM10 0 10 0 DO I + LOOP ;"));
+        Assert.True(forth.Interpret("SUM10"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(45L, (long)forth.Stack[0]);
     }
 
     /// <summary>
