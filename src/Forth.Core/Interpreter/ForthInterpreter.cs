@@ -6,6 +6,7 @@ using System.Reflection; // for LoadAssemblyWords
 using Forth.Core;
 using Forth.Core.Binding;
 using Forth.Core.Execution;
+using System.Text; // pictured numeric buffer
 
 namespace Forth.Core.Interpreter;
 
@@ -42,6 +43,9 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     internal long StateAddr => _stateAddr;
     private readonly long _baseAddr;
     internal long BaseAddr => _baseAddr;
+
+    // Pictured numeric output buffer
+    private StringBuilder? _picBuf;
 
     // Deferred word bindings: name -> target Word
     private readonly Dictionary<string, Word?> _deferred = new(StringComparer.OrdinalIgnoreCase);
@@ -172,6 +176,26 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     internal void PopLoopIndexMaybe() => _controlFlow.PopMaybe();
     internal void Unloop() => _controlFlow.Unloop();
     internal long CurrentLoopIndex() => _controlFlow.Current();
+
+    // Pictured numeric helpers
+    internal void PicturedBegin() => _picBuf = new StringBuilder();
+    internal void PicturedHold(char ch)
+    {
+        _picBuf ??= new StringBuilder();
+        _picBuf.Insert(0, ch);
+    }
+    internal void PicturedHoldDigit(long digit)
+    {
+        int d = (int)digit;
+        char ch = (char)(d < 10 ? '0' + d : 'A' + (d - 10));
+        PicturedHold(ch);
+    }
+    internal string PicturedEnd()
+    {
+        var s = _picBuf?.ToString() ?? string.Empty;
+        _picBuf = null;
+        return s;
+    }
 
     /// <summary>
     /// Interpret one line asynchronously. Returns false if BYE/QUIT requested exit.

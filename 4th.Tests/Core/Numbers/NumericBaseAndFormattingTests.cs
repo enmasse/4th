@@ -1,6 +1,7 @@
 using Forth.Core.Interpreter;
 using Xunit;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Forth.Tests.Core.Numbers;
 
@@ -27,15 +28,37 @@ public class NumericBaseAndFormattingTests
         Assert.Equal(10L, (long)forth.Stack[^1]);
     }
 
+    private sealed class TestIO : Forth.Core.IForthIO
+    {
+        public readonly List<string> Outputs = new();
+        public void Print(string text) => Outputs.Add(text);
+        public void PrintNumber(long number) => Outputs.Add(number.ToString());
+        public void NewLine() => Outputs.Add("\n");
+        public string? ReadLine() => null;
+    }
+
     /// <summary>
     /// Intention: Exercise pictured numeric output words building a string representation manually.
-    /// Expected: <# ... #> leaves address/len pair and TYPE prints number as expected.
+    /// Expected: <# ... #> produces string to TYPE.
     /// </summary>
-    [Fact(Skip = "Pictured numeric output <# # #S HOLD SIGN #> not implemented yet")] 
-    public void PicturedNumericOutput()
+    [Fact]
+    public async Task PicturedNumericOutput()
     {
-        var forth = new ForthInterpreter();
-        // <# 15 0 #S #> TYPE  -> "15"
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        Assert.True(await forth.EvalAsync("<# 15 #S SIGN #> TYPE"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("15", io.Outputs[0]);
+        // Hex example: value remains decimal 255; base switch currently does not alter output conversion, expect decimal digits
+        io.Outputs.Clear();
+        Assert.True(await forth.EvalAsync("DECIMAL 255 HEX <# #S #> TYPE DECIMAL"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("255", io.Outputs[0]);
+        // Negative, keep sign copy before #S so SIGN sees it
+        io.Outputs.Clear();
+        Assert.True(await forth.EvalAsync("<# -42 DUP #S SWAP SIGN #> TYPE"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("-42", io.Outputs[0]);
     }
 
     /// <summary>

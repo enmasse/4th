@@ -124,6 +124,42 @@ internal static class CorePrimitives
             i.Push((long)remainder);
             i.Push((long)(consumed + digits));
         });
+        // Pictured numeric output primitives (single-cell variant)
+        dict["<#"] = new ForthInterpreter.Word(i => { i.PicturedBegin(); });
+        dict["HOLD"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"HOLD"); var n=ToLong(i.PopInternal()); i.PicturedHold((char)(n & 0xFFFF)); });
+        dict["#"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"#");
+            var n = ToLong(i.PopInternal());
+            // For this implementation, pictured numeric output is decimal-only regardless of BASE
+            const long b = 10;
+            long u = n < 0 ? -n : n;
+            long rem = u % b;
+            long q = u / b;
+            i.PicturedHoldDigit(rem);
+            i.Push(q);
+        });
+        dict["#S"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"#S");
+            var n = ToLong(i.PopInternal());
+            // Decimal-only pictured numeric output regardless of BASE
+            const long b = 10;
+            long u = n < 0 ? -n : n;
+            if (u == 0)
+            {
+                i.PicturedHoldDigit(0);
+                i.Push(0L);
+                return;
+            }
+            while (u > 0)
+            {
+                long rem = u % b;
+                i.PicturedHoldDigit(rem);
+                u /= b;
+            }
+            i.Push(0L);
+        });
+        dict["SIGN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"SIGN"); var n=ToLong(i.PopInternal()); if (n < 0) i.PicturedHold('-'); });
+        dict["#>"] = new ForthInterpreter.Word(i => { var s=i.PicturedEnd(); i.Push(s); });
         dict[">R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,">R"); var a=i.PopInternal(); i.RPush(a); });
         dict["R>"] = new ForthInterpreter.Word(i => { if (i.RCount==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,"Return stack underflow in R>"); var a=i.RPop(); i.Push(a); });
         dict["2>R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"2>R"); var b=i.PopInternal(); var a=i.PopInternal(); i.RPush(a); i.RPush(b); });
