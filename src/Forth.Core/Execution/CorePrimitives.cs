@@ -264,6 +264,20 @@ internal static class CorePrimitives
             if (err != 0)
                 throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}");
         });
+
+        // WORDS: list all available word names
+        dict["WORDS"] = new ForthInterpreter.Word(i => {
+            var names = i.GetAllWordNames();
+            var sb = new StringBuilder();
+            bool first = true;
+            foreach (var n in names)
+            {
+                if (!first) sb.Append(' ');
+                first = false;
+                sb.Append(n);
+            }
+            i.WriteText(sb.ToString());
+        });
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);

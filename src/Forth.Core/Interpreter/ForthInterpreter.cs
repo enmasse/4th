@@ -158,6 +158,19 @@ public class ForthInterpreter : IForthInterpreter
     internal void PicturedHoldDigit(long digit){ int d=(int)digit; char ch=(char)(d<10?'0'+d:'A'+(d-10)); PicturedHold(ch);}    
     internal string PicturedEnd(){ var s=_picBuf?.ToString()??string.Empty; _picBuf=null; return s; }
 
+    internal IEnumerable<string> GetAllWordNames()
+    {
+        var names = new List<string>();
+        foreach (var k in _dict.Keys) names.Add(k);
+        foreach (var mod in _modules)
+        {
+            var mname = mod.Key;
+            foreach (var wk in mod.Value.Keys) names.Add($"{mname}:{wk}");
+        }
+        names.Sort(StringComparer.OrdinalIgnoreCase);
+        return names;
+    }
+
     public async Task<bool> EvalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
@@ -228,7 +241,7 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("POSTPONE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"POSTPONE expects a name"); var name=tokens[i++]; if(TryResolveWord(name,out var wpost) && wpost is not null){ CurrentList().Add(async intr=> await wpost.ExecuteAsync(intr)); continue; } i--; continue; }
                 if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new IfFrame()); continue; }
                 if (tok.Equals("ELSE", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError,"ELSE without IF"); if(ifr.ElsePart is not null) throw new ForthException(ForthErrorCode.CompileError,"Multiple ELSE"); ifr.ElsePart=new(); ifr.InElse=true; continue; }
-                if (tok.Equals("THEN", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError,"THEN without IF"); _controlStack.Pop(); var thenPart=ifr.ThenPart; var elsePart=ifr.ElsePart; CurrentList().Add(async intr=> { EnsureStack(intr,1,"IF"); var flag=intr.PopInternal(); if(ToBool(flag)) foreach(var a in thenPart) await a(intr); else if(elsePart is not null) foreach(var a in elsePart) await a(intr);}); continue; }
+                if (tok.Equals("THEN", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError,"THEN without IF"); _controlStack.Pop(); var thenPart=ifr.ThenPart; var elsePart=ifr.ElsePart; CurrentList().Add(async intr => { EnsureStack(intr,1,"IF"); var flag=intr.PopInternal(); if(ToBool(flag)) foreach(var a in thenPart) await a(intr); else if(elsePart is not null) foreach(var a in elsePart) await a(intr);}); continue; }
                 if (tok.Equals("BEGIN", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new BeginFrame()); continue; }
                 if (tok.Equals("WHILE", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError,"WHILE without BEGIN"); if(bf.InWhile) throw new ForthException(ForthErrorCode.CompileError,"Multiple WHILE"); bf.InWhile=true; continue; }
                 if (tok.Equals("REPEAT", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError,"REPEAT without BEGIN"); if(!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError,"REPEAT requires WHILE"); _controlStack.Pop(); var pre=bf.PrePart; var mid=bf.MidPart; CurrentList().Add(async intr => { while(true){ foreach(var a in pre) await a(intr); EnsureStack(intr,1,"WHILE"); var flag=intr.PopInternal(); if(!ToBool(flag)) break; foreach(var b in mid) await b(intr);} }); continue; }

@@ -80,4 +80,20 @@ public class IntrospectionAndToolsTests
         Assert.Single(io.Outputs); // SEE output removed; only DUMP line
         Assert.Equal("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F", io.Outputs[0]);
     }
+
+    /// <summary>
+    /// Intention: Validate WORDS lists all known words including built-ins.
+    /// Expected: Output contains words like "+" and ".S" showing they are available.
+    /// </summary>
+    [Fact]
+    public async Task Words_PrintsWordList()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        Assert.True(await forth.EvalAsync("WORDS"));
+        Assert.Single(io.Outputs);
+        var outp = io.Outputs[0];
+        Assert.Contains("+", outp);
+        Assert.Contains(".S", outp);
+    }
 }
