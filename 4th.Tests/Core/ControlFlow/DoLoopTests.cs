@@ -1,4 +1,5 @@
 using Forth.Core.Interpreter;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Forth.Tests.Core.ControlFlow;
@@ -10,11 +11,11 @@ public class DoLoopTests
     /// Expected: ": SUM10 0 10 0 DO I + LOOP ; SUM10" leaves 45 on the stack (0+1+..+9).
     /// </summary>
     [Fact]
-    public void DoLoop_Basic()
+    public async Task DoLoop_Basic()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret(": SUM10 0 10 0 DO I + LOOP ;"));
-        Assert.True(forth.Interpret("SUM10"));
+        Assert.True(await forth.EvalAsync(": SUM10 0 10 0 DO I + LOOP ;"));
+        Assert.True(await forth.EvalAsync("SUM10"));
         Assert.Single(forth.Stack);
         Assert.Equal(45L, (long)forth.Stack[0]);
     }
@@ -24,12 +25,11 @@ public class DoLoopTests
     /// Expected: Accumulator stops updating once index reaches 5, producing 0+1+2+3+4 = 10.
     /// </summary>
     [Fact]
-    public void DoLoop_LeaveEarly()
+    public async Task DoLoop_LeaveEarly()
     {
         var forth = new ForthInterpreter();
-        // : SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ; -> pushes 10
-        Assert.True(forth.Interpret(": SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ;"));
-        Assert.True(forth.Interpret("SUM5"));
+        Assert.True(await forth.EvalAsync(": SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ;"));
+        Assert.True(await forth.EvalAsync("SUM5"));
         Assert.Single(forth.Stack);
         Assert.Equal(10L, (long)forth.Stack[0]);
     }
@@ -39,12 +39,11 @@ public class DoLoopTests
     /// Expected: No stack corruption or runtime error when exiting loop prematurely.
     /// </summary>
     [Fact]
-    public void Unloop_InsideExit()
+    public async Task Unloop_InsideExit()
     {
         var forth = new ForthInterpreter();
-        // : T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;  -> should run without error, leaving 0 on stack
-        Assert.True(forth.Interpret(": T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;"));
-        Assert.True(forth.Interpret("T"));
+        Assert.True(await forth.EvalAsync(": T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;"));
+        Assert.True(await forth.EvalAsync("T"));
         // Either 0 or empty stack is acceptable; here we assert no exception and depth is 0 or 1
         Assert.True(forth.Stack.Count == 0 || forth.Stack.Count == 1);
     }

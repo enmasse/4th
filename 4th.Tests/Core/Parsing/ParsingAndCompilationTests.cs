@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Parsing;
 
@@ -21,16 +22,16 @@ public class ParsingAndCompilationTests
     /// Expected: Using xts allows passing and invoking words indirectly at runtime.
     /// </summary>
     [Fact] 
-    public void Tick_ExecutionToken()
+    public async Task Tick_ExecutionToken()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("9 ' DUP EXECUTE")); // leaves 9 9
+        Assert.True(await forth.EvalAsync("9 ' DUP EXECUTE")); // leaves 9 9
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(9L, (long)forth.Stack[^2]);
         Assert.Equal(9L, (long)forth.Stack[^1]);
 
         // Another run proves reusability
-        Assert.True(forth.Interpret("4 ' DUP EXECUTE")); // leaves ... 4 4
+        Assert.True(await forth.EvalAsync("4 ' DUP EXECUTE")); // leaves ... 4 4
         Assert.Equal(4, forth.Stack.Count);
         Assert.Equal(9L, (long)forth.Stack[^4]);
         Assert.Equal(9L, (long)forth.Stack[^3]);
@@ -43,17 +44,17 @@ public class ParsingAndCompilationTests
     /// Expected: STATE @ = 0 while interpreting and nonzero when inside a definition.
     /// </summary>
     [Fact]
-    public void State_AndInterpretCompile()
+    public async Task State_AndInterpretCompile()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("STATE @"));
+        Assert.True(await forth.EvalAsync("STATE @"));
         Assert.Single(forth.Stack);
         Assert.Equal(0L, (long)forth.Stack[0]);
 
         // Now during compile, before ';', the STATE cell must be non-zero
-        Assert.True(forth.Interpret(": T STATE @ ;"));
+        Assert.True(await forth.EvalAsync(": T STATE @ ;"));
         // After definition finished, STATE must be back to 0
-        Assert.True(forth.Interpret("STATE @"));
+        Assert.True(await forth.EvalAsync("STATE @"));
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(0L, (long)forth.Stack[^1]);
     }

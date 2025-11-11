@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Numbers;
 
@@ -10,18 +11,18 @@ public class NumericBaseAndFormattingTests
     /// Expected: Values entered after switching base interpret correctly (e.g., HEX A equals 10 decimal).
     /// </summary>
     [Fact]
-    public void BaseSwitching()
+    public async Task BaseSwitching()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("DECIMAL 10"));
+        Assert.True(await forth.EvalAsync("DECIMAL 10"));
         Assert.Single(forth.Stack);
         Assert.Equal(10L, (long)forth.Stack[0]);
 
-        Assert.True(forth.Interpret("HEX A"));
+        Assert.True(await forth.EvalAsync("HEX A"));
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(10L, (long)forth.Stack[^1]);
 
-        Assert.True(forth.Interpret("DECIMAL 10"));
+        Assert.True(await forth.EvalAsync("DECIMAL 10"));
         Assert.Equal(3, forth.Stack.Count);
         Assert.Equal(10L, (long)forth.Stack[^1]);
     }

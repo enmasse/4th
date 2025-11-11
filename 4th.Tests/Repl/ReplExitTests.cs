@@ -1,17 +1,18 @@
 using Forth.Core;
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Repl;
 
 public class ReplExitTests
 {
     [Fact]
-    public void ByeAndQuitExit()
+    public async Task ByeAndQuitExit()
     {
         var f = new ForthInterpreter();
-        Assert.False(f.Interpret("BYE"));
+        Assert.False(await f.EvalAsync("BYE"));
         f = new ForthInterpreter();
-        Assert.False(f.Interpret("QUIT"));
+        Assert.False(await f.EvalAsync("QUIT"));
     }
 }

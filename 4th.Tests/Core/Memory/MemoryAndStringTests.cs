@@ -1,6 +1,7 @@
 using Forth.Core.Interpreter;
 using Xunit;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Memory;
 
@@ -31,13 +32,13 @@ public class MemoryAndStringTests
     /// Expected: "VARIABLE X 10 X ! 5 X +! X @" yields 15.
     /// </summary>
     [Fact] 
-    public void PlusStore()
+    public async Task PlusStore()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("VARIABLE X"));
-        Assert.True(forth.Interpret("10 X !"));
-        Assert.True(forth.Interpret("5 X +!"));
-        Assert.True(forth.Interpret("X @"));
+        Assert.True(await forth.EvalAsync("VARIABLE X"));
+        Assert.True(await forth.EvalAsync("10 X !"));
+        Assert.True(await forth.EvalAsync("5 X +!"));
+        Assert.True(await forth.EvalAsync("X @"));
         Assert.Single(forth.Stack);
         Assert.Equal(15L, (long)forth.Stack[0]);
     }
@@ -58,11 +59,11 @@ public class MemoryAndStringTests
     /// Expected: Output stream contains the literal text.
     /// </summary>
     [Fact] 
-    public void SQuoteType_Output()
+    public async Task SQuoteType_Output()
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(forth.Interpret("\"HELLO\" TYPE"));
+        Assert.True(await forth.EvalAsync("\"HELLO\" TYPE"));
         Assert.Single(io.Outputs);
         Assert.Equal("HELLO", io.Outputs[0]);
         Assert.Empty(forth.Stack); // TYPE should consume the string

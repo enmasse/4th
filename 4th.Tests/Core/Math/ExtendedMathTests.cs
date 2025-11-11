@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Math;
 
@@ -10,16 +11,16 @@ public class ExtendedMathTests
     /// Expected: 6 3 AND -> 2; 6 1 OR -> 7; 6 3 XOR -> 5; 0 INVERT -> -1 (two's complement).
     /// </summary>
     [Fact] 
-    public void Bitwise_Basics()
+    public async Task Bitwise_Basics()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("6 3 AND"));
+        Assert.True(await forth.EvalAsync("6 3 AND"));
         Assert.Equal(2L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("6 1 OR"));
+        Assert.True(await forth.EvalAsync("6 1 OR"));
         Assert.Equal(7L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("6 3 XOR"));
+        Assert.True(await forth.EvalAsync("6 3 XOR"));
         Assert.Equal(5L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("0 INVERT"));
+        Assert.True(await forth.EvalAsync("0 INVERT"));
         Assert.Equal(-1L, (long)forth.Stack[^1]);
     }
 
@@ -28,12 +29,12 @@ public class ExtendedMathTests
     /// Expected: 1 3 LSHIFT -> 8; 8 2 RSHIFT -> 2.
     /// </summary>
     [Fact] 
-    public void Bitwise_Shifts()
+    public async Task Bitwise_Shifts()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("1 3 LSHIFT"));
+        Assert.True(await forth.EvalAsync("1 3 LSHIFT"));
         Assert.Equal(8L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("8 2 RSHIFT"));
+        Assert.True(await forth.EvalAsync("8 2 RSHIFT"));
         Assert.Equal(2L, (long)forth.Stack[^1]);
     }
 
@@ -42,17 +43,17 @@ public class ExtendedMathTests
     /// Expected: 1 2 2DUP -> 1 2 1 2; then 2SWAP exchanges pairs.
     /// </summary>
     [Fact] 
-    public void DoubleCell_Ops()
+    public async Task DoubleCell_Ops()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("1 2 2DUP"));
+        Assert.True(await forth.EvalAsync("1 2 2DUP"));
         Assert.Equal(4, forth.Stack.Count);
         Assert.Equal(1L, (long)forth.Stack[0]);
         Assert.Equal(2L, (long)forth.Stack[1]);
         Assert.Equal(1L, (long)forth.Stack[2]);
         Assert.Equal(2L, (long)forth.Stack[3]);
 
-        Assert.True(forth.Interpret("2SWAP"));
+        Assert.True(await forth.EvalAsync("2SWAP"));
         Assert.Equal(4, forth.Stack.Count);
         Assert.Equal(1L, (long)forth.Stack[0]);
         Assert.Equal(2L, (long)forth.Stack[1]);
@@ -65,24 +66,24 @@ public class ExtendedMathTests
     /// Expected: 0= 0<> <> <= >= MIN MAX have correct results for representative inputs.
     /// </summary>
     [Fact] 
-    public void Comparisons_Extended()
+    public async Task Comparisons_Extended()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("0 0="));
+        Assert.True(await forth.EvalAsync("0 0="));
         Assert.Equal(1L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("1 0<>"));
+        Assert.True(await forth.EvalAsync("1 0<>"));
         Assert.Equal(1L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("2 3 <>"));
+        Assert.True(await forth.EvalAsync("2 3 <>"));
         Assert.Equal(1L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("2 2 <>"));
+        Assert.True(await forth.EvalAsync("2 2 <>"));
         Assert.Equal(0L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("2 3 <="));
+        Assert.True(await forth.EvalAsync("2 3 <="));
         Assert.Equal(1L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("3 2 >="));
+        Assert.True(await forth.EvalAsync("3 2 >="));
         Assert.Equal(1L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("2 5 MIN"));
+        Assert.True(await forth.EvalAsync("2 5 MIN"));
         Assert.Equal(2L, (long)forth.Stack[^1]);
-        Assert.True(forth.Interpret("2 5 MAX"));
+        Assert.True(await forth.EvalAsync("2 5 MAX"));
         Assert.Equal(5L, (long)forth.Stack[^1]);
     }
 
@@ -91,14 +92,14 @@ public class ExtendedMathTests
     /// Expected: 7 3 /MOD -> 1 2 ; 7 3 MOD -> 1 etc.
     /// </summary>
     [Fact] 
-    public void DivMod_Variants()
+    public async Task DivMod_Variants()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("7 3 /MOD"));
+        Assert.True(await forth.EvalAsync("7 3 /MOD"));
         Assert.Equal(2L, (long)forth.Stack[^1]); // quotient
         Assert.Equal(1L, (long)forth.Stack[^2]); // remainder below it
 
-        Assert.True(forth.Interpret("7 3 MOD"));
+        Assert.True(await forth.EvalAsync("7 3 MOD"));
         Assert.Equal(1L, (long)forth.Stack[^1]);
     }
 }

@@ -14,13 +14,13 @@ Minimal async-capable Forth interpreter core library targeting .NET 9.
 ## Basic Usage
 ```csharp
 var forth = new ForthInterpreter();
-await forth.InterpretAsync("1 2 3 +");
+await forth.EvalAsync("1 2 3 +");
 Console.WriteLine(string.Join(",", forth.Stack)); // 1,5
 ```
 
 Bind and await an async method:
 ```csharp
-await forth.InterpretAsync("BINDASYNC MyNamespace.MyType AddAsync 2 ADDAB 5 7 ADDAB AWAIT");
+await forth.EvalAsync("BINDASYNC MyNamespace.MyType AddAsync 2 ADDAB 5 7 ADDAB AWAIT");
 ```
 
 ## NuGet

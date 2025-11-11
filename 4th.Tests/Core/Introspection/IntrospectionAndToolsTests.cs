@@ -1,6 +1,7 @@
 using Forth.Core.Interpreter;
 using Xunit;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Introspection;
 
@@ -20,11 +21,11 @@ public class IntrospectionAndToolsTests
     /// Expected: After 1 2 3 .S output contains representation like "<3> 1 2 3".
     /// </summary>
     [Fact]
-    public void DotS_StackDisplay()
+    public async Task DotS_StackDisplay()
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        Assert.True(forth.Interpret("1 2 3 .S"));
+        Assert.True(await forth.EvalAsync("1 2 3 .S"));
         Assert.Single(io.Outputs);
         Assert.Equal("<3> 1 2 3", io.Outputs[0]);
         Assert.Equal(3, forth.Stack.Count); // .S must not change the stack
@@ -35,10 +36,10 @@ public class IntrospectionAndToolsTests
     /// Expected: 1 2 3 DEPTH -> 1 2 3 3.
     /// </summary>
     [Fact] 
-    public void Depth_Word()
+    public async Task Depth_Word()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("1 2 3 DEPTH"));
+        Assert.True(await forth.EvalAsync("1 2 3 DEPTH"));
         Assert.Equal(4, forth.Stack.Count);
         Assert.Equal(1L, (long)forth.Stack[0]);
         Assert.Equal(2L, (long)forth.Stack[1]);

@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Forth.Tests.Core.Defining;
 
@@ -21,24 +22,24 @@ public class DefiningWordsTests
     /// Expected: After "VALUE X 10 TO X X" stack shows current value (10) and updates when reassigned.
     /// </summary>
     [Fact] 
-    public void ValueAndTo_Assignment()
+    public async Task ValueAndTo_Assignment()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("VALUE X")); // define X default 0
-        Assert.True(forth.Interpret("10 TO X")); // assign 10
-        Assert.True(forth.Interpret("X"));
+        Assert.True(await forth.EvalAsync("VALUE X")); // define X default 0
+        Assert.True(await forth.EvalAsync("10 TO X")); // assign 10
+        Assert.True(await forth.EvalAsync("X"));
         Assert.Single(forth.Stack);
         Assert.Equal(10L, (long)forth.Stack[0]);
 
         // Reassign then fetch
-        Assert.True(forth.Interpret("20 TO X X"));
+        Assert.True(await forth.EvalAsync("20 TO X X"));
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(10L, (long)forth.Stack[0]);
         Assert.Equal(20L, (long)forth.Stack[1]);
 
         // Simplify: reset interpreter to validate reassignment
         var forth2 = new ForthInterpreter();
-        Assert.True(forth2.Interpret("VALUE X 10 TO X 20 TO X X"));
+        Assert.True(await forth2.EvalAsync("VALUE X 10 TO X 20 TO X X"));
         Assert.Single(forth2.Stack);
         Assert.Equal(20L, (long)forth2.Stack[0]);
     }
@@ -48,15 +49,15 @@ public class DefiningWordsTests
     /// Expected: After rebinding, invoking deferred word executes new target definition.
     /// </summary>
     [Fact] 
-    public void DeferAndIs_Rebinding()
+    public async Task DeferAndIs_Rebinding()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("DEFER ACT : HELLO 123 ; ' HELLO IS ACT ACT"));
+        Assert.True(await forth.EvalAsync("DEFER ACT : HELLO 123 ; ' HELLO IS ACT ACT"));
         Assert.Single(forth.Stack);
         Assert.Equal(123L, (long)forth.Stack[0]);
 
         // Rebind to another word
-        Assert.True(forth.Interpret(": WORLD 77 ; ' WORLD IS ACT ACT"));
+        Assert.True(await forth.EvalAsync(": WORLD 77 ; ' WORLD IS ACT ACT"));
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(77L, (long)forth.Stack[^1]);
     }
@@ -66,11 +67,11 @@ public class DefiningWordsTests
     /// Expected: "99 CONSTANT N N" leaves 99 on stack consistently.
     /// </summary>
     [Fact] 
-    public void Constant_Definition()
+    public async Task Constant_Definition()
     {
         var forth = new ForthInterpreter();
-        Assert.True(forth.Interpret("99 CONSTANT N"));
-        Assert.True(forth.Interpret("N N"));
+        Assert.True(await forth.EvalAsync("99 CONSTANT N"));
+        Assert.True(await forth.EvalAsync("N N"));
         Assert.Equal(2, forth.Stack.Count);
         Assert.Equal(99L, (long)forth.Stack[0]);
         Assert.Equal(99L, (long)forth.Stack[1]);
