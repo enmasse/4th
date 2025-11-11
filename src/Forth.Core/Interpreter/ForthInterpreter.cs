@@ -1,7 +1,7 @@
-using System.Globalization;
 using System.Threading.Tasks;
 using System; // added for Type reflection
 using System.Collections.Concurrent; // added for IL cache
+using System.Globalization; // needed for NumberStyles in BIND parsing
 using Forth.Core;
 using Forth.Core.Binding;
 using Forth.Core.Execution;
@@ -32,10 +32,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private string? _currentModule;
 
     private readonly ConcurrentDictionary<string, Func<ForthInterpreter, Task>> _ilCache = new();
-
-    // DO..LOOP index stack for nested loops (innermost at top)
-    private readonly Stack<long> _loopIndexStack = new();
-    private int _unloopPending; // counts iterations where UNLOOP already removed loop index
 
     // STATE and BASE cells
     private readonly long _stateAddr;
@@ -161,37 +157,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     // VALUE helpers
     internal long ValueGet(string name) => _values.TryGetValue(name, out var v) ? v : 0L;
     internal void ValueSet(string name, long v) => _values[name] = v;
-
-    // Loop index helpers
-    internal void PushLoopIndex(long idx) => _loopIndexStack.Push(idx);
-    internal void PopLoopIndex()
-    {
-        if (_loopIndexStack.Count == 0)
-            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LOOP index stack underflow");
-        _loopIndexStack.Pop();
-    }
-    internal void PopLoopIndexMaybe()
-    {
-        if (_unloopPending > 0)
-        {
-            _unloopPending--;
-            return;
-        }
-        PopLoopIndex();
-    }
-    internal void Unloop()
-    {
-        if (_loopIndexStack.Count == 0)
-            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "UNLOOP used outside DO...LOOP");
-        _loopIndexStack.Pop();
-        _unloopPending++;
-    }
-    internal long CurrentLoopIndex()
-    {
-        if (_loopIndexStack.Count == 0)
-            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "I used outside DO...LOOP");
-        return _loopIndexStack.Peek();
-    }
 
     /// <summary>
     /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
@@ -681,58 +646,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
             }
         }
         return !_exitRequested;
-    }
-
-    private static object Normalize(object? val) => val switch
-    {
-        null => 0L,
-        int i => (long)i,
-        long l => l,
-        short s => (long)s,
-        byte b => (long)b,
-        char c => (long)c,
-        bool bo => bo ? 1L : 0L,
-        _ => val!
-    };
-
-    private bool TryParseNumber(string token, out long value)
-    {
-        value = 0;
-        if (string.IsNullOrEmpty(token)) return false;
-        bool neg = false;
-        int pos = 0;
-        if (token[0] == '+' || token[0] == '-')
-        {
-            neg = token[0] == '-';
-            pos = 1;
-            if (token.Length == 1) return false;
-        }
-        MemTryGet(_baseAddr, out var b);
-        int @base = (int)(b <= 0 ? 10 : b);
-        long acc = 0;
-        for (; pos < token.Length; pos++)
-        {
-            char c = token[pos];
-            int digit = c switch
-            {
-                >= '0' and <= '9' => c - '0',
-                >= 'A' and <= 'Z' => 10 + (c - 'A'),
-                >= 'a' and <= 'z' => 10 + (c - 'a'),
-                _ => -1
-            };
-            if (digit < 0 || digit >= @base)
-                return false;
-            try
-            {
-                checked { acc = acc * @base + digit; }
-            }
-            catch (OverflowException)
-            {
-                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "Number out of range");
-            }
-        }
-        value = neg ? -acc : acc;
-        return true;
     }
 
     private void InstallPrimitives() => CorePrimitives.Install(this, _dict);
