@@ -20,11 +20,17 @@ public class MemoryAndStringTests
     /// Intention: Verify byte fetch/store operations (C@/C!) operate on single bytes of allocated memory.
     /// Expected: After storing 65 ('A') into buffer, C@ reads back 65 from same address.
     /// </summary>
-    [Fact(Skip = "C@ and C! (byte fetch/store) not implemented yet")] 
-    public void ByteFetchStore()
+    [Fact] 
+    public async Task ByteFetchStore()
     {
         var forth = new ForthInterpreter();
-        // CREATE BUF 10 ALLOT  65 BUF C!  BUF C@ should push 65
+        Assert.True(await forth.EvalAsync("CREATE BUF 10 ALLOT"));
+        // Push value 65 then address and store
+        Assert.True(await forth.EvalAsync("65 BUF C!"));
+        // Fetch should push 65
+        Assert.True(await forth.EvalAsync("BUF C@"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(65L, (long)forth.Stack[0]);
     }
 
     /// <summary>

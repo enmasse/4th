@@ -251,6 +251,27 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push((long)count);
                     continue;
                 }
+                // Defining word: CREATE ( -- addr ) records current allocation pointer; ALLOT allocates bytes
+                if (tok.Equals("CREATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after CREATE");
+                    var name = tokens[i++];
+                    if (string.IsNullOrWhiteSpace(name)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Invalid name for CREATE");
+                    var addr = _nextAddr; // Do not advance yet; ALLOT will consume space
+                    TargetDict()[name] = new Word(intr => intr.Push(addr));
+                    continue;
+                }
+                if (tok.Equals("ALLOT", StringComparison.OrdinalIgnoreCase))
+                {
+                    EnsureStack(this,1,"ALLOT");
+                    var cells = ToLong(PopInternal());
+                    if (cells < 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Negative ALLOT size");
+                    for (long k = 0; k < cells; k++)
+                    {
+                        _mem[_nextAddr++] = 0; // allocate zeroed byte cell
+                    }
+                    continue;
+                }
 
                 // Definition start
                 if (tok == ":")

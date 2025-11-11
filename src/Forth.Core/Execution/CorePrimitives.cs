@@ -29,6 +29,9 @@ internal static class CorePrimitives
         dict["@"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"@"); var addr=ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); });
         dict["!"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"!"); var addr=ToLong(i.PopInternal()); var val=ToLong(i.PopInternal()); i.MemSet(addr,val); });
         dict["+!"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"+!"); var addr=ToLong(i.PopInternal()); var add=ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); });
+        // Byte memory operations
+        dict["C!"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"C!"); var addr=ToLong(i.PopInternal()); var val=ToLong(i.PopInternal()); var b=(long)((byte)val); i.MemSet(addr, b); });
+        dict["C@"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"C@"); var addr=ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push((long)((byte)v)); });
         dict[">R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,">R"); var a=i.PopInternal(); i.RPush(a); });
         dict["R>"] = new ForthInterpreter.Word(i => { if (i.RCount==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,"Return stack underflow in R>"); var a=i.RPop(); i.Push(a); });
         dict["2>R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"2>R"); var b=i.PopInternal(); var a=i.PopInternal(); i.RPush(a); i.RPush(b); });
