@@ -48,6 +48,7 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
 
     // Simple decompile table for colon definitions
     private readonly Dictionary<string, string> _decompile = new(StringComparer.OrdinalIgnoreCase);
+    private List<string>? _currentDefTokens; // tokens of current definition body for SEE
 
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
@@ -299,6 +300,7 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
                     _controlStack.Clear();
                     _isCompiling = true;
+                    _currentDefTokens = new List<string>();
                     _mem[_stateAddr] = 1;
                     continue;
                 }
@@ -451,6 +453,9 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
             }
             else
             {
+                // Collect tokens for decompile (exclude semicolon)
+                if (tok != ";") _currentDefTokens?.Add(tok);
+
                 if (tok == ";")
                 {
                     if (_currentInstructions is null || string.IsNullOrEmpty(_currentDefName))
@@ -469,12 +474,14 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                         catch (ExitWordException) { }
                     });
                     TargetDict()[_currentDefName] = compiled;
-                    // Record minimal decompile text
-                    _decompile[nameForDecomp] = $": {nameForDecomp} ;";
+                    // Record decompile text with captured tokens
+                    var bodyText = _currentDefTokens is { Count: > 0 } ? string.Join(' ', _currentDefTokens) : string.Empty;
+                    _decompile[nameForDecomp] = string.IsNullOrEmpty(bodyText) ? $": {nameForDecomp} ;" : $": {nameForDecomp} {bodyText} ;";
                     _isCompiling = false;
                     _mem[_stateAddr] = 0;
                     _currentDefName = null;
                     _currentInstructions = null;
+                    _currentDefTokens = null;
                     continue;
                 }
                 if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new IfFrame()); continue; }

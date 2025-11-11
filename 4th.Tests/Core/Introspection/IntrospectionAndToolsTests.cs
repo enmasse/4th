@@ -58,7 +58,7 @@ public class IntrospectionAndToolsTests
         var forth = new ForthInterpreter(io);
         Assert.True(await forth.EvalAsync(": X 1 2 + ; SEE X"));
         Assert.Single(io.Outputs);
-        Assert.Equal(": X ;", io.Outputs[0]);
+        Assert.Equal(": X 1 2 + ;", io.Outputs[0]);
     }
 
     /// <summary>
