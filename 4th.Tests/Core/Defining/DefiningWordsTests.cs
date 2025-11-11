@@ -42,10 +42,14 @@ public class DefiningWordsTests
     /// Intention: Confirm CONSTANT captures stack top at definition time and always pushes that value.
     /// Expected: "99 CONSTANT N N" leaves 99 on stack consistently.
     /// </summary>
-    [Fact(Skip = "CONSTANT word not implemented yet")] 
+    [Fact] 
     public void Constant_Definition()
     {
         var forth = new ForthInterpreter();
-        // 99 CONSTANT N  N should push 99
+        Assert.True(forth.Interpret("99 CONSTANT N"));
+        Assert.True(forth.Interpret("N N"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(99L, (long)forth.Stack[0]);
+        Assert.Equal(99L, (long)forth.Stack[1]);
     }
 }
