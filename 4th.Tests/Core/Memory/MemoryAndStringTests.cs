@@ -20,11 +20,16 @@ public class MemoryAndStringTests
     /// Intention: Validate +! adds a value to a stored cell in place.
     /// Expected: "VARIABLE X 10 X ! 5 X +! X @" yields 15.
     /// </summary>
-    [Fact(Skip = "+! (add store) not implemented yet")] 
+    [Fact] 
     public void PlusStore()
     {
         var forth = new ForthInterpreter();
-        // VARIABLE X 10 X ! 5 X +! X @ should push 15
+        Assert.True(forth.Interpret("VARIABLE X"));
+        Assert.True(forth.Interpret("10 X !"));
+        Assert.True(forth.Interpret("5 X +!"));
+        Assert.True(forth.Interpret("X @"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(15L, (long)forth.Stack[0]);
     }
 
     /// <summary>
