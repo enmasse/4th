@@ -278,6 +278,19 @@ internal static class CorePrimitives
             }
             i.WriteText(sb.ToString());
         });
+
+        // Multiply then divide: ( n1 n2 n3 -- n ) -> (n1 * n2) / n3
+        dict["*/"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,3,"*/");
+            var d = ToLong(i.PopInternal());
+            var n2 = ToLong(i.PopInternal());
+            var n1 = ToLong(i.PopInternal());
+            if (d == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.DivideByZero, "Divide by zero");
+            var prod = n1 * n2;
+            i.Push(prod / d);
+        });
+    
+    
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
