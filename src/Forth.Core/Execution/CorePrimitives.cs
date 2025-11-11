@@ -17,7 +17,6 @@ internal static class CorePrimitives
         dict["<"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"<"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a < b ? 1L : 0L); });
         dict["="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a == b ? 1L : 0L); });
         dict[">"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,">"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a > b ? 1L : 0L); });
-        // Extended comparisons
         dict["0="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"0="); var a=ToLong(i.PopInternal()); i.Push(a==0 ? 1L : 0L); });
         dict["0<>"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"0<>"); var a=ToLong(i.PopInternal()); i.Push(a!=0 ? 1L : 0L); });
         dict["<>"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"<>"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a!=b ? 1L : 0L); });
@@ -81,31 +80,28 @@ internal static class CorePrimitives
         dict["RSHIFT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"RSHIFT"); var u=ToLong(i.PopInternal()); var x=ToLong(i.PopInternal()); i.Push((long)((ulong)x >> (int)u)); });
         dict["EXIT"] = new ForthInterpreter.Word(i => { i.ThrowExit(); });
         dict["UNLOOP"] = new ForthInterpreter.Word(i => { i.Unloop(); });
-        // Introspection
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
         dict["RP@"] = new ForthInterpreter.Word(i => { i.Push((long)i.RCount); });
         dict["STATE"] = new ForthInterpreter.Word(i => { i.Push(i.StateAddr); });
         dict["BASE"] = new ForthInterpreter.Word(i => { i.Push(i.BaseAddr); });
         dict["DECIMAL"] = new ForthInterpreter.Word(i => { i.MemSet(i.BaseAddr, 10); });
         dict["HEX"] = new ForthInterpreter.Word(i => { i.MemSet(i.BaseAddr, 16); });
-        // Loop index
         dict["I"] = new ForthInterpreter.Word(i => { i.Push(i.CurrentLoopIndex()); });
-        dict["EXECUTE"] = new ForthInterpreter.Word(i => {
+        dict["EXECUTE"] = new ForthInterpreter.Word(async i => {
             ForthInterpreter.EnsureStack(i,1,"EXECUTE");
             var top = i.StackTop();
             if (top is ForthInterpreter.Word wTop)
             {
                 i.PopInternal();
-                wTop.ExecuteAsync(i).GetAwaiter().GetResult();
+                await wTop.ExecuteAsync(i).ConfigureAwait(false);
                 return;
             }
-            // pattern: data xt EXECUTE (xt just beneath top)
             if (i.Stack.Count >= 2 && i.StackNthFromTop(2) is ForthInterpreter.Word wBelow)
             {
-                var data = i.PopInternal(); // remove top data
-                var xt = i.PopInternal(); // remove xt
-                wBelow.ExecuteAsync(i).GetAwaiter().GetResult();
-                i.Push(data); // restore data on top (xt consumed)
+                var data = i.PopInternal(); // value
+                i.PopInternal();            // xt
+                await wBelow.ExecuteAsync(i).ConfigureAwait(false);
+                i.Push(data);
                 return;
             }
             throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "EXECUTE expects an execution token");
