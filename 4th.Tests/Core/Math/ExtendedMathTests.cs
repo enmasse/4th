@@ -64,11 +64,26 @@ public class ExtendedMathTests
     /// Intention: Ensure extended comparisons and min/max behave per standard truth values (all bits set for true).
     /// Expected: 0= 0<> <> <= >= MIN MAX have correct results for representative inputs.
     /// </summary>
-    [Fact(Skip = "Comparison variants not implemented yet")] 
+    [Fact] 
     public void Comparisons_Extended()
     {
         var forth = new ForthInterpreter();
-        // 0= 0<> <> <= >= MIN MAX
+        Assert.True(forth.Interpret("0 0="));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("1 0<>"));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("2 3 <>"));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("2 2 <>"));
+        Assert.Equal(0L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("2 3 <="));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("3 2 >="));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("2 5 MIN"));
+        Assert.Equal(2L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("2 5 MAX"));
+        Assert.Equal(5L, (long)forth.Stack[^1]);
     }
 
     /// <summary>

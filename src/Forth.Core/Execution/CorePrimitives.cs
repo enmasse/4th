@@ -16,6 +16,14 @@ internal static class CorePrimitives
         dict["<"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"<"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a < b ? 1L : 0L); });
         dict["="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a == b ? 1L : 0L); });
         dict[">"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,">"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a > b ? 1L : 0L); });
+        // Extended comparisons
+        dict["0="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"0="); var a=ToLong(i.PopInternal()); i.Push(a==0 ? 1L : 0L); });
+        dict["0<>"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"0<>"); var a=ToLong(i.PopInternal()); i.Push(a!=0 ? 1L : 0L); });
+        dict["<>"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"<>"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a!=b ? 1L : 0L); });
+        dict["<="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"<="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a<=b ? 1L : 0L); });
+        dict[">="] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,">="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a>=b ? 1L : 0L); });
+        dict["MIN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"MIN"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a<b ? a : b); });
+        dict["MAX"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"MAX"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a>b ? a : b); });
         dict["ROT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,3,"ROT"); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(b); i.Push(c); i.Push(a); });
         dict["-ROT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,3,"-ROT"); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(c); i.Push(a); i.Push(b); });
         dict["@"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"@"); var addr=ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); });
