@@ -27,6 +27,9 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private long _nextAddr = 1;
     private readonly HashSet<object> _consumedTaskResults = new();
 
+    // VALUE storage
+    private readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase);
+
     // Module support
     private readonly Dictionary<string, Dictionary<string, Word>> _modules = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _usingModules = new();
@@ -136,11 +139,14 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
-    // Return stack helpers
+    // Return stack helpers (restored)
     internal void RPush(object value) => _rstack.Push(value);
     internal object RPop() => _rstack.Pop();
     internal int RCount => _rstack.Count;
 
+    // VALUE helpers
+    internal long ValueGet(string name) => _values.TryGetValue(name, out var v) ? v : 0L;
+    internal void ValueSet(string name, long v) => _values[name] = v;
     /// <summary>
     /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
     /// </summary>
@@ -257,6 +263,23 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     EnsureStack(this,1,"CONSTANT");
                     var value = PopInternal();
                     TargetDict()[name] = new Word(intr => intr.Push(value));
+                    continue;
+                }
+                if (tok.Equals("VALUE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after VALUE");
+                    var name = tokens[i++];
+                    if (!_values.ContainsKey(name)) _values[name] = 0L;
+                    TargetDict()[name] = new Word(intr => intr.Push(intr.ValueGet(name)));
+                    continue;
+                }
+                if (tok.Equals("TO", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after TO");
+                    var name = tokens[i++];
+                    EnsureStack(this,1,"TO");
+                    var v = ToLong(PopInternal());
+                    ValueSet(name, v);
                     continue;
                 }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))

@@ -20,15 +20,31 @@ public class DefiningWordsTests
     /// Intention: Validate VALUE and TO allow mutable single-cell storage with assignment semantics.
     /// Expected: After "VALUE X 10 TO X X" stack shows current value (10) and updates when reassigned.
     /// </summary>
-    [Fact(Skip = "VALUE and TO not implemented yet")] 
+    [Fact] 
     public void ValueAndTo_Assignment()
     {
         var forth = new ForthInterpreter();
-        // VALUE X 10 TO X X should yield 10
+        Assert.True(forth.Interpret("VALUE X")); // define X default 0
+        Assert.True(forth.Interpret("10 TO X")); // assign 10
+        Assert.True(forth.Interpret("X"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(10L, (long)forth.Stack[0]);
+
+        // Reassign then fetch
+        Assert.True(forth.Interpret("20 TO X X"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(10L, (long)forth.Stack[0]);
+        Assert.Equal(20L, (long)forth.Stack[1]);
+
+        // Simplify: reset interpreter to validate reassignment
+        var forth2 = new ForthInterpreter();
+        Assert.True(forth2.Interpret("VALUE X 10 TO X 20 TO X X"));
+        Assert.Single(forth2.Stack);
+        Assert.Equal(20L, (long)forth2.Stack[0]);
     }
 
     /// <summary>
-    /// Intention: Ensure DEFER creates a deferred word whose target can be rebound using IS.
+    /// Intention: Ensure DEFER creates a deferred word whose target can be rebinding using IS.
     /// Expected: After rebinding, invoking deferred word executes new target definition.
     /// </summary>
     [Fact(Skip = "DEFER and IS not implemented yet")] 
