@@ -15,7 +15,7 @@ public class ClrBindingTests
     public async Task Bind_Sync_Static_Method()
     {
         var f = New();
-        Assert.True(await f.EvalAsync($"BIND Forth.Tests.AsyncTestTargets Add 2 ADDAB 3 4 ADDAB"));
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets Add 2 ADDAB 3 4 ADDAB"));
         Assert.Equal(new long[]{7}, Longs(f));
     }
 
@@ -23,7 +23,7 @@ public class ClrBindingTests
     public async Task Bind_Async_Static_Method_Result()
     {
         var f = New();
-        Assert.True(await f.EvalAsync($"BIND Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 5 6 ADDAB"));
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB 5 6 ADDAB"));
         Assert.Equal(new long[]{11}, Longs(f));
     }
 
@@ -31,7 +31,7 @@ public class ClrBindingTests
     public async Task Bind_Async_Void_Task()
     {
         var f = New();
-        Assert.True(await f.EvalAsync($"BIND Forth.Tests.AsyncTestTargets VoidDelay 1 DELAY 20 DELAY"));
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 20 DELAY"));
         Assert.Empty(f.Stack);
     }
 
@@ -39,7 +39,7 @@ public class ClrBindingTests
     public async Task Bind_ValueTask_Static_Method_Result()
     {
         var f = New();
-        Assert.True(await f.EvalAsync($"BIND Forth.Tests.AsyncTestTargets AddValueTask 2 ADDVT 2 9 ADDVT"));
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets AddValueTask 2 ADDVT 2 9 ADDVT"));
         Assert.Equal(new long[]{11}, Longs(f));
     }
 
@@ -47,7 +47,7 @@ public class ClrBindingTests
     public async Task Bind_ValueTask_Void()
     {
         var f = New();
-        Assert.True(await f.EvalAsync($"BIND Forth.Tests.AsyncTestTargets VoidDelayValueTask 1 DVT 10 DVT"));
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelayValueTask 1 DVT 10 DVT"));
         Assert.Empty(f.Stack);
     }
 }

@@ -10,8 +10,8 @@ public class PublicStackApiTests
     public void PushPop_ReadsAndWrites()
     {
         var f = new ForthInterpreter();
-        f.Push(5);
-        f.Push(7);
+        f.Push(5L);
+        f.Push(7L);
         Assert.Equal(7L, (long)f.Pop());
         Assert.Equal(5L, (long)f.Pop());
     }

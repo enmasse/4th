@@ -22,7 +22,7 @@ public class DynamicLoadTests
     public async Task LoadAssemblyWords_FromForth()
     {
         var f = new ForthInterpreter();
-        Assert.True(await f.EvalAsync("LOAD-ASM-TYPE Forth.Tests.DynamicModules.SampleDynamicModule"));
+        Assert.True(await f.EvalAsync("LOAD-ASM-TYPE Forth.Tests.Samples.DynamicModules.SampleDynamicModule"));
         Assert.True(await f.EvalAsync("USING DynMod 9 INCASYNC"));
         Assert.Equal(10L, (long)f.Stack[^1]);
     }

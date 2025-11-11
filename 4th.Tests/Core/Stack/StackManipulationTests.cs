@@ -12,6 +12,6 @@ public class StackManipulationTests
     {
         var forth = new ForthInterpreter();
         Assert.True(forth.Interpret("1 2 DUP SWAP OVER ROT"));
-        Assert.Equal(new long[] { 2, 1, 1, 2 }, forth.Stack.Select(o => (long)o).ToArray());
+        Assert.Equal(new long[] { 1, 2, 2, 2 }, forth.Stack.Select(o => (long)o).ToArray());
     }
 }

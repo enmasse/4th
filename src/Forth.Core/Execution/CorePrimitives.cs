@@ -22,7 +22,8 @@ internal static class CorePrimitives
         dict["DROP"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"DROP"); i.DropTop(); });
         dict["SWAP"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"SWAP"); i.SwapTop2(); });
         dict["OVER"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"OVER"); i.Push(i.StackNthFromTop(2)); });
-        dict["SPAWN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"SPAWN"); var obj=i.PopInternal(); if (obj is not Task) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"SPAWN expects a Task"); i.Push(obj); });
+        dict["NEGATE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"NEGATE"); var a=ToLong(i.PopInternal()); i.Push(-a); });
+        dict["SPAWN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"SPAWN"); var obj=i.PopInternal(); if (obj is not Task t) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"SPAWN expects a Task"); i.Push(t); i.Push(t); });
         dict["YIELD"] = new ForthInterpreter.Word(async i => { await Task.Yield(); });
         dict["BYE"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
         dict["QUIT"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
