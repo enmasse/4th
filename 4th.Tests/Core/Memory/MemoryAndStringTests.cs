@@ -1,10 +1,20 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Forth.Tests.Core.Memory;
 
 public class MemoryAndStringTests
 {
+    private sealed class TestIO : Forth.Core.IForthIO
+    {
+        public readonly List<string> Outputs = new();
+        public void Print(string text) => Outputs.Add(text);
+        public void PrintNumber(long number) => Outputs.Add(number.ToString());
+        public void NewLine() => Outputs.Add("\n");
+        public string? ReadLine() => null;
+    }
+
     /// <summary>
     /// Intention: Verify byte fetch/store operations (C@/C!) operate on single bytes of allocated memory.
     /// Expected: After storing 65 ('A') into buffer, C@ reads back 65 from same address.
@@ -47,10 +57,14 @@ public class MemoryAndStringTests
     /// Intention: Verify S" produces an address/length pair and TYPE emits the string.
     /// Expected: Output stream contains the literal text.
     /// </summary>
-    [Fact(Skip = "S\" string literal and TYPE not implemented yet")] 
+    [Fact] 
     public void SQuoteType_Output()
     {
-        var forth = new ForthInterpreter();
-        // S" HELLO" TYPE should print HELLO
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        Assert.True(forth.Interpret("\"HELLO\" TYPE"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("HELLO", io.Outputs[0]);
+        Assert.Empty(forth.Stack); // TYPE should consume the string
     }
 }

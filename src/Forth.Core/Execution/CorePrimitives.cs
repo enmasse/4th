@@ -31,6 +31,7 @@ internal static class CorePrimitives
         dict["."] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"."); var n=ToLong(i.PopInternal()); i.WriteNumber(n); });
         dict["CR"] = new ForthInterpreter.Word(i => { i.NewLine(); });
         dict["EMIT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
+        dict["TYPE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TYPE"); var obj=i.PopInternal(); if (obj is string s) { i.WriteText(s); } else throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError,"TYPE expects a string"); });
         dict["EXIT"] = new ForthInterpreter.Word(i => { i.ThrowExit(); });
         // Introspection
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
