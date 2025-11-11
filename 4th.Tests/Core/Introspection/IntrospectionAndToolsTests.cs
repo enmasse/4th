@@ -1,19 +1,33 @@
 using Forth.Core.Interpreter;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Forth.Tests.Core.Introspection;
 
 public class IntrospectionAndToolsTests
 {
+    private sealed class TestIO : Forth.Core.IForthIO
+    {
+        public readonly List<string> Outputs = new();
+        public void Print(string text) => Outputs.Add(text);
+        public void PrintNumber(long number) => Outputs.Add(number.ToString());
+        public void NewLine() => Outputs.Add("\n");
+        public string? ReadLine() => null;
+    }
+
     /// <summary>
     /// Intention: Validate .S prints current stack contents for debugging without altering stack state.
     /// Expected: After 1 2 3 .S output contains representation like "<3> 1 2 3".
     /// </summary>
-    [Fact(Skip = ".S (stack display) not implemented yet")] 
+    [Fact]
     public void DotS_StackDisplay()
     {
-        var forth = new ForthInterpreter();
-        // 1 2 3 .S  should show <3> 1 2 3
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        Assert.True(forth.Interpret("1 2 3 .S"));
+        Assert.Single(io.Outputs);
+        Assert.Equal("<3> 1 2 3", io.Outputs[0]);
+        Assert.Equal(3, forth.Stack.Count); // .S must not change the stack
     }
 
     /// <summary>

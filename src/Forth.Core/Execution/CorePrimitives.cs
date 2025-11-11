@@ -1,3 +1,4 @@
+using System.Text;
 using System.Threading.Tasks;
 using Forth.Core.Interpreter;
 
@@ -45,6 +46,29 @@ internal static class CorePrimitives
         dict["BYE"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
         dict["QUIT"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
         dict["."] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"."); var n=ToLong(i.PopInternal()); i.WriteNumber(n); });
+        dict[".S"] = new ForthInterpreter.Word(i => {
+            var items = i.Stack;
+            var sb = new StringBuilder();
+            sb.Append('<').Append(items.Count).Append("> ");
+            for (int idx = 0; idx < items.Count; idx++)
+            {
+                if (idx > 0) sb.Append(' ');
+                var o = items[idx];
+                switch (o)
+                {
+                    case long l: sb.Append(l); break;
+                    case int ii: sb.Append(ii); break;
+                    case short s: sb.Append((long)s); break;
+                    case byte b: sb.Append((long)b); break;
+                    case char ch: sb.Append((int)ch); break;
+                    case bool bo: sb.Append(bo ? 1 : 0); break;
+                    default:
+                        sb.Append(o?.ToString() ?? "null");
+                        break;
+                }
+            }
+            i.WriteText(sb.ToString());
+        });
         dict["CR"] = new ForthInterpreter.Word(i => { i.NewLine(); });
         dict["EMIT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
         dict["TYPE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TYPE"); var obj=i.PopInternal(); if (obj is string s) { i.WriteText(s); } else throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError,"TYPE expects a string"); });
