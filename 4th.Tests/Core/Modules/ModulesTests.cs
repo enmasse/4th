@@ -3,7 +3,7 @@ using Forth.Core.Interpreter;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Forth.Tests;
+namespace Forth.Tests.Core.Modules;
 
 public class ModulesTests
 {

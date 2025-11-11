@@ -4,7 +4,7 @@ using Forth.Core.Interpreter;
 using Xunit;
 using System.Linq;
 
-namespace Forth.Tests;
+namespace Forth.Tests.Core.Binding;
 
 public class ClrBindingTests
 {

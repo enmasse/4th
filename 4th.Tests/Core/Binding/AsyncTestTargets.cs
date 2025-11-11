@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-namespace Forth.Tests;
+namespace Forth.Tests.Core.Binding;
 
 public static class AsyncTestTargets
 {

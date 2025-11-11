@@ -11,7 +11,7 @@ public class DynamicLoadTests
     public async Task LoadAssemblyWords_FromCSharp()
     {
         var f = new ForthInterpreter();
-        var asm = typeof(DynamicModules.SampleDynamicModule).Assembly;
+        var asm = typeof(Forth.Tests.Samples.DynamicModules.SampleDynamicModule).Assembly;
         var count = f.LoadAssemblyWords(asm);
         Assert.True(count >= 1);
         Assert.True(await f.EvalAsync("USING DynMod 41 INC"));

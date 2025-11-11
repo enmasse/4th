@@ -3,9 +3,9 @@ using Forth.Core.Modules;
 using Forth.Core.Interpreter;
 using System.Threading.Tasks;
 
-namespace Forth.Tests.DynamicModules;
+namespace Forth.Tests.Samples.DynamicModules;
 
-[ForthModule("DynMod")] // will scope words under DynMod module
+[ForthModule("DynMod")]
 public sealed class SampleDynamicModule : IForthWordModule
 {
     public void Register(IForthInterpreter forth)

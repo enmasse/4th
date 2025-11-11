@@ -1,22 +1,21 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Forth.Core;
 using Forth.Core.Interpreter;
 using Xunit;
-using System.Linq;
 
-namespace Forth.Tests;
+namespace Forth.Tests.Core.Async;
 
 public class FiberSpawnTests
 {
     private static ForthInterpreter New() => new();
-    private static long[] Longs(ForthInterpreter f) => f.Stack.Select(o => o is long l ? l : 0L).ToArray();
 
     [Fact]
     public async Task SpawnDuplicateTaskAndAwaitBoth()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.AsyncTestTargets AddAsync 2 ADDAB 10 32 ADDAB DUP SPAWN AWAIT AWAIT");
-        Assert.Equal(new long[]{42}, Longs(f));
+        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB 10 32 ADDAB SPAWN AWAIT AWAIT");
+        Assert.Equal(42L, (long)f.Stack[^1]);
     }
 
     [Fact]
@@ -24,6 +23,6 @@ public class FiberSpawnTests
     {
         var f = New();
         await f.EvalAsync("1 2 3 YIELD 4 5");
-        Assert.Equal(new long[]{1,2,3,4,5}, Longs(f));
+        Assert.Equal(new long[]{1,2,3,4,5}, f.Stack.Select(o => (long)o).ToArray());
     }
 }

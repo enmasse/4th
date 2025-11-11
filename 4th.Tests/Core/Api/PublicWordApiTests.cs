@@ -3,13 +3,10 @@ using Forth.Core;
 using Forth.Core.Interpreter;
 using Xunit;
 
-namespace Forth.Tests;
+namespace Forth.Tests.Core.Api;
 
 public class PublicWordApiTests
 {
-    /// <summary>
-    /// Verifies a synchronously added word consumes two numbers and pushes their sum.
-    /// </summary>
     [Fact]
     public async Task AddSyncWord_AddsTwoNumbers()
     {
@@ -23,9 +20,6 @@ public class PublicWordApiTests
         Assert.Equal(12L, (long)forth.Stack[^1]);
     }
 
-    /// <summary>
-    /// Verifies an async word is awaited and its result is pushed.
-    /// </summary>
     [Fact]
     public async Task AddAsyncWord_AwaitsAndPushesResult()
     {
@@ -39,9 +33,6 @@ public class PublicWordApiTests
         Assert.Equal(42L, (long)forth.Stack[^1]);
     }
 
-    /// <summary>
-    /// Verifies another sync word using stack helper pattern (SQUARE) works.
-    /// </summary>
     [Fact]
     public async Task AddSyncWord_ThatUsesInterpreterStackHelpers()
     {
