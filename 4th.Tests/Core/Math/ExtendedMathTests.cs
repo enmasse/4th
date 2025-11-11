@@ -39,13 +39,25 @@ public class ExtendedMathTests
 
     /// <summary>
     /// Intention: Exercise double-cell stack ops to ensure paired-cell ordering is preserved.
-    /// Expected: 1 2 2DUP -> 1 2 1 2;  1 2 2SWAP -> keeps pairs swapped.
+    /// Expected: 1 2 2DUP -> 1 2 1 2; then 2SWAP exchanges pairs.
     /// </summary>
-    [Fact(Skip = "Double-cell ops not implemented yet")] 
+    [Fact] 
     public void DoubleCell_Ops()
     {
         var forth = new ForthInterpreter();
-        // 1 2 2DUP  -> 1 2 1 2;  1 2 2SWAP -> 1 2  (check ordering)
+        Assert.True(forth.Interpret("1 2 2DUP"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.Equal(2L, (long)forth.Stack[1]);
+        Assert.Equal(1L, (long)forth.Stack[2]);
+        Assert.Equal(2L, (long)forth.Stack[3]);
+
+        Assert.True(forth.Interpret("2SWAP"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.Equal(2L, (long)forth.Stack[1]);
+        Assert.Equal(1L, (long)forth.Stack[2]);
+        Assert.Equal(2L, (long)forth.Stack[3]);
     }
 
     /// <summary>
