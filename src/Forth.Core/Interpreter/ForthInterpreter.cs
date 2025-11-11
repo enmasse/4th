@@ -15,6 +15,7 @@ namespace Forth.Core.Interpreter;
 public partial class ForthInterpreter : Forth.Core.IForthInterpreter
 {
     private readonly ForthStack _stack = new();
+    private readonly ForthStack _rstack = new();
     private readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
     private readonly Forth.Core.IForthIO _io;
     private bool _exitRequested;
@@ -134,6 +135,11 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     };
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
+
+    // Return stack helpers
+    internal void RPush(object value) => _rstack.Push(value);
+    internal object RPop() => _rstack.Pop();
+    internal int RCount => _rstack.Count;
 
     /// <summary>
     /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.

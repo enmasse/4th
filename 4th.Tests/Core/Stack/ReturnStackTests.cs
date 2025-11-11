@@ -9,12 +9,14 @@ public class ReturnStackTests
     /// Intention: Verify basic data transfer between data stack and return stack using >R and R>.
     /// Expected: After "1 2 >R R>" the data stack remains 1 2 (R holds and returns 2), matching common Forth semantics.
     /// </summary>
-    [Fact(Skip = ">R and R> (return stack transfer) not implemented yet")] 
+    [Fact] 
     public void ReturnStack_BasicTransfer()
     {
         var forth = new ForthInterpreter();
-        // 1 2 >R R> should leave 1 2 on the data stack in most Forths
-        // forth.Interpret("1 2 >R R>");
+        Assert.True(forth.Interpret("1 2 >R R>"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.Equal(2L, (long)forth.Stack[1]);
     }
 
     /// <summary>
