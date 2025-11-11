@@ -27,11 +27,14 @@ public class ExtendedMathTests
     /// Intention: Validate arithmetic shifts with LSHIFT and RSHIFT on unsigned semantics per standard.
     /// Expected: 1 3 LSHIFT -> 8; 8 2 RSHIFT -> 2.
     /// </summary>
-    [Fact(Skip = "Shift words LSHIFT RSHIFT not implemented yet")] 
+    [Fact] 
     public void Bitwise_Shifts()
     {
         var forth = new ForthInterpreter();
-        // 1 3 LSHIFT -> 8; 8 2 RSHIFT -> 2
+        Assert.True(forth.Interpret("1 3 LSHIFT"));
+        Assert.Equal(8L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("8 2 RSHIFT"));
+        Assert.Equal(2L, (long)forth.Stack[^1]);
     }
 
     /// <summary>
