@@ -75,10 +75,15 @@ public class ExtendedMathTests
     /// Intention: Validate remainder and quotient variants return results matching ANS Forth definitions.
     /// Expected: 7 3 /MOD -> 1 2 ; 7 3 MOD -> 1 etc.
     /// </summary>
-    [Fact(Skip = "Division variants not implemented yet")] 
+    [Fact] 
     public void DivMod_Variants()
     {
         var forth = new ForthInterpreter();
-        // 7 3 /MOD -> 1 2 ; 7 3 MOD -> 1
+        Assert.True(forth.Interpret("7 3 /MOD"));
+        Assert.Equal(2L, (long)forth.Stack[^1]); // quotient
+        Assert.Equal(1L, (long)forth.Stack[^2]); // remainder below it
+
+        Assert.True(forth.Interpret("7 3 MOD"));
+        Assert.Equal(1L, (long)forth.Stack[^1]);
     }
 }
