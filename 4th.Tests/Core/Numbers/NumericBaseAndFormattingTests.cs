@@ -5,6 +5,10 @@ namespace Forth.Tests.Core.Numbers;
 
 public class NumericBaseAndFormattingTests
 {
+    /// <summary>
+    /// Intention: Confirm BASE changes affect number parsing and printing (DECIMAL vs HEX).
+    /// Expected: Values entered after switching base interpret correctly (e.g., HEX A equals 10 decimal).
+    /// </summary>
     [Fact(Skip = "BASE/DECIMAL/HEX not implemented yet")] 
     public void BaseSwitching()
     {
@@ -12,6 +16,10 @@ public class NumericBaseAndFormattingTests
         // DECIMAL 10  HEX  A  should parse in selected base
     }
 
+    /// <summary>
+    /// Intention: Exercise pictured numeric output words building a string representation manually.
+    /// Expected: <# ... #> leaves address/len pair and TYPE prints number as expected.
+    /// </summary>
     [Fact(Skip = "Pictured numeric output <# # #S HOLD SIGN #> not implemented yet")] 
     public void PicturedNumericOutput()
     {
@@ -19,6 +27,10 @@ public class NumericBaseAndFormattingTests
         // <# 15 0 #S #> TYPE  -> "15"
     }
 
+    /// <summary>
+    /// Intention: Verify >NUMBER converts a string to its numeric value producing residual substring if any.
+    /// Expected: S" 123" 0 0 >NUMBER yields 123 and zero remainder length.
+    /// </summary>
     [Fact(Skip = ">NUMBER not implemented yet")] 
     public void ToNumber_Parsing()
     {

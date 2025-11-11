@@ -5,6 +5,10 @@ namespace Forth.Tests.Core.Memory;
 
 public class MemoryAndStringTests
 {
+    /// <summary>
+    /// Intention: Verify byte fetch/store operations (C@/C!) operate on single bytes of allocated memory.
+    /// Expected: After storing 65 ('A') into buffer, C@ reads back 65 from same address.
+    /// </summary>
     [Fact(Skip = "C@ and C! (byte fetch/store) not implemented yet")] 
     public void ByteFetchStore()
     {
@@ -12,6 +16,10 @@ public class MemoryAndStringTests
         // CREATE BUF 10 ALLOT  65 BUF C!  BUF C@ should push 65
     }
 
+    /// <summary>
+    /// Intention: Validate +! adds a value to a stored cell in place.
+    /// Expected: "VARIABLE X 10 X ! 5 X +! X @" yields 15.
+    /// </summary>
     [Fact(Skip = "+! (add store) not implemented yet")] 
     public void PlusStore()
     {
@@ -19,6 +27,10 @@ public class MemoryAndStringTests
         // VARIABLE X 10 X ! 5 X +! X @ should push 15
     }
 
+    /// <summary>
+    /// Intention: Ensure MOVE, FILL, ERASE properly manipulate arbitrary memory regions.
+    /// Expected: After operations, destination reflects copied/filled bytes and erased areas become zeroed.
+    /// </summary>
     [Fact(Skip = "MOVE FILL ERASE not implemented yet")] 
     public void MoveFillErase()
     {
@@ -26,6 +38,10 @@ public class MemoryAndStringTests
         // CREATE A 20 ALLOT CREATE B 20 ALLOT A B 20 MOVE
     }
 
+    /// <summary>
+    /// Intention: Verify S" produces an address/length pair and TYPE emits the string.
+    /// Expected: Output stream contains the literal text.
+    /// </summary>
     [Fact(Skip = "S\" string literal and TYPE not implemented yet")] 
     public void SQuoteType_Output()
     {

@@ -5,6 +5,10 @@ namespace Forth.Tests.Core.Parsing;
 
 public class ParsingAndCompilationTests
 {
+    /// <summary>
+    /// Intention: Verify immediate words execute during compilation and POSTPONE compiles semantics of named word.
+    /// Expected: Constructed word behaves as if IF/THEN were compiled where POSTPONE placed them.
+    /// </summary>
     [Fact(Skip = "Immediate words and POSTPONE not implemented yet")] 
     public void ImmediateAndPostpone()
     {
@@ -12,6 +16,10 @@ public class ParsingAndCompilationTests
         // : T POSTPONE IF 1 POSTPONE THEN ; IMMEDIATE
     }
 
+    /// <summary>
+    /// Intention: Confirm tick (') returns execution token and ['] compiles it as a literal during compilation.
+    /// Expected: Using xts allows passing and invoking words indirectly.
+    /// </summary>
     [Fact(Skip = "Tick ' and ['] to obtain execution tokens not implemented yet")] 
     public void Tick_ExecutionToken()
     {
@@ -19,6 +27,10 @@ public class ParsingAndCompilationTests
         // ' DUP  is an xt;  ['] DUP compiles literal xt
     }
 
+    /// <summary>
+    /// Intention: Ensure STATE reflects interpreter mode (interpreting vs compiling) as a flag value.
+    /// Expected: STATE @ = 0 while interpreting and nonzero when inside a definition.
+    /// </summary>
     [Fact(Skip = "STATE and compile/interpret distinction not implemented yet")] 
     public void State_AndInterpretCompile()
     {
@@ -26,6 +38,10 @@ public class ParsingAndCompilationTests
         // STATE @ 0= while interpreting, nonzero while compiling
     }
 
+    /// <summary>
+    /// Intention: Validate search-order and WORDLIST control for vocabulary stacks.
+    /// Expected: Words appear/disappear based on GET-ORDER/SET-ORDER and DEFINITIONS.
+    /// </summary>
     [Fact(Skip = "SEARCH-ORDER and WORDLIST not implemented yet")] 
     public void Wordlists_SearchOrder()
     {

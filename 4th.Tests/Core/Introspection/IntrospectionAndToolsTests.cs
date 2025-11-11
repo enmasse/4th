@@ -5,6 +5,10 @@ namespace Forth.Tests.Core.Introspection;
 
 public class IntrospectionAndToolsTests
 {
+    /// <summary>
+    /// Intention: Validate .S prints current stack contents for debugging without altering stack state.
+    /// Expected: After 1 2 3 .S output contains representation like "<3> 1 2 3".
+    /// </summary>
     [Fact(Skip = ".S (stack display) not implemented yet")] 
     public void DotS_StackDisplay()
     {
@@ -12,6 +16,10 @@ public class IntrospectionAndToolsTests
         // 1 2 3 .S  should show <3> 1 2 3
     }
 
+    /// <summary>
+    /// Intention: Ensure DEPTH pushes current stack depth count without modifying existing items.
+    /// Expected: 1 2 3 DEPTH -> 1 2 3 3.
+    /// </summary>
     [Fact(Skip = "DEPTH not implemented yet")] 
     public void Depth_Word()
     {
@@ -19,6 +27,10 @@ public class IntrospectionAndToolsTests
         // 1 2 3 DEPTH -> 1 2 3 3
     }
 
+    /// <summary>
+    /// Intention: Confirm SEE decompiles a word showing its definition for inspection.
+    /// Expected: Output includes colon definition for previously defined word.
+    /// </summary>
     [Fact(Skip = "SEE (decompiler) not implemented yet")] 
     public void See_Decompile()
     {
@@ -26,6 +38,10 @@ public class IntrospectionAndToolsTests
         // : X 1 2 + ; SEE X
     }
 
+    /// <summary>
+    /// Intention: Validate DUMP outputs raw memory contents for a given address range.
+    /// Expected: Output shows hex/character pairs for requested cell span.
+    /// </summary>
     [Fact(Skip = "DUMP (memory dump) not implemented yet")] 
     public void Dump_Memory()
     {
