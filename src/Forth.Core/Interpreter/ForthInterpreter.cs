@@ -2,13 +2,14 @@ using System.Threading.Tasks;
 using System; // added for Type reflection
 using System.Collections.Concurrent; // added for IL cache
 using System.Globalization; // needed for NumberStyles in BIND parsing
+using System.Reflection; // for LoadAssemblyWords
 using Forth.Core;
 using Forth.Core.Binding;
 using Forth.Core.Execution;
 
 namespace Forth.Core.Interpreter;
 
-public partial class ForthInterpreter : Forth.Core.IForthInterpreter
+public class ForthInterpreter : Forth.Core.IForthInterpreter
 {
     private readonly ForthStack _stack = new();
     private readonly ForthStack _rstack = new();
@@ -32,6 +33,9 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private string? _currentModule;
 
     private readonly ConcurrentDictionary<string, Func<ForthInterpreter, Task>> _ilCache = new();
+
+    // Components
+    private readonly ControlFlowRuntime _controlFlow = new();
 
     // STATE and BASE cells
     private readonly long _stateAddr;
@@ -149,7 +153,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
     private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
-    // Return stack helpers (restored)
+    // Return stack helpers
     internal void RPush(object value) => _rstack.Push(value);
     internal object RPop() => _rstack.Pop();
     internal int RCount => _rstack.Count;
@@ -157,6 +161,13 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     // VALUE helpers
     internal long ValueGet(string name) => _values.TryGetValue(name, out var v) ? v : 0L;
     internal void ValueSet(string name, long v) => _values[name] = v;
+
+    // Control-flow wrappers
+    internal void PushLoopIndex(long idx) => _controlFlow.Push(idx);
+    internal void PopLoopIndex() => _controlFlow.Pop();
+    internal void PopLoopIndexMaybe() => _controlFlow.PopMaybe();
+    internal void Unloop() => _controlFlow.Unloop();
+    internal long CurrentLoopIndex() => _controlFlow.Current();
 
     /// <summary>
     /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
@@ -177,7 +188,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
             return !_exitRequested;
         }
         var tokens = Tokenizer.Tokenize(line);
-        if (!_isCompiling && _ilCache.Count < 1024) // only consider when not compiling and cache not huge
+        if (!_isCompiling && _ilCache.Count < 1024)
         {
             if (IlScriptCompiler.TryCompile(tokens, out var runner))
             {
@@ -186,7 +197,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                 return !_exitRequested;
             }
         }
-        // Fast path: compile to sync IR when possible and execute synchronously
         if (!_isCompiling)
         {
             var script = CompileSync(line);
@@ -247,7 +257,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     continue;
                 }
 
-                // Immediate (interpret) mode
+                // Definition start
                 if (tok == ":")
                 {
                     if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after ':'");
@@ -256,7 +266,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
                     _controlStack.Clear();
                     _isCompiling = true;
-                    _mem[_stateAddr] = 1; // compiling
+                    _mem[_stateAddr] = 1;
                     continue;
                 }
                 if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
@@ -336,14 +346,12 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push(s.Length > 0 ? (long)s[0] : 0L);
                     continue;
                 }
-                // double-quoted string literal: push content as string
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     var s = tok.Substring(1, tok.Length - 2);
                     Push(s);
                     continue;
                 }
-                // ABORT" immediate with message: ABORT followed by a quoted string
                 if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i < tokens.Count && tokens[i].Length >= 2 && tokens[i][0] == '"' && tokens[i][^1] == '"')
@@ -352,7 +360,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                         var msg = st.Substring(1, st.Length - 2);
                         throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, msg);
                     }
-                    // plain ABORT
                     throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, "ABORT");
                 }
                 if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
@@ -381,7 +388,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                         if (resultType?.FullName != "System.Threading.Tasks.VoidTaskResult")
                         {
                             var val = resultProp!.GetValue(t);
-                            Push(Normalize(val));
+                            Push(NumberParser.Normalize(val));
                             if (_stack.Count >= 2 && _stack.NthFromTop(2) is Task)
                             {
                                 var top = _stack.Pop();
@@ -429,7 +436,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     });
                     TargetDict()[_currentDefName] = compiled;
                     _isCompiling = false;
-                    _mem[_stateAddr] = 0; // back to interpret
+                    _mem[_stateAddr] = 0;
                     _currentDefName = null;
                     _currentInstructions = null;
                     continue;
@@ -546,7 +553,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                 }
                 if (tok.Equals("LEAVE", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Validate that we're inside some DO...LOOP, not necessarily the top frame
                     bool insideDo = false;
                     foreach (var frame in _controlStack)
                     {
@@ -613,7 +619,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                             if (resultType?.FullName != "System.Threading.Tasks.VoidTaskResult")
                             {
                                 var val = resultProp!.GetValue(t);
-                                intr.Push(Normalize(val));
+                                intr.Push(NumberParser.Normalize(val));
                                 if (intr._stack.Count >= 2 && intr._stack.NthFromTop(2) is Task)
                                 {
                                     var top = intr._stack.Pop();
@@ -648,6 +654,18 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
         return !_exitRequested;
     }
 
+    private List<Func<ForthInterpreter, Task>> CurrentList() => _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
+
+    private bool TryParseNumber(string token, out long value)
+    {
+        long GetBase(long @default)
+        {
+            MemTryGet(_baseAddr, out var b);
+            return b <= 0 ? @default : b;
+        }
+        return NumberParser.TryParse(token, GetBase, out value);
+    }
+
     private void InstallPrimitives() => CorePrimitives.Install(this, _dict);
 
     internal object StackTop() => _stack.Top();
@@ -661,8 +679,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     internal void NewLine() => _io.NewLine();
     internal void WriteText(string s) => _io.Print(s);
     internal void ThrowExit() => throw new ExitWordException();
-
-    private List<Func<ForthInterpreter, Task>> CurrentList() => _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
     internal Forth.Core.Execution.ForthCompiledScript? CompileSync(string line)
     {
@@ -690,7 +706,6 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
             if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"') { var s = tok.Substring(1, tok.Length - 2); steps.Add(intr => intr.Push(s)); continue; }
             if (TryParseNumber(tok, out var numVal)) { steps.Add(intr => intr.Push(numVal)); continue; }
 
-            // Inline known core synchronous words if present
             if (TryResolveWord(tok, out var w) && w is not null && !w.IsAsync)
             {
                 switch (tok.ToUpperInvariant())
@@ -706,13 +721,30 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     case "ROT": steps.Add(intr => { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(b3); intr.Push(c); intr.Push(a3); }); break;
                     case "-ROT": steps.Add(intr => { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(c); intr.Push(a3); intr.Push(b3); }); break;
                     default:
-                        return null; // do not inline other words
+                        return null;
                 }
                 continue;
             }
             return null;
         }
         return new Forth.Core.Execution.ForthCompiledScript(steps);
+    }
+
+    internal void WithModule(string name, Action action)
+    {
+        var previous = _currentModule;
+        _currentModule = name;
+        try { action(); }
+        finally { _currentModule = previous; }
+    }
+
+    public int LoadAssemblyWords(Assembly asm) => AssemblyWordLoader.RegisterFromAssembly(this, asm);
+
+    public void BeginModuleScope(string moduleName, Action register)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(moduleName);
+        ArgumentNullException.ThrowIfNull(register);
+        WithModule(moduleName, register);
     }
 
     internal sealed class Word
