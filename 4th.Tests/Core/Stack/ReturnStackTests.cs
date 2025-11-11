@@ -23,21 +23,26 @@ public class ReturnStackTests
     /// Intention: Validate double-cell transfer with 2>R and 2R> keeps ordering intact for paired cells.
     /// Expected: "10 20 2>R 2R>" restores the original pair on the data stack.
     /// </summary>
-    [Fact(Skip = "2>R and 2R> (double-cell transfer) not implemented yet")] 
+    [Fact] 
     public void ReturnStack_DoubleCellTransfer()
     {
         var forth = new ForthInterpreter();
-        // forth.Interpret("10 20 2>R 2R>");
+        Assert.True(forth.Interpret("10 20 2>R 2R>"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(10L, (long)forth.Stack[0]);
+        Assert.Equal(20L, (long)forth.Stack[1]);
     }
 
     /// <summary>
     /// Intention: Ensure RP@ returns a sensible (implementation-defined) return stack pointer value.
     /// Expected: RP@ pushes an address/integer; primarily used to confirm the word exists and returns a cell.
     /// </summary>
-    [Fact(Skip = "RP@ (return stack pointer fetch) not implemented yet")] 
+    [Fact] 
     public void ReturnStack_RPFetch()
     {
         var forth = new ForthInterpreter();
-        // forth.Interpret("RP@");
+        Assert.True(forth.Interpret("RP@"));
+        Assert.Single(forth.Stack);
+        Assert.IsType<long>(forth.Stack[0]);
     }
 }
