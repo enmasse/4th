@@ -37,10 +37,17 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private readonly Stack<long> _loopIndexStack = new();
     private int _unloopPending; // counts iterations where UNLOOP already removed loop index
 
+    // STATE cell (0 while interpreting, nonzero while compiling inside a definition)
+    private readonly long _stateAddr;
+    internal long StateAddr => _stateAddr;
+
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
         _io = io ?? new Forth.Core.ConsoleForthIO();
+        // Allocate STATE before installing primitives so the word can reference it
+        _stateAddr = _nextAddr++;
+        _mem[_stateAddr] = 0; // start in interpret state
         InstallPrimitives();
     }
 
@@ -277,6 +284,8 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentInstructions = new List<Func<ForthInterpreter, Task>>();
                     _controlStack.Clear();
                     _isCompiling = true;
+                    // Enter compile state
+                    _mem[_stateAddr] = 1;
                     continue;
                 }
                 if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase))
@@ -414,6 +423,7 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     });
                     TargetDict()[_currentDefName] = compiled;
                     _isCompiling = false;
+                    _mem[_stateAddr] = 0; // return to interpret state
                     _currentDefName = null;
                     _currentInstructions = null;
                     continue;

@@ -31,11 +31,20 @@ public class ParsingAndCompilationTests
     /// Intention: Ensure STATE reflects interpreter mode (interpreting vs compiling) as a flag value.
     /// Expected: STATE @ = 0 while interpreting and nonzero when inside a definition.
     /// </summary>
-    [Fact(Skip = "STATE and compile/interpret distinction not implemented yet")] 
+    [Fact]
     public void State_AndInterpretCompile()
     {
         var forth = new ForthInterpreter();
-        // STATE @ 0= while interpreting, nonzero while compiling
+        Assert.True(forth.Interpret("STATE @"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0L, (long)forth.Stack[0]);
+
+        // Now during compile, before ';', the STATE cell must be non-zero
+        Assert.True(forth.Interpret(": T STATE @ ;"));
+        // After definition finished, STATE must be back to 0
+        Assert.True(forth.Interpret("STATE @"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[^1]);
     }
 
     /// <summary>
