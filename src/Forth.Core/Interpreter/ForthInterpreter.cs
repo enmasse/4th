@@ -170,11 +170,6 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     internal long CurrentLoopIndex() => _controlFlow.Current();
 
     /// <summary>
-    /// Interpret one line synchronously by awaiting <see cref="EvalAsync"/>.
-    /// </summary>
-    public bool Interpret(string line) => EvalAsync(line).GetAwaiter().GetResult();
-
-    /// <summary>
     /// Interpret one line asynchronously. Returns false if BYE/QUIT requested exit.
     /// Supports async words and AWAIT of Task/Task&lt;T&gt;/ValueTask words.
     /// </summary>
@@ -679,6 +674,15 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     internal void NewLine() => _io.NewLine();
     internal void WriteText(string s) => _io.Print(s);
     internal void ThrowExit() => throw new ExitWordException();
+
+    /// <summary>
+    /// Synchronous convenience wrapper over <see cref="EvalAsync"/>.
+    /// Prefer <see cref="EvalAsync"/> in new code to avoid thread blocking / deadlocks.
+    /// </summary>
+    /// <param name="line">Line of Forth source to execute.</param>
+    /// <returns><c>true</c> if interpreter should continue; <c>false</c> if BYE/QUIT requested exit.</returns>
+    [Obsolete("Use EvalAsync instead; this method blocks the calling thread.")]
+    public bool Interpret(string line) => EvalAsync(line).GetAwaiter().GetResult();
 
     internal Forth.Core.Execution.ForthCompiledScript? CompileSync(string line)
     {
