@@ -90,6 +90,26 @@ internal static class CorePrimitives
         dict["HEX"] = new ForthInterpreter.Word(i => { i.MemSet(i.BaseAddr, 16); });
         // Loop index
         dict["I"] = new ForthInterpreter.Word(i => { i.Push(i.CurrentLoopIndex()); });
+        dict["EXECUTE"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"EXECUTE");
+            var top = i.StackTop();
+            if (top is ForthInterpreter.Word wTop)
+            {
+                i.PopInternal();
+                wTop.ExecuteAsync(i).GetAwaiter().GetResult();
+                return;
+            }
+            // pattern: data xt EXECUTE (xt just beneath top)
+            if (i.Stack.Count >= 2 && i.StackNthFromTop(2) is ForthInterpreter.Word wBelow)
+            {
+                var data = i.PopInternal(); // remove top data
+                var xt = i.PopInternal(); // remove xt
+                wBelow.ExecuteAsync(i).GetAwaiter().GetResult();
+                i.Push(data); // restore data on top (xt consumed)
+                return;
+            }
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "EXECUTE expects an execution token");
+        });
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);

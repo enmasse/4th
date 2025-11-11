@@ -17,14 +17,25 @@ public class ParsingAndCompilationTests
     }
 
     /// <summary>
-    /// Intention: Confirm tick (') returns execution token and ['] compiles it as a literal during compilation.
-    /// Expected: Using xts allows passing and invoking words indirectly.
+    /// Intention: Confirm tick (') returns execution token that can be invoked via EXECUTE.
+    /// Expected: Using xts allows passing and invoking words indirectly at runtime.
     /// </summary>
-    [Fact(Skip = "Tick ' and ['] to obtain execution tokens not implemented yet")] 
+    [Fact] 
     public void Tick_ExecutionToken()
     {
         var forth = new ForthInterpreter();
-        // ' DUP  is an xt;  ['] DUP compiles literal xt
+        Assert.True(forth.Interpret("9 ' DUP EXECUTE")); // leaves 9 9
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(9L, (long)forth.Stack[^2]);
+        Assert.Equal(9L, (long)forth.Stack[^1]);
+
+        // Another run proves reusability
+        Assert.True(forth.Interpret("4 ' DUP EXECUTE")); // leaves ... 4 4
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(9L, (long)forth.Stack[^4]);
+        Assert.Equal(9L, (long)forth.Stack[^3]);
+        Assert.Equal(4L, (long)forth.Stack[^2]);
+        Assert.Equal(4L, (long)forth.Stack[^1]);
     }
 
     /// <summary>
