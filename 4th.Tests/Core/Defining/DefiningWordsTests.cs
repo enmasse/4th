@@ -13,7 +13,7 @@ public class DefiningWordsTests
     public void CreateDoes_Basic()
     {
         var forth = new ForthInterpreter();
-        // Example: CREATE COUNTER 0 ,  : INC COUNTER @ 1 + DUP COUNTER ! ;  DOES> INC
+        // :NONAME CREATE COUNTER 0 , DOES> 1 + DUP TO COUNTER ;
     }
 
     /// <summary>

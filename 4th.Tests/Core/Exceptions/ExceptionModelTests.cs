@@ -17,10 +17,6 @@ public class ExceptionModelTests
         // ['] X CATCH -> nonzero error code; then THROW to rethrow
     }
 
-    /// <summary>
-    /// Intention: Ensure ABORT and ABORT" unwind control flow and optionally report a message.
-    /// Expected: ABORT" failed" triggers an exception that can be caught by CATCH.
-    /// </summary>
     [Fact(Skip = "ABORT and ABORT\" not implemented yet")] 
     public void Abort_AbortQuote()
     {

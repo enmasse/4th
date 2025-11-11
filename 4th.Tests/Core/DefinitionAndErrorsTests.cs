@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Forth.Tests;
+namespace Core;
 
 public class DefinitionAndErrorsTests
 {
