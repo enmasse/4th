@@ -10,12 +10,20 @@ public class ExceptionModelTests
     /// Intention: Validate ANS Forth exception mechanism where CATCH executes an xt and returns error code.
     /// Expected: ABORT or THROW cause nonzero code; THROW rethrows a code to outer handler.
     /// </summary>
-    [Fact(Skip = "CATCH/THROW not implemented yet")] 
-    public void CatchThrow_Basic()
+    [Fact]
+    public async Task CatchThrow_Basic()
     {
         var forth = new ForthInterpreter();
-        // : X ABORT" boom" ;
-        // ['] X CATCH -> nonzero error code; then THROW to rethrow
+        // Define a word that aborts
+        Assert.True(await forth.EvalAsync(": X ABORT \"boom\" ;"));
+        // ['] X CATCH -> nonzero error code
+        Assert.True(await forth.EvalAsync("' X CATCH"));
+        Assert.Single(forth.Stack);
+        Assert.NotEqual(0L, (long)forth.Stack[0]);
+        var code = (long)forth.Stack[0];
+        // THROW rethrows when nonzero
+        var ex = await Assert.ThrowsAsync<Forth.Core.ForthException>(async () => await forth.EvalAsync($"{code} THROW"));
+        Assert.Equal((Forth.Core.ForthErrorCode)code, ex.Code);
     }
 
     [Fact]

@@ -201,6 +201,29 @@ internal static class CorePrimitives
             }
             throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "EXECUTE expects an execution token");
         });
+        // Exception model: CATCH ( xt -- 0 | err ) and THROW ( err -- )
+        dict["CATCH"] = new ForthInterpreter.Word(async i => {
+            ForthInterpreter.EnsureStack(i,1,"CATCH");
+            var obj = i.PopInternal();
+            if (obj is not ForthInterpreter.Word xt) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "CATCH expects an execution token");
+            try
+            {
+                await xt.ExecuteAsync(i).ConfigureAwait(false);
+                i.Push(0L);
+            }
+            catch (Forth.Core.ForthException ex)
+            {
+                var codeVal = (long)ex.Code;
+                if (codeVal == 0) codeVal = 1; // ensure nonzero per Forth semantics
+                i.Push(codeVal);
+            }
+        });
+        dict["THROW"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"THROW");
+            var err = ToLong(i.PopInternal());
+            if (err != 0)
+                throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}");
+        });
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
