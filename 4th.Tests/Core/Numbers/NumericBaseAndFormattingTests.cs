@@ -42,10 +42,15 @@ public class NumericBaseAndFormattingTests
     /// Intention: Verify >NUMBER converts a string to its numeric value producing residual substring if any.
     /// Expected: S" 123" 0 0 >NUMBER yields 123 and zero remainder length.
     /// </summary>
-    [Fact(Skip = ">NUMBER not implemented yet")] 
-    public void ToNumber_Parsing()
+    [Fact]
+    public async Task ToNumber_Parsing()
     {
         var forth = new ForthInterpreter();
         // S" 123" 0 0 >NUMBER -> 123 0 3
+        Assert.True(await forth.EvalAsync("S\" 123\" 0 0 >NUMBER"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(123L, (long)forth.Stack[0]);
+        Assert.Equal(0L, (long)forth.Stack[1]);
+        Assert.Equal(3L, (long)forth.Stack[2]);
     }
 }

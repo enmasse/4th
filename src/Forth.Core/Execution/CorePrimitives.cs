@@ -90,6 +90,40 @@ internal static class CorePrimitives
             }
             i.WriteText(sb.ToString());
         });
+        // Number parsing: >NUMBER ( str start consumed -- value remainderLen totalConsumed )
+        dict[">NUMBER"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,3,">NUMBER");
+            var consumed = (int)ToLong(i.PopInternal());
+            var start = (int)ToLong(i.PopInternal());
+            var obj = i.PopInternal();
+            if (obj is not string s)
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, ">NUMBER expects a string and two integers");
+            // skip leading whitespace from start
+            int idx = Math.Clamp(start, 0, s.Length);
+            while (idx < s.Length && char.IsWhiteSpace(s[idx])) idx++;
+            // current BASE
+            i.MemTryGet(i.BaseAddr, out var baseVal);
+            int b = baseVal <= 0 ? 10 : (int)baseVal;
+            long value = 0;
+            int digits = 0;
+            while (idx < s.Length)
+            {
+                int d;
+                char ch = s[idx];
+                if (ch >= '0' && ch <= '9') d = ch - '0';
+                else if (ch >= 'A' && ch <= 'Z') d = ch - 'A' + 10;
+                else if (ch >= 'a' && ch <= 'z') d = ch - 'a' + 10;
+                else break;
+                if (d >= b) break;
+                value = value * b + d;
+                idx++;
+                digits++;
+            }
+            int remainder = s.Length - idx;
+            i.Push(value);
+            i.Push((long)remainder);
+            i.Push((long)(consumed + digits));
+        });
         dict[">R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,">R"); var a=i.PopInternal(); i.RPush(a); });
         dict["R>"] = new ForthInterpreter.Word(i => { if (i.RCount==0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,"Return stack underflow in R>"); var a=i.RPop(); i.Push(a); });
         dict["2>R"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"2>R"); var b=i.PopInternal(); var a=i.PopInternal(); i.RPush(a); i.RPush(b); });

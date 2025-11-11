@@ -387,6 +387,17 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push(s);
                     continue;
                 }
+                // S" string-literal pushes the string; tokenizer splits as: token "S" then a quoted token
+                if (tok.Equals("S\"", StringComparison.OrdinalIgnoreCase) || tok.Equals("S", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected text after S\"");
+                    var next = tokens[i++];
+                    if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "S\" expects a quoted string token following");
+                    var sLit = next.Substring(1, next.Length - 2);
+                    Push(sLit);
+                    continue;
+                }
                 if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i < tokens.Count && tokens[i].Length >= 2 && tokens[i][0] == '"' && tokens[i][^1] == '"')
@@ -687,6 +698,16 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                 {
                     var s = tok.Substring(1, tok.Length - 2);
                     _currentInstructions!.Add(intr => { intr.Push(s); return Task.CompletedTask; });
+                    continue;
+                }
+                if (tok.Equals("S\"", StringComparison.OrdinalIgnoreCase) || tok.Equals("S", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected text after S\"");
+                    var next = tokens[i++];
+                    if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "S\" expects a quoted string token following");
+                    var sLit = next.Substring(1, next.Length - 2);
+                    _currentInstructions!.Add(intr => { intr.Push(sLit); return Task.CompletedTask; });
                     continue;
                 }
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }
