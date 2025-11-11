@@ -54,6 +54,9 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     private readonly Dictionary<string, string> _decompile = new(StringComparer.OrdinalIgnoreCase);
     private List<string>? _currentDefTokens; // tokens of current definition body for SEE
 
+    // Track last defined word for IMMEDIATE
+    private Word? _lastDefinedWord;
+
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
@@ -479,6 +482,13 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push(tt is not null && tt.IsCompleted ? 1L : 0L);
                     continue;
                 }
+                if (tok.Equals("IMMEDIATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_lastDefinedWord is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE");
+                    _lastDefinedWord.IsImmediate = true;
+                    continue;
+                }
                 if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling = false; _mem[_stateAddr] = 0; continue; }
                 if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling = true; _mem[_stateAddr] = 1; continue; }
 
@@ -508,7 +518,10 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                         }
                         catch (ExitWordException) { }
                     });
+                    // capture tokens on word for potential immediate expansion
+                    compiled.BodyTokens = _currentDefTokens is { Count: > 0 } ? new List<string>(_currentDefTokens) : null;
                     TargetDict()[_currentDefName] = compiled;
+                    _lastDefinedWord = compiled;
                     // Record decompile text with captured tokens
                     var bodyText = _currentDefTokens is { Count: > 0 } ? string.Join(' ', _currentDefTokens) : string.Empty;
                     _decompile[nameForDecomp] = string.IsNullOrEmpty(bodyText) ? $": {nameForDecomp} ;" : $": {nameForDecomp} {bodyText} ;";
@@ -517,6 +530,28 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentDefName = null;
                     _currentInstructions = null;
                     _currentDefTokens = null;
+                    continue;
+                }
+                if (tok.Equals("IMMEDIATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    // IMMEDIATE used in compile state is unusual; treat same as interpret: mark last defined
+                    if (_lastDefinedWord is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE");
+                    _lastDefinedWord.IsImmediate = true;
+                    continue;
+                }
+                if (tok.Equals("POSTPONE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "POSTPONE expects a name");
+                    var name = tokens[i++];
+                    // If name is a known word, compile a call to it (even if immediate)
+                    if (TryResolveWord(name, out var wpost) && wpost is not null)
+                    {
+                        CurrentList().Add(async intr => await wpost.ExecuteAsync(intr));
+                        continue;
+                    }
+                    // Otherwise, treat as structural token; push it back to be processed normally
+                    i--; // reprocess 'name' in main loop to apply compile-time behavior (e.g., IF/THEN)
                     continue;
                 }
                 if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new IfFrame()); continue; }
@@ -718,6 +753,13 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     _currentInstructions!.Add(intr => { intr.Push(value); return Task.CompletedTask; });
                     continue;
                 }
+                if (tok.Equals("IMMEDIATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_lastDefinedWord is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE");
+                    _lastDefinedWord.IsImmediate = true;
+                    continue;
+                }
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     var s = tok.Substring(1, tok.Length - 2);
@@ -735,7 +777,23 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     continue;
                 }
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr => { intr.Push(lit); return Task.CompletedTask; }); continue; }
-                if (TryResolveWord(tok, out var cw) && cw is not null) { CurrentList().Add(async intr => await cw.ExecuteAsync(intr)); continue; }
+                if (TryResolveWord(tok, out var cw) && cw is not null)
+                {
+                    if (cw.IsImmediate)
+                    {
+                        // Expand immediate colon word by inlining its tokens if available
+                        if (cw.BodyTokens is { Count: > 0 })
+                        {
+                            tokens.InsertRange(i, cw.BodyTokens);
+                            continue;
+                        }
+                        // Fallback: execute at compile-time
+                        await cw.ExecuteAsync(this);
+                        continue;
+                    }
+                    CurrentList().Add(async intr => await cw.ExecuteAsync(intr));
+                    continue;
+                }
                 throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
             }
         }
@@ -839,6 +897,8 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     {
         private readonly Func<ForthInterpreter, Task> _run;
         public bool IsAsync { get; }
+        public bool IsImmediate { get; set; }
+        public List<string>? BodyTokens { get; set; }
         public Word(Action<ForthInterpreter> sync) { _run = intr => { sync(intr); return Task.CompletedTask; }; IsAsync = false; }
         public Word(Func<ForthInterpreter, Task> asyncRun) { _run = asyncRun; IsAsync = true; }
         public Task ExecuteAsync(ForthInterpreter intr) => _run(intr);

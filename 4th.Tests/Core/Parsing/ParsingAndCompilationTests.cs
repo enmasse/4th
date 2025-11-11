@@ -10,11 +10,25 @@ public class ParsingAndCompilationTests
     /// Intention: Verify immediate words execute during compilation and POSTPONE compiles semantics of named word.
     /// Expected: Constructed word behaves as if IF/THEN were compiled where POSTPONE placed them.
     /// </summary>
-    [Fact(Skip = "Immediate words and POSTPONE not implemented yet")] 
-    public void ImmediateAndPostpone()
+    [Fact]
+    public async Task ImmediateAndPostpone()
     {
         var forth = new ForthInterpreter();
-        // : T POSTPONE IF 1 POSTPONE THEN ; IMMEDIATE
+        // Define an immediate word that compiles a literal 1
+        Assert.True(await forth.EvalAsync(": ONE 1 ; IMMEDIATE"));
+        // Use POSTPONE to insert semantics of IF and THEN around a literal flag
+        Assert.True(await forth.EvalAsync(": T 1 POSTPONE IF ONE POSTPONE THEN ;"));
+        Assert.True(await forth.EvalAsync("T"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+
+        // Now define a word that pushes 0 so IF is false and THEN skips ONE
+        var forth2 = new ForthInterpreter();
+        Assert.True(await forth2.EvalAsync(": ONE 1 ; IMMEDIATE"));
+        Assert.True(await forth2.EvalAsync(": F 0 ; IMMEDIATE"));
+        Assert.True(await forth2.EvalAsync(": T2 F POSTPONE IF ONE POSTPONE THEN ;"));
+        Assert.True(await forth2.EvalAsync("T2"));
+        Assert.Empty(forth2.Stack);
     }
 
     /// <summary>
