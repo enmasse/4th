@@ -10,11 +10,19 @@ public class DefiningWordsTests
     /// Intention: Demonstrate CREATE ... DOES> defining a runtime behavior where created object maintains state.
     /// Expected: Invoking the defined word updates and returns internal counter (e.g., increments stored value).
     /// </summary>
-    [Fact(Skip = "CREATE ... DOES> not implemented yet")] 
-    public void CreateDoes_Basic()
+    [Fact] 
+    public async Task CreateDoes_Basic()
     {
         var forth = new ForthInterpreter();
-        // :NONAME CREATE COUNTER 0 , DOES> 1 + DUP TO COUNTER ;
+        // Data cell initialized to 0; DOES> reads current, increments, stores, and leaves new value on stack
+        Assert.True(await forth.EvalAsync("CREATE COUNTER 0 , DOES> 1 + DUP >R SWAP R> SWAP !"));
+        // Invoke twice: 1 then 2
+        Assert.True(await forth.EvalAsync("COUNTER"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.True(await forth.EvalAsync("COUNTER"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(2L, (long)forth.Stack[1]);
     }
 
     /// <summary>
