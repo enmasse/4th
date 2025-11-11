@@ -214,8 +214,12 @@ internal static class CorePrimitives
             catch (Forth.Core.ForthException ex)
             {
                 var codeVal = (long)ex.Code;
-                if (codeVal == 0) codeVal = 1; // ensure nonzero per Forth semantics
+                if (codeVal == 0) codeVal = 1;
                 i.Push(codeVal);
+            }
+            catch (Exception)
+            {
+                i.Push((long)Forth.Core.ForthErrorCode.Unknown);
             }
         });
         dict["THROW"] = new ForthInterpreter.Word(i => {

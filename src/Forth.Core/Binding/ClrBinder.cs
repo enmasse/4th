@@ -36,32 +36,55 @@ internal static class ClrBinder
                 var rawInst = interp.Pop();
                 instance = rawInst;
             }
-            object? result = target.Invoke(instance, argVals);
-            if (isTask)
+            object? result;
+            try
             {
-                var task = (Task)result!;
-                await task.ConfigureAwait(false);
-                if (isGenericTask)
+                result = target.Invoke(instance, argVals);
+            }
+            catch (TargetInvocationException tie)
+            {
+                throw WrapInterop(tie.InnerException ?? tie); // propagate
+            }
+            catch (Exception ex)
+            {
+                throw WrapInterop(ex);
+            }
+            try
+            {
+                if (isTask)
                 {
-                    var val = task.GetType().GetProperty("Result")!.GetValue(task);
+                    var task = (Task)result!;
+                    await task.ConfigureAwait(false);
+                    if (isGenericTask)
+                    {
+                        var val = task.GetType().GetProperty("Result")!.GetValue(task);
+                        ForthInterpreterPush(interp, val);
+                    }
+                }
+                else if (isValueTask)
+                {
+                    var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
+                    await asTask.ConfigureAwait(false);
+                }
+                else if (isGenericValueTask)
+                {
+                    var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
+                    await asTask.ConfigureAwait(false);
+                    var val = asTask.GetType().GetProperty("Result")!.GetValue(asTask);
                     ForthInterpreterPush(interp, val);
                 }
+                else
+                {
+                    ForthInterpreterPush(interp, result);
+                }
             }
-            else if (isValueTask)
+            catch (TargetInvocationException tie2)
             {
-                var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-                await asTask.ConfigureAwait(false);
+                throw WrapInterop(tie2.InnerException ?? tie2);
             }
-            else if (isGenericValueTask)
+            catch (Exception ex2)
             {
-                var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-                await asTask.ConfigureAwait(false);
-                var val = asTask.GetType().GetProperty("Result")!.GetValue(asTask);
-                ForthInterpreterPush(interp, val);
-            }
-            else
-            {
-                ForthInterpreterPush(interp, result);
+                throw WrapInterop(ex2);
             }
         });
     }
@@ -93,11 +116,40 @@ internal static class ClrBinder
             {
                 instance = interp.Pop();
             }
-            object? result = target.Invoke(instance, argVals);
-            Task toPush = result is Task t ? t : (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
+            object? result;
+            try
+            {
+                result = target.Invoke(instance, argVals);
+            }
+            catch (TargetInvocationException tie)
+            {
+                throw WrapInterop(tie.InnerException ?? tie);
+            }
+            catch (Exception ex)
+            {
+                throw WrapInterop(ex);
+            }
+            Task toPush;
+            try
+            {
+                toPush = result is Task t ? t : (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
+            }
+            catch (TargetInvocationException tie2)
+            {
+                throw WrapInterop(tie2.InnerException ?? tie2);
+            }
+            catch (Exception ex2)
+            {
+                throw WrapInterop(ex2);
+            }
             interp.Push(toPush);
             return Task.CompletedTask;
         });
+    }
+
+    private static Forth.Core.ForthException WrapInterop(Exception ex)
+    {
+        return ex is Forth.Core.ForthException fe ? fe : new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, ex.Message);
     }
 
     private static object? Coerce(object raw, Type target)

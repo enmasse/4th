@@ -22,4 +22,19 @@ public static class AsyncTestTargets
     {
         await Task.Delay(ms);
     }
+
+    // Throwing variants for tests
+    public static int ThrowSync() => throw new System.InvalidOperationException("sync fail");
+    public static Task ThrowTask() => Task.FromException(new System.InvalidOperationException("task fail"));
+    public static async Task<int> ThrowTaskT()
+    {
+        await Task.Delay(1);
+        throw new System.InvalidOperationException("taskT fail");
+    }
+    public static ValueTask ThrowValueTask() => ValueTask.FromException(new System.InvalidOperationException("vt fail"));
+    public static async ValueTask<int> ThrowValueTaskT()
+    {
+        await Task.Delay(1);
+        throw new System.InvalidOperationException("vtT fail");
+    }
 }

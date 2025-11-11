@@ -50,4 +50,54 @@ public class ClrBindingTests
         Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelayValueTask 1 DVT 10 DVT"));
         Assert.Empty(f.Stack);
     }
+
+    [Fact]
+    public async Task Catch_Sync_Exception_From_Bound_Method()
+    {
+        var f = New();
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets ThrowSync 0 TSYNC ' TSYNC CATCH"));
+        var vals = Longs(f);
+        Assert.Single(vals);
+        Assert.NotEqual(0, vals[0]);
+    }
+
+    [Fact]
+    public async Task Catch_Task_Exception_From_Bound_Method()
+    {
+        var f = New();
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets ThrowTask 0 TTASK ' TTASK CATCH"));
+        var vals = Longs(f);
+        Assert.Single(vals);
+        Assert.NotEqual(0, vals[0]);
+    }
+
+    [Fact]
+    public async Task Catch_TaskT_Exception_From_Bound_Method()
+    {
+        var f = New();
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets ThrowTaskT 0 TTASKT ' TTASKT CATCH"));
+        var vals = Longs(f);
+        Assert.Single(vals);
+        Assert.NotEqual(0, vals[0]);
+    }
+
+    [Fact]
+    public async Task Catch_ValueTask_Exception_From_Bound_Method()
+    {
+        var f = New();
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets ThrowValueTask 0 TVT ' TVT CATCH"));
+        var vals = Longs(f);
+        Assert.Single(vals);
+        Assert.NotEqual(0, vals[0]);
+    }
+
+    [Fact]
+    public async Task Catch_ValueTaskT_Exception_From_Bound_Method()
+    {
+        var f = New();
+        Assert.True(await f.EvalAsync($"BIND Forth.Tests.Core.Binding.AsyncTestTargets ThrowValueTaskT 0 TVTT ' TVTT CATCH"));
+        var vals = Longs(f);
+        Assert.Single(vals);
+        Assert.NotEqual(0, vals[0]);
+    }
 }
