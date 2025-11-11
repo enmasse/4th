@@ -43,6 +43,9 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
     private readonly long _baseAddr;
     internal long BaseAddr => _baseAddr;
 
+    // Deferred word bindings: name -> target Word
+    private readonly Dictionary<string, Word?> _deferred = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
@@ -326,6 +329,41 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     ValueSet(name, v);
                     continue;
                 }
+                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after DEFER");
+                    var name = tokens[i++];
+                    _deferred[name] = null;
+                    TargetDict()[name] = new Word(async intr =>
+                    {
+                        if (!_deferred.TryGetValue(name, out var target) || target is null)
+                            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Deferred word not set: {name}");
+                        await target.ExecuteAsync(intr);
+                    });
+                    continue;
+                }
+                if (tok.Equals("IS", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected deferred name after IS");
+                    var name = tokens[i++];
+                    EnsureStack(this,1,"IS");
+                    var xtObj = PopInternal();
+                    if (xtObj is not Word xt)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "IS expects an execution token");
+                    if (!_deferred.ContainsKey(name))
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such deferred: {name}");
+                    _deferred[name] = xt;
+                    continue;
+                }
+                if (tok == "'")
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected word after '\''");
+                    var wname = tokens[i++];
+                    if (!TryResolveWord(wname, out var wtok) || wtok is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {wname}");
+                    Push(wtok);
+                    continue;
+                }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected char after CHAR");
@@ -554,18 +592,44 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     CurrentList().Add(intr => { throw new LoopLeaveException(); });
                     continue;
                 }
-                // Compile-time ABORT" with message: ABORT followed by quoted string
-                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (i < tokens.Count && tokens[i].Length >= 2 && tokens[i][0] == '"' && tokens[i][^1] == '"')
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after DEFER");
+                    var name = tokens[i++];
+                    _deferred[name] = null;
+                    TargetDict()[name] = new Word(async intr =>
                     {
-                        var st = tokens[i++];
-                        var msg = st.Substring(1, st.Length - 2);
-                        _currentInstructions!.Add(intr => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, msg));
-                        continue;
-                    }
-                    // plain ABORT in compile-time (no message)
-                    _currentInstructions!.Add(intr => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, "ABORT"));
+                        if (!_deferred.TryGetValue(name, out var target) || target is null)
+                            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Deferred word not set: {name}");
+                        await target.ExecuteAsync(intr);
+                    });
+                    continue;
+                }
+                if (tok.Equals("IS", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected deferred name after IS");
+                    var name = tokens[i++];
+                    _currentInstructions!.Add(intr =>
+                    {
+                        ForthInterpreter.EnsureStack(intr,1,"IS");
+                        var xtObj = intr.PopInternal();
+                        if (xtObj is not Word xt)
+                            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "IS expects an execution token");
+                        if (!intr._deferred.ContainsKey(name))
+                            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such deferred: {name}");
+                        intr._deferred[name] = xt;
+                        return Task.CompletedTask;
+                    });
+                    continue;
+                }
+                if (tok == "'")
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected word after '\''");
+                    var wname = tokens[i++];
+                    if (!TryResolveWord(wname, out var wtok) || wtok is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {wname}");
+                    var wt = wtok;
+                    _currentInstructions!.Add(intr => { intr.Push(wt); return Task.CompletedTask; });
                     continue;
                 }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))

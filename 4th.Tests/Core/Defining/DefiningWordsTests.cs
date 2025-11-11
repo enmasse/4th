@@ -47,11 +47,18 @@ public class DefiningWordsTests
     /// Intention: Ensure DEFER creates a deferred word whose target can be rebinding using IS.
     /// Expected: After rebinding, invoking deferred word executes new target definition.
     /// </summary>
-    [Fact(Skip = "DEFER and IS not implemented yet")] 
+    [Fact] 
     public void DeferAndIs_Rebinding()
     {
         var forth = new ForthInterpreter();
-        // DEFER ACT : HELLO 123 ; ' HELLO IS ACT ACT should push 123
+        Assert.True(forth.Interpret("DEFER ACT : HELLO 123 ; ' HELLO IS ACT ACT"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(123L, (long)forth.Stack[0]);
+
+        // Rebind to another word
+        Assert.True(forth.Interpret(": WORLD 77 ; ' WORLD IS ACT ACT"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(77L, (long)forth.Stack[^1]);
     }
 
     /// <summary>
