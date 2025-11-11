@@ -328,6 +328,18 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     Push(s);
                     continue;
                 }
+                // ABORT" immediate with message: ABORT followed by a quoted string
+                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i < tokens.Count && tokens[i].Length >= 2 && tokens[i][0] == '"' && tokens[i][^1] == '"')
+                    {
+                        var st = tokens[i++];
+                        var msg = st.Substring(1, st.Length - 2);
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, msg);
+                    }
+                    // plain ABORT
+                    throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, "ABORT");
+                }
                 if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase))
                 {
                     bool asyncBind = tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase);
@@ -527,6 +539,20 @@ public partial class ForthInterpreter : Forth.Core.IForthInterpreter
                     if (!insideDo)
                         throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LEAVE used outside DO...LOOP");
                     CurrentList().Add(intr => { throw new LoopLeaveException(); });
+                    continue;
+                }
+                // Compile-time ABORT" with message: ABORT followed by quoted string
+                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i < tokens.Count && tokens[i].Length >= 2 && tokens[i][0] == '"' && tokens[i][^1] == '"')
+                    {
+                        var st = tokens[i++];
+                        var msg = st.Substring(1, st.Length - 2);
+                        _currentInstructions!.Add(intr => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, msg));
+                        continue;
+                    }
+                    // plain ABORT in compile-time (no message)
+                    _currentInstructions!.Add(intr => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, "ABORT"));
                     continue;
                 }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase))

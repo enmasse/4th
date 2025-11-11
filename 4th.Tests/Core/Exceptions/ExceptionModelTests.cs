@@ -17,10 +17,15 @@ public class ExceptionModelTests
         // ['] X CATCH -> nonzero error code; then THROW to rethrow
     }
 
-    [Fact(Skip = "ABORT and ABORT\" not implemented yet")] 
+    [Fact]
     public void Abort_AbortQuote()
     {
         var forth = new ForthInterpreter();
-        // ABORT" failed" should throw and unwind
+        var ex = Assert.Throws<Forth.Core.ForthException>(() => forth.Interpret("ABORT \"failed\""));
+        Assert.Equal(Forth.Core.ForthErrorCode.Unknown, ex.Code);
+        Assert.Equal("failed", ex.Message);
+
+        var ex2 = Assert.Throws<Forth.Core.ForthException>(() => forth.Interpret("ABORT"));
+        Assert.Equal(Forth.Core.ForthErrorCode.Unknown, ex2.Code);
     }
 }

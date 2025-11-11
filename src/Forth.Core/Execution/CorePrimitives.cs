@@ -45,6 +45,7 @@ internal static class CorePrimitives
         dict["YIELD"] = new ForthInterpreter.Word(async i => { await Task.Yield(); });
         dict["BYE"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
         dict["QUIT"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
+        dict["ABORT"] = new ForthInterpreter.Word(i => { throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.Unknown, "ABORT"); });
         dict["."] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"."); var n=ToLong(i.PopInternal()); i.WriteNumber(n); });
         dict[".S"] = new ForthInterpreter.Word(i => {
             var items = i.Stack;
