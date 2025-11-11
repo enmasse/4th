@@ -9,11 +9,18 @@ public class ExtendedMathTests
     /// Intention: Provide coverage for core bitwise words to ensure correct logical operations on cells.
     /// Expected: 6 3 AND -> 2; 6 1 OR -> 7; 6 3 XOR -> 5; 0 INVERT -> -1 (two's complement).
     /// </summary>
-    [Fact(Skip = "Bitwise words AND OR XOR INVERT not implemented yet")] 
+    [Fact] 
     public void Bitwise_Basics()
     {
         var forth = new ForthInterpreter();
-        // 6 3 AND -> 2; 6 1 OR -> 7; 6 3 XOR -> 5; 0 INVERT -> -1
+        Assert.True(forth.Interpret("6 3 AND"));
+        Assert.Equal(2L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("6 1 OR"));
+        Assert.Equal(7L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("6 3 XOR"));
+        Assert.Equal(5L, (long)forth.Stack[^1]);
+        Assert.True(forth.Interpret("0 INVERT"));
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
     }
 
     /// <summary>

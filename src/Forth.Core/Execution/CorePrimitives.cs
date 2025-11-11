@@ -32,6 +32,10 @@ internal static class CorePrimitives
         dict["CR"] = new ForthInterpreter.Word(i => { i.NewLine(); });
         dict["EMIT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
         dict["TYPE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TYPE"); var obj=i.PopInternal(); if (obj is string s) { i.WriteText(s); } else throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError,"TYPE expects a string"); });
+        dict["AND"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"AND"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a & b); });
+        dict["OR"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"OR"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a | b); });
+        dict["XOR"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"XOR"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a ^ b); });
+        dict["INVERT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"INVERT"); var a=ToLong(i.PopInternal()); i.Push(~a); });
         dict["EXIT"] = new ForthInterpreter.Word(i => { i.ThrowExit(); });
         // Introspection
         dict["DEPTH"] = new ForthInterpreter.Word(i => { i.Push((long)i.Stack.Count); });
