@@ -46,6 +46,9 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
     // Deferred word bindings: name -> target Word
     private readonly Dictionary<string, Word?> _deferred = new(StringComparer.OrdinalIgnoreCase);
 
+    // Simple decompile table for colon definitions
+    private readonly Dictionary<string, string> _decompile = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Create a new interpreter instance. Optionally provide custom I/O.</summary>
     public ForthInterpreter(Forth.Core.IForthIO? io = null)
     {
@@ -273,6 +276,20 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     continue;
                 }
 
+                // Introspection: SEE <name> prints minimal decompile header
+                if (tok.Equals("SEE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= tokens.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Expected name after SEE");
+                    var name = tokens[i++];
+                    // Strip optional module prefix for decompile table lookup
+                    var plain = name;
+                    var cidx = name.IndexOf(':');
+                    if (cidx > 0) plain = name.Substring(cidx + 1);
+                    string text = _decompile.TryGetValue(plain, out var s) ? s : $": {plain} ;";
+                    WriteText(text);
+                    continue;
+                }
+
                 // Definition start
                 if (tok == ":")
                 {
@@ -441,6 +458,7 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                     if (_controlStack.Count != 0)
                         throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "Unmatched control structure");
                     var body = _currentInstructions;
+                    var nameForDecomp = _currentDefName;
                     var compiled = new Word(async intr =>
                     {
                         try
@@ -451,6 +469,8 @@ public class ForthInterpreter : Forth.Core.IForthInterpreter
                         catch (ExitWordException) { }
                     });
                     TargetDict()[_currentDefName] = compiled;
+                    // Record minimal decompile text
+                    _decompile[nameForDecomp] = $": {nameForDecomp} ;";
                     _isCompiling = false;
                     _mem[_stateAddr] = 0;
                     _currentDefName = null;

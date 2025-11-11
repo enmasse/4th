@@ -51,11 +51,14 @@ public class IntrospectionAndToolsTests
     /// Intention: Confirm SEE decompiles a word showing its definition for inspection.
     /// Expected: Output includes colon definition for previously defined word.
     /// </summary>
-    [Fact(Skip = "SEE (decompiler) not implemented yet")] 
-    public void See_Decompile()
+    [Fact]
+    public async Task See_Decompile()
     {
-        var forth = new ForthInterpreter();
-        // : X 1 2 + ; SEE X
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        Assert.True(await forth.EvalAsync(": X 1 2 + ; SEE X"));
+        Assert.Single(io.Outputs);
+        Assert.Equal(": X ;", io.Outputs[0]);
     }
 
     /// <summary>
@@ -74,7 +77,7 @@ public class IntrospectionAndToolsTests
             Assert.True(await forth.EvalAsync($"{n} BUF {n} + C!"));
         }
         Assert.True(await forth.EvalAsync("BUF 16 DUMP"));
-        Assert.Single(io.Outputs);
+        Assert.Single(io.Outputs); // SEE output removed; only DUMP line
         Assert.Equal("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F", io.Outputs[0]);
     }
 }
