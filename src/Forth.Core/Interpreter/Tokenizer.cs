@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Forth.Core.Interpreter;
 
 /// <summary>
@@ -45,13 +48,18 @@ public static class Tokenizer
             // Special-case ." as a single token
             if (c == '.' && i + 1 < input.Length && input[i + 1] == '"')
             {
-                if current.Count > 0)
+                if (current.Count > 0)
                 {
                     list.Add(new string(current.ToArray()));
                     current.Clear();
                 }
                 list.Add(".\"");
-                continue; // do not consume the '"'; next loop iteration will handle entering string mode
+                i++; // skip the opening '"'
+                // enter string mode but skip any whitespace immediately after the quote
+                while (i + 1 < input.Length && char.IsWhiteSpace(input[i + 1])) i++;
+                inString = true;
+                current.Add('"');
+                continue;
             }
             if (c == '(')
             {

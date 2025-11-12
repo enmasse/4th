@@ -204,10 +204,29 @@ public class ForthInterpreter : IForthInterpreter
             builder["CHAR"] = new Word(i => { var s=i.ReadNextTokenOrThrow("Expected char after CHAR"); if(!i._isCompiling) i.Push(s.Length>0?(long)s[0]:0L); else i.CurrentList().Add(ii=> { ii.Push(s.Length>0?(long)s[0]:0L); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "CHAR" };
             builder["S\""] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,"S\" expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S\"" };
             builder["S"] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S"); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,"S expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S" };
-            builder[".\""] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { ii.WriteText(str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
+            builder[".\""] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1].TrimStart(); if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { ii.WriteText(str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
             builder["BIND"] = new Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BIND"); var methodName=i.ReadNextTokenOrThrow("method after BIND"); var argToken=i.ReadNextTokenOrThrow("arg count after BIND"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new ForthException(ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BIND"); i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BIND" };
             builder["BINDASYNC"] = new Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BINDASYNC"); var methodName=i.ReadNextTokenOrThrow("method after BINDASYNC"); var argToken=i.ReadNextTokenOrThrow("arg count after BINDASYNC"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new ForthException(ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BINDASYNC"); i.TargetDict()[forthName]= ClrBinder.CreateBoundTaskWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BINDASYNC" };
             builder["FORGET"] = new Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after FORGET"); i.ForgetWord(name); }) { IsImmediate = true, Name = "FORGET" };
+
+            // Async/task helpers
+            builder["TASK?"] = new Word(i => { EnsureStack(i,1,"TASK?"); var obj=i.PopInternal(); long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag); }) { Name = "TASK?" };
+            builder["AWAIT"] = new Word(async i => {
+                EnsureStack(i,1,"AWAIT");
+                var obj = i.PopInternal();
+                if (obj is not Task t)
+                    throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task");
+                await t.ConfigureAwait(false);
+                var tt = t.GetType();
+                if (tt.IsGenericType && !i.IsResultConsumed(t))
+                {
+                    var prop = tt.GetProperty("Result");
+                    var val = prop?.GetValue(t);
+                    if (val is not null && !string.Equals(val.GetType().Name, "VoidTaskResult", StringComparison.Ordinal))
+                        i.Push(val);
+                    i.MarkResultConsumed(t);
+                }
+            }) { Name = "AWAIT" };
 
             // merge into interpreter dictionary (respect possible existing words)
             foreach (var kv in builder)
@@ -383,72 +402,45 @@ public class ForthInterpreter : IForthInterpreter
             if (tok.Length==0) continue;
             if (!_isCompiling)
             {
+                // Collect tokens for DOES> body when in create-does> sequence
                 if (_doesCollecting) { _doesTokens!.Add(tok); continue; }
-                if (tok.Equals("MODULE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after MODULE"); _currentModule = name; if (string.IsNullOrWhiteSpace(_currentModule)) throw new ForthException(ForthErrorCode.CompileError,"Invalid module name"); if (!_modules.ContainsKey(_currentModule)) _modules[_currentModule]= new(StringComparer.OrdinalIgnoreCase); continue; }
-                if (tok.Equals("END-MODULE", StringComparison.OrdinalIgnoreCase)) { _currentModule=null; continue; }
-                if (tok.Equals("USING", StringComparison.OrdinalIgnoreCase)) { var m=ReadNextTokenOrThrow("Expected name after USING"); if(!_usingModules.Contains(m)) _usingModules.Add(m); continue; }
-                if (tok.Equals("LOAD-ASM", StringComparison.OrdinalIgnoreCase)) { var path=ReadNextTokenOrThrow("Expected path after LOAD-ASM"); var count=AssemblyWordLoader.Load(this,path); Push((long)count); continue; }
-                if (tok.Equals("LOAD-ASM-TYPE", StringComparison.OrdinalIgnoreCase)) { var tn=ReadNextTokenOrThrow("Expected type after LOAD-ASM-TYPE"); Type? t=Type.GetType(tn,false,false); if(t==null) foreach(var asm in AppDomain.CurrentDomain.GetAssemblies()){ t=asm.GetType(tn,false,false); if(t!=null) break;} if(t==null) throw new ForthException(ForthErrorCode.CompileError,$"Type not found: {tn}"); var count=LoadAssemblyWords(t.Assembly); Push((long)count); continue; }
-                if (tok.Equals("CREATE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after CREATE"); if(string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError,"Invalid name for CREATE"); var addr=_nextAddr; _lastCreatedName=name; _lastCreatedAddr=addr; TargetDict()[name]= new Word(intr=> intr.Push(addr)) { Name = name, Module = _currentModule}; RegisterDefinition(name); continue; }
-                if (tok.Equals(",", StringComparison.OrdinalIgnoreCase)) { EnsureStack(this,1,","); var v=ToLong(PopInternal()); _mem[_nextAddr++]=v; continue; }
-                if (tok.Equals("DOES>", StringComparison.OrdinalIgnoreCase)) { if (string.IsNullOrEmpty(_lastCreatedName)) throw new ForthException(ForthErrorCode.CompileError,"DOES> without CREATE"); _doesCollecting=true; _doesTokens=new List<string>(); continue; }
-                if (tok.Equals("ALLOT", StringComparison.OrdinalIgnoreCase)) { EnsureStack(this,1,"ALLOT"); var cells=ToLong(PopInternal()); if(cells<0) throw new ForthException(ForthErrorCode.CompileError,"Negative ALLOT size"); for(long k=0;k<cells;k++) _mem[_nextAddr++]=0; continue; }
-                if (tok.Equals("SEE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after SEE"); var plain=name; var cidx=name.IndexOf(':'); if(cidx>0) plain=name[(cidx+1)..]; var text=_decompile.TryGetValue(plain,out var s) ? s : $": {plain} ;"; WriteText(text); continue; }
-                if (tok==":") { var name=ReadNextTokenOrThrow("Expected name after ':'"); BeginDefinition(name); continue; }
-                if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr=_nextAddr++; _mem[addr]=0; TargetDict()[name]= new Word(intr=> intr.Push(addr)) { Name = name, Module = _currentModule }; RegisterDefinition(name); continue; }
-                if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after CONSTANT"); EnsureStack(this,1,"CONSTANT"); var val=PopInternal(); TargetDict()[name]= new Word(intr=> intr.Push(val)) { Name = name, Module = _currentModule }; RegisterDefinition(name); continue; }
-                if (tok.Equals("VALUE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after VALUE"); if(!_values.ContainsKey(name)) _values[name]=0; TargetDict()[name]= new Word(intr=> intr.Push(intr.ValueGet(name))) { Name = name, Module = _currentModule }; RegisterDefinition(name); continue; }
-                if (tok.Equals("TO", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after TO"); EnsureStack(this,1,"TO"); var vv=ToLongPublic(PopInternal()); ValueSet(name,vv); continue; }
-                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after DEFER"); _deferred[name]=null; TargetDict()[name]= new Word(async intr=> { if(!_deferred.TryGetValue(name,out var target) || target is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(intr);}) { Name = name, Module = _currentModule }; RegisterDefinition(name); continue; }
-                if (tok.Equals("IS", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected deferred name after IS"); EnsureStack(this,1,"IS"); var xtObj=PopInternal(); if(xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError,"IS expects an execution token"); if(!_deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord,$"No such deferred: {name}"); _deferred[name]=xt; continue; }
-                if (tok=="'") { var wn=ReadNextTokenOrThrow("Expected word after '"); if(!TryResolveWord(wn,out var wtok) || wtok is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {wn}"); Push(wtok); continue; }
-                if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase)) { var s=ReadNextTokenOrThrow("Expected char after CHAR"); Push(s.Length>0?(long)s[0]:0L); continue; }
-                if (tok.Equals("IMMEDIATE", StringComparison.OrdinalIgnoreCase)) { if (_lastDefinedWord is null) throw new ForthException(ForthErrorCode.CompileError,"No recent definition to mark IMMEDIATE"); _lastDefinedWord.IsImmediate=true; continue; }
-                if (tok.Equals("POSTPONE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("POSTPONE expects a name"); if(TryResolveWord(name,out var wpost) && wpost is not null){ if (wpost.IsImmediate){ await wpost.ExecuteAsync(this);} else { _currentInstructions?.Add(async intr=> await wpost.ExecuteAsync(intr)); } continue; } throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {name}"); }
-                if (tok.Equals("[", StringComparison.Ordinal)) { _isCompiling=false; _mem[_stateAddr]=0; continue; }
-                if (tok.Equals("]", StringComparison.Ordinal)) { _isCompiling=true; _mem[_stateAddr]=1; continue; }
+                // ABORT with optional quoted message is kept as interpret-time sugar
+                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length>=2 && maybeMsg[0]=='"' && maybeMsg[^1]=='"')
+                        throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
+                    throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+                }
+                // Bare quoted literal token => push string
                 if (tok.Length>=2 && tok[0]=='"' && tok[^1]=='"') { Push(tok[1..^1]); continue; }
-                if (tok.Equals("S", StringComparison.OrdinalIgnoreCase) || tok.Equals("S\"", StringComparison.OrdinalIgnoreCase)) { var next=ReadNextTokenOrThrow("Expected text after S\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,"S\" expects quoted token"); Push(next[1..^1]); continue; }
-                if (tok.StartsWith(".\"") || tok.Equals(".\"", StringComparison.OrdinalIgnoreCase)) { var next=ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,".\" expects quoted token"); WriteText(next[1..^1]); continue; }
-                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase)) { if(TryReadNextToken(out var maybeMsg) && maybeMsg.Length>=2 && maybeMsg[0]=='"' && maybeMsg[^1]=='"'){ throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]); } throw new ForthException(ForthErrorCode.Unknown,"ABORT"); }
-                if (tok.Equals("BIND", StringComparison.OrdinalIgnoreCase) || tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase)) { bool asyncBind=tok.Equals("BINDASYNC", StringComparison.OrdinalIgnoreCase); var typeName=ReadNextTokenOrThrow("type after BIND"); var methodName=ReadNextTokenOrThrow("method after BIND"); var argToken=ReadNextTokenOrThrow("arg count after BIND"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new ForthException(ForthErrorCode.CompileError,"Invalid arg count"); var forthName=ReadNextTokenOrThrow("forth name after BIND"); TargetDict()[forthName]= asyncBind? ClrBinder.CreateBoundTaskWord(typeName,methodName,argCount):ClrBinder.CreateBoundWord(typeName,methodName,argCount); RegisterDefinition(forthName); continue; }
-                if (tok.Equals("FORGET", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("Expected name after FORGET"); ForgetWord(name); continue; }
+                // Numeric literal
                 if (TryParseNumber(tok, out var num)) { Push(num); continue; }
+                // Delegate to dictionary for all other words (including compiler/defining words)
                 if (TryResolveWord(tok, out var word) && word is not null) { await word.ExecuteAsync(this); continue; }
                 throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {tok}");
             }
             else
             {
+                // While compiling, record tokens for decompilation (exclude ';')
                 if (tok != ";") _currentDefTokens?.Add(tok);
+                // End of definition marker
                 if (tok == ";") { FinishDefinition(); continue; }
-                if (tok.Equals("IMMEDIATE", StringComparison.OrdinalIgnoreCase)) { if(_lastDefinedWord is null) throw new ForthException(ForthErrorCode.CompileError,"No recent definition to mark IMMEDIATE"); _lastDefinedWord.IsImmediate=true; continue; }
-                if (tok.Equals("POSTPONE", StringComparison.OrdinalIgnoreCase)) { var name=ReadNextTokenOrThrow("POSTPONE expects a name"); if(TryResolveWord(name,out var wpost) && wpost is not null){ if (wpost.IsImmediate){ await wpost.ExecuteAsync(this);} else { CurrentList().Add(async intr=> await wpost.ExecuteAsync(intr)); } continue; }
-                    var up = name.ToUpperInvariant();
-                    switch (up)
-                    {
-                        case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
-                        case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'":
-                            _tokens!.Insert(_tokenIndex, name);
-                            continue;
-                        default:
-                            throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {name}");
-                    }
-                }
-                if (tok.Equals("IF", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new IfFrame()); continue; }
-                if (tok.Equals("ELSE", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError,"ELSE without IF"); if(ifr.ElsePart is not null) throw new ForthException(ForthErrorCode.CompileError,"Multiple ELSE"); ifr.ElsePart=new(); ifr.InElse=true; continue; }
-                if (tok.Equals("THEN", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError,"THEN without IF"); _controlStack.Pop(); var thenPart=ifr.ThenPart; var elsePart=ifr.ElsePart; CurrentList().Add(async intr => { EnsureStack(intr,1,"IF"); var flag=intr.PopInternal(); if(ToBool(flag)) foreach(var a in thenPart) await a(intr); else if(elsePart is not null) foreach(var a in elsePart) await a(intr);}); continue; }
-                if (tok.Equals("BEGIN", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new BeginFrame()); continue; }
-                if (tok.Equals("WHILE", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError,"WHILE without BEGIN"); if(bf.InWhile) throw new ForthException(ForthErrorCode.CompileError,"Multiple WHILE"); bf.InWhile=true; continue; }
-                if (tok.Equals("REPEAT", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError,"REPEAT without BEGIN"); if(!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError,"REPEAT requires WHILE"); _controlStack.Pop(); var pre=bf.PrePart; var mid=bf.MidPart; CurrentList().Add(async intr => { while(true){ foreach(var a in pre) await a(intr); EnsureStack(intr,1,"WHILE"); var flag=intr.PopInternal(); if(!ToBool(flag)) break; foreach(var b in mid) await b(intr);} }); continue; }
-                if (tok.Equals("UNTIL", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError,"UNTIL without BEGIN"); if(bf.InWhile) throw new ForthException(ForthErrorCode.CompileError,"UNTIL after WHILE use REPEAT"); _controlStack.Pop(); var body=bf.PrePart; CurrentList().Add(async intr => { while(true){ foreach(var a in body) await a(intr); EnsureStack(intr,1,"UNTIL"); var flag=intr.PopInternal(); if(ToBool(flag)) break; } }); continue; }
-                if (tok.Equals("DO", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new DoFrame()); continue; }
-                if (tok.Equals("LOOP", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not DoFrame df) throw new ForthException(ForthErrorCode.CompileError,"LOOP without DO"); _controlStack.Pop(); var body=df.Body; CurrentList().Add(async intr => { EnsureStack(intr,2,"DO"); var start=ToLongPublic(intr.Pop()); var limit=ToLongPublic(intr.Pop()); long step=start<=limit?1L:-1L; for(long idx=start; idx!=limit; idx+=step){ intr.PushLoopIndex(idx); try { foreach(var a in body) await a(intr);} catch(LoopLeaveException){ break; } finally { intr.PopLoopIndexMaybe(); } } }); continue; }
-                if (tok.Equals("LEAVE", StringComparison.OrdinalIgnoreCase)) { bool inside=false; foreach(var f in _controlStack) if(f is DoFrame){ inside=true; break;} if(!inside) throw new ForthException(ForthErrorCode.CompileError,"LEAVE outside DO...LOOP"); CurrentList().Add(intr=> { throw new LoopLeaveException(); }); continue; }
-                if (tok.Equals("LITERAL", StringComparison.OrdinalIgnoreCase)) { EnsureStack(this,1,"LITERAL"); var value=PopInternal(); _currentInstructions!.Add(intr=> { intr.Push(value); return Task.CompletedTask; }); continue; }
-                if (tok.Equals("S", StringComparison.OrdinalIgnoreCase) || tok.Equals("S\"", StringComparison.OrdinalIgnoreCase)) { var next=ReadNextTokenOrThrow("Expected text after S\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,"S\" expects quoted token"); var sLit=next[1..^1]; _currentInstructions!.Add(intr=> { intr.Push(sLit); return Task.CompletedTask; }); continue; }
-                if (tok=="'") { var wn=ReadNextTokenOrThrow("Expected word after '"); if(!TryResolveWord(wn,out var wtok) || wtok is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {wn}"); var wt=wtok; _currentInstructions!.Add(intr=> { intr.Push(wt); return Task.CompletedTask; }); continue; }
+                // Compile-time quoted literal token
+                if (tok.Length>=2 && tok[0]=='"' && tok[^1]=='"') { CurrentList().Add(intr=> { intr.Push(tok[1..^1]); return Task.CompletedTask; }); continue; }
+                // Compile-time numeric literal
                 if (TryParseNumber(tok, out var lit)) { CurrentList().Add(intr=> { intr.Push(lit); return Task.CompletedTask; }); continue; }
-                if (TryResolveWord(tok, out var cw) && cw is not null) { if(cw.IsImmediate){ if(cw.BodyTokens is {Count:>0}){ _tokens!.InsertRange(_tokenIndex, cw.BodyTokens); continue;} await cw.ExecuteAsync(this); continue;} CurrentList().Add(async intr=> await cw.ExecuteAsync(intr)); continue; }
+                // Resolve words; immediate words execute now (may manipulate control stack/token stream),
+                // non-immediate words are compiled by appending their execution
+                if (TryResolveWord(tok, out var cw) && cw is not null)
+                {
+                    if (cw.IsImmediate)
+                    {
+                        if (cw.BodyTokens is {Count:>0}) { _tokens!.InsertRange(_tokenIndex, cw.BodyTokens); continue; }
+                        await cw.ExecuteAsync(this); continue;
+                    }
+                    CurrentList().Add(async intr=> await cw.ExecuteAsync(intr));
+                    continue;
+                }
                 throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word in definition: {tok}");
             }
         }
