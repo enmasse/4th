@@ -42,6 +42,17 @@ public static class Tokenizer
                 if (c == ')') inComment = false;
                 continue;
             }
+            // Special-case ." as a single token
+            if (c == '.' && i + 1 < input.Length && input[i + 1] == '"')
+            {
+                if current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                list.Add(".\"");
+                continue; // do not consume the '"'; next loop iteration will handle entering string mode
+            }
             if (c == '(')
             {
                 inComment = true;
