@@ -67,13 +67,13 @@ public class ForthInterpreter : IForthInterpreter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
-        TargetDict()[name] = new Word(i => body(i));
+        TargetDict()[name] = new Word(i => body(i)) { Name = name, Module = _currentModule };
     }
     public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
-        TargetDict()[name] = new Word(i => body(i));
+        TargetDict()[name] = new Word(i => body(i)) { Name = name, Module = _currentModule };
     }
 
     private Dictionary<string, Word> TargetDict()
@@ -161,11 +161,27 @@ public class ForthInterpreter : IForthInterpreter
     internal IEnumerable<string> GetAllWordNames()
     {
         var names = new List<string>();
-        foreach (var k in _dict.Keys) names.Add(k);
+        // snapshot core dict
+        foreach (var kv in _dict)
+        {
+            var w = kv.Value;
+            if (w is null) continue;
+            if (w.IsHidden) continue;
+            var n = w.Name ?? kv.Key;
+            names.Add(n);
+        }
+        // snapshot modules
         foreach (var mod in _modules)
         {
             var mname = mod.Key;
-            foreach (var wk in mod.Value.Keys) names.Add($"{mname}:{wk}");
+            foreach (var kv in mod.Value)
+            {
+                var w = kv.Value;
+                if (w is null) continue;
+                if (w.IsHidden) continue;
+                var n = w.Name ?? kv.Key;
+                names.Add($"{mname}:{n}");
+            }
         }
         names.Sort(StringComparer.OrdinalIgnoreCase);
         return names;
@@ -195,17 +211,17 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("USING", StringComparison.OrdinalIgnoreCase)) { if (i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after USING"); var m=tokens[i++]; if(!_usingModules.Contains(m)) _usingModules.Add(m); continue; }
                 if (tok.Equals("LOAD-ASM", StringComparison.OrdinalIgnoreCase)) { if (i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected path after LOAD-ASM"); var path=tokens[i++]; var count=AssemblyWordLoader.Load(this,path); Push((long)count); continue; }
                 if (tok.Equals("LOAD-ASM-TYPE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected type after LOAD-ASM-TYPE"); var tn=tokens[i++]; Type? t=Type.GetType(tn,false,false); if(t==null) foreach(var asm in AppDomain.CurrentDomain.GetAssemblies()){ t=asm.GetType(tn,false,false); if(t!=null) break;} if(t==null) throw new ForthException(ForthErrorCode.CompileError,$"Type not found: {tn}"); var count=LoadAssemblyWords(t.Assembly); Push((long)count); continue; }
-                if (tok.Equals("CREATE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after CREATE"); var name=tokens[i++]; if(string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError,"Invalid name for CREATE"); var addr=_nextAddr; _lastCreatedName=name; _lastCreatedAddr=addr; TargetDict()[name]= new Word(intr=> intr.Push(addr)); continue; }
+                if (tok.Equals("CREATE", StringComparison.OrdinalIgnoreCase)) { if (i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after CREATE"); var name=tokens[i++]; if(string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError,"Invalid name for CREATE"); var addr=_nextAddr; _lastCreatedName=name; _lastCreatedAddr=addr; TargetDict()[name]= new Word(intr=> intr.Push(addr)) { Name = name, Module = _currentModule}; continue; }
                 if (tok.Equals(",", StringComparison.OrdinalIgnoreCase)) { EnsureStack(this,1,","); var v=ToLong(PopInternal()); _mem[_nextAddr++]=v; continue; }
                 if (tok.Equals("DOES>", StringComparison.OrdinalIgnoreCase)) { if (string.IsNullOrEmpty(_lastCreatedName)) throw new ForthException(ForthErrorCode.CompileError,"DOES> without CREATE"); _doesCollecting=true; _doesTokens=new List<string>(); continue; }
                 if (tok.Equals("ALLOT", StringComparison.OrdinalIgnoreCase)) { EnsureStack(this,1,"ALLOT"); var cells=ToLong(PopInternal()); if(cells<0) throw new ForthException(ForthErrorCode.CompileError,"Negative ALLOT size"); for(long k=0;k<cells;k++) _mem[_nextAddr++]=0; continue; }
                 if (tok.Equals("SEE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after SEE"); var name=tokens[i++]; var plain=name; var cidx=name.IndexOf(':'); if(cidx>0) plain=name[(cidx+1)..]; var text=_decompile.TryGetValue(plain,out var s) ? s : $": {plain} ;"; WriteText(text); continue; }
                 if (tok==":") { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after ':'"); _currentDefName=tokens[i++]; if(string.IsNullOrWhiteSpace(_currentDefName)) throw new ForthException(ForthErrorCode.CompileError,"Invalid word name"); _currentInstructions=new(); _controlStack.Clear(); _isCompiling=true; _currentDefTokens=new(); _mem[_stateAddr]=1; continue; }
-                if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after VARIABLE"); var name=tokens[i++]; var addr=_nextAddr++; _mem[addr]=0; TargetDict()[name]= new Word(intr=> intr.Push(addr)); continue; }
-                if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after CONSTANT"); var name=tokens[i++]; EnsureStack(this,1,"CONSTANT"); var val=PopInternal(); TargetDict()[name]= new Word(intr=> intr.Push(val)); continue; }
-                if (tok.Equals("VALUE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after VALUE"); var name=tokens[i++]; if(!_values.ContainsKey(name)) _values[name]=0; TargetDict()[name]= new Word(intr=> intr.Push(intr.ValueGet(name))); continue; }
+                if (tok.Equals("VARIABLE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after VARIABLE"); var name=tokens[i++]; var addr=_nextAddr++; _mem[addr]=0; TargetDict()[name]= new Word(intr=> intr.Push(addr)) { Name = name, Module = _currentModule }; continue; }
+                if (tok.Equals("CONSTANT", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after CONSTANT"); var name=tokens[i++]; EnsureStack(this,1,"CONSTANT"); var val=PopInternal(); TargetDict()[name]= new Word(intr=> intr.Push(val)) { Name = name, Module = _currentModule }; continue; }
+                if (tok.Equals("VALUE", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after VALUE"); var name=tokens[i++]; if(!_values.ContainsKey(name)) _values[name]=0; TargetDict()[name]= new Word(intr=> intr.Push(intr.ValueGet(name))) { Name = name, Module = _currentModule }; continue; }
                 if (tok.Equals("TO", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after TO"); var name=tokens[i++]; EnsureStack(this,1,"TO"); var vv=ToLong(PopInternal()); ValueSet(name,vv); continue; }
-                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after DEFER"); var name=tokens[i++]; _deferred[name]=null; TargetDict()[name]= new Word(async intr=> { if(!_deferred.TryGetValue(name,out var target) || target is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(intr);}); continue; }
+                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after DEFER"); var name=tokens[i++]; _deferred[name]=null; TargetDict()[name]= new Word(async intr=> { if(!_deferred.TryGetValue(name,out var target) || target is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(intr);}) { Name = name, Module = _currentModule }; continue; }
                 if (tok.Equals("IS", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected deferred name after IS"); var name=tokens[i++]; EnsureStack(this,1,"IS"); var xtObj=PopInternal(); if(xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError,"IS expects an execution token"); if(!_deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord,$"No such deferred: {name}"); _deferred[name]=xt; continue; }
                 if (tok=="'") { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected word after '\''"); var wn=tokens[i++]; if(!TryResolveWord(wn,out var wtok) || wtok is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {wn}"); Push(wtok); continue; }
                 if (tok.Equals("CHAR", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected char after CHAR"); var s=tokens[i++]; Push(s.Length>0?(long)s[0]:0L); continue; }
@@ -232,6 +248,9 @@ public class ForthInterpreter : IForthInterpreter
                     var body=_currentInstructions; var nameForDecomp=_currentDefName;
                     var compiled=new Word(async intr => { try { foreach(var a in body) await a(intr);} catch(ExitWordException){ } });
                     compiled.BodyTokens = _currentDefTokens is {Count:>0} ? new List<string>(_currentDefTokens) : null;
+                    // populate metadata for the compiled word
+                    compiled.Name = _currentDefName;
+                    compiled.Module = _currentModule;
                     TargetDict()[_currentDefName]=compiled; _lastDefinedWord=compiled;
                     var bodyText = _currentDefTokens is {Count:>0} ? string.Join(' ', _currentDefTokens) : string.Empty;
                     _decompile[nameForDecomp]= string.IsNullOrEmpty(bodyText)?$": {nameForDecomp} ;":$": {nameForDecomp} {bodyText} ;";
@@ -249,7 +268,7 @@ public class ForthInterpreter : IForthInterpreter
                 if (tok.Equals("DO", StringComparison.OrdinalIgnoreCase)) { _controlStack.Push(new DoFrame()); continue; }
                 if (tok.Equals("LOOP", StringComparison.OrdinalIgnoreCase)) { if(_controlStack.Count==0 || _controlStack.Peek() is not DoFrame df) throw new ForthException(ForthErrorCode.CompileError,"LOOP without DO"); _controlStack.Pop(); var body=df.Body; CurrentList().Add(async intr => { EnsureStack(intr,2,"DO"); var start=ToLongPublic(intr.Pop()); var limit=ToLongPublic(intr.Pop()); long step=start<=limit?1L:-1L; for(long idx=start; idx!=limit; idx+=step){ intr.PushLoopIndex(idx); try { foreach(var a in body) await a(intr);} catch(LoopLeaveException){ break; } finally { intr.PopLoopIndexMaybe(); } } }); continue; }
                 if (tok.Equals("LEAVE", StringComparison.OrdinalIgnoreCase)) { bool inside=false; foreach(var f in _controlStack) if(f is DoFrame){ inside=true; break;} if(!inside) throw new ForthException(ForthErrorCode.CompileError,"LEAVE outside DO...LOOP"); CurrentList().Add(intr=> { throw new LoopLeaveException(); }); continue; }
-                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after DEFER"); var name=tokens[i++]; _deferred[name]=null; TargetDict()[name]= new Word(async intr=> { if(!_deferred.TryGetValue(name,out var target) || target is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(intr); }); continue; }
+                if (tok.Equals("DEFER", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected name after DEFER"); var name=tokens[i++]; _deferred[name]=null; TargetDict()[name]= new Word(async intr=> { if(!_deferred.TryGetValue(name,out var target) || target is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(intr); }) { Name = name, Module = _currentModule }; continue; }
                 if (tok.Equals("IS", StringComparison.OrdinalIgnoreCase)) { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected deferred name after IS"); var name=tokens[i++]; _currentInstructions!.Add(intr => { EnsureStack(intr,1,"IS"); var xtObj=intr.PopInternal(); if(xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError,"IS expects an execution token"); if(!intr._deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord,$"No such deferred: {name}"); intr._deferred[name]=xt; return Task.CompletedTask; }); continue; }
                 if (tok=="'") { if(i>=tokens.Count) throw new ForthException(ForthErrorCode.CompileError,"Expected word after '\''"); var wn=tokens[i++]; if(!TryResolveWord(wn,out var wtok) || wtok is null) throw new ForthException(ForthErrorCode.UndefinedWord,$"Undefined word: {wn}"); var wt=wtok; _currentInstructions!.Add(intr=> { intr.Push(wt); return Task.CompletedTask; }); continue; }
                 if (tok.Equals("AWAIT", StringComparison.OrdinalIgnoreCase)) { _currentInstructions!.Add(async intr => { EnsureStack(intr,1,"AWAIT"); var obj=intr.PopInternal(); if(obj is not Task t) throw new ForthException(ForthErrorCode.CompileError,"AWAIT expects a Task id"); await t.ConfigureAwait(false); var tt=t.GetType(); if(tt.IsGenericType && !intr.IsResultConsumed(obj)){ var rp=tt.GetProperty("Result"); var rt=rp?.PropertyType; if(rt?.FullName!="System.Threading.Tasks.VoidTaskResult"){ var val=rp!.GetValue(t); intr.Push(NumberParser.Normalize(val)); if(intr._stack.Count>=2 && intr._stack.NthFromTop(2) is Task){ var top=intr._stack.Pop(); var below=intr._stack.Pop(); intr._stack.Push(top); intr._stack.Push(below);} } intr.MarkResultConsumed(obj);} }); continue; }
@@ -263,15 +282,15 @@ public class ForthInterpreter : IForthInterpreter
             }
         }
         // Finalize DOES>
-        if (_doesCollecting && !string.IsNullOrEmpty(_lastCreatedName) && _doesTokens is {Count:>0})
-        {
-            var bodyLine = string.Join(' ', _doesTokens);
-            var addr = _lastCreatedAddr;
-            // The created word at invocation: push addr then fetch current value and execute body
-            var newWord = new Word(async intr => { intr.MemTryGet(addr, out var cur); intr.Push(addr); intr.Push(cur); await intr.EvalAsync(bodyLine).ConfigureAwait(false); });
+         if (_doesCollecting && !string.IsNullOrEmpty(_lastCreatedName) && _doesTokens is {Count:>0})
+         {
+             var bodyLine = string.Join(' ', _doesTokens);
+             var addr = _lastCreatedAddr;
+             // The created word at invocation: push addr then fetch current value and execute body
+            var newWord = new Word(async intr => { intr.MemTryGet(addr, out var cur); intr.Push(addr); intr.Push(cur); await intr.EvalAsync(bodyLine).ConfigureAwait(false); }) { Name = _lastCreatedName, Module = _currentModule };
             TargetDict()[_lastCreatedName] = newWord; _lastDefinedWord=newWord;
-            _doesCollecting=false; _doesTokens=null; _lastCreatedName=null;
-        }
+             _doesCollecting=false; _doesTokens=null; _lastCreatedName=null;
+         }
         return !_exitRequested;
     }
 
@@ -315,6 +334,9 @@ public class ForthInterpreter : IForthInterpreter
         public bool IsAsync { get; }
         public bool IsImmediate { get; set; }
         public List<string>? BodyTokens { get; set; }
+        public string? Name { get; set; }
+        public string? Module { get; set; }
+        public bool IsHidden { get; set; }
         public Word(Action<ForthInterpreter> sync){ _run= intr => { sync(intr); return Task.CompletedTask; }; IsAsync=false; }
         public Word(Func<ForthInterpreter, Task> asyncRun){ _run=asyncRun; IsAsync=true; }
         public Task ExecuteAsync(ForthInterpreter intr)=> _run(intr);
