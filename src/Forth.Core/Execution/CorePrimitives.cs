@@ -414,10 +414,14 @@ internal static class CorePrimitives
             var obj = i.PopInternal();
             if (obj is not ForthInterpreter.Word xt)
                 throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "SPAWN expects an execution token");
+            
+            // Capture parent context
+            var context = i.CaptureContext();
+            
             var task = Task.Run(async () =>
             {
-                // Run on a fresh interpreter to avoid concurrent access to the same instance
-                var child = new ForthInterpreter();
+                // Create child interpreter with parent's context
+                var child = new ForthInterpreter(context);
                 try { await xt.ExecuteAsync(child).ConfigureAwait(false); }
                 catch { /* fault task; let exception propagate */ throw; }
             });
@@ -430,9 +434,14 @@ internal static class CorePrimitives
             var obj = i.PopInternal();
             if (obj is not ForthInterpreter.Word xt)
                 throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "FUTURE expects an execution token");
+            
+            // Capture parent context
+            var context = i.CaptureContext();
+            
             var task = Task.Run(async () =>
             {
-                var child = new ForthInterpreter();
+                // Create child interpreter with parent's context
+                var child = new ForthInterpreter(context);
                 await xt.ExecuteAsync(child).ConfigureAwait(false);
                 // If child left values, take top as result
                 return child.Stack.Count > 0 ? child.Pop() : null;
@@ -446,9 +455,14 @@ internal static class CorePrimitives
             var obj = i.PopInternal();
             if (obj is not ForthInterpreter.Word xt)
                 throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "TASK expects an execution token");
+            
+            // Capture parent context
+            var context = i.CaptureContext();
+            
             var task = Task.Run(async () =>
             {
-                var child = new ForthInterpreter();
+                // Create child interpreter with parent's context
+                var child = new ForthInterpreter(context);
                 await xt.ExecuteAsync(child).ConfigureAwait(false);
                 return child.Stack.Count > 0 ? child.Pop() : null;
             });
