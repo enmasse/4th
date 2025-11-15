@@ -398,6 +398,63 @@ internal static class CorePrimitives
             }
         }) { Name = "AWAIT" };
 
+        // JOIN is an idiomatic alias for AWAIT in Forth concurrency
+        builder["JOIN"] = new ForthInterpreter.Word(async i => {
+            // Delegate to AWAIT behavior
+            ForthInterpreter.EnsureStack(i,1,"JOIN");
+            i._dict.TryGetValue("AWAIT", out var awaitWord);
+            if (awaitWord is null)
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, "AWAIT not found for JOIN");
+            await awaitWord.ExecuteAsync(i);
+        }) { Name = "JOIN" };
+
+        // SPAWN: ( xt -- task ) start xt on a background Task without result
+        builder["SPAWN"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"SPAWN");
+            var obj = i.PopInternal();
+            if (obj is not ForthInterpreter.Word xt)
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "SPAWN expects an execution token");
+            var task = Task.Run(async () =>
+            {
+                // Run on a fresh interpreter to avoid concurrent access to the same instance
+                var child = new ForthInterpreter();
+                try { await xt.ExecuteAsync(child).ConfigureAwait(false); }
+                catch { /* fault task; let exception propagate */ throw; }
+            });
+            i.Push(task);
+        }) { Name = "SPAWN" };
+
+        // FUTURE: ( xt -- task ) run xt on a fresh interpreter and return its top-of-stack as the task result
+        builder["FUTURE"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"FUTURE");
+            var obj = i.PopInternal();
+            if (obj is not ForthInterpreter.Word xt)
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "FUTURE expects an execution token");
+            var task = Task.Run(async () =>
+            {
+                var child = new ForthInterpreter();
+                await xt.ExecuteAsync(child).ConfigureAwait(false);
+                // If child left values, take top as result
+                return child.Stack.Count > 0 ? child.Pop() : null;
+            });
+            i.Push(task);
+        }) { Name = "FUTURE" };
+
+        // TASK is a synonym for FUTURE for brevity, with same semantics
+        builder["TASK"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"TASK");
+            var obj = i.PopInternal();
+            if (obj is not ForthInterpreter.Word xt)
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "TASK expects an execution token");
+            var task = Task.Run(async () =>
+            {
+                var child = new ForthInterpreter();
+                await xt.ExecuteAsync(child).ConfigureAwait(false);
+                return child.Stack.Count > 0 ? child.Pop() : null;
+            });
+            i.Push(task);
+        }) { Name = "TASK" };
+
         foreach (var kv in builder) intr._dict[kv.Key] = kv.Value;
         intr.SnapshotWords();
     }
