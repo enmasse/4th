@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class StackOpsTests
 {
-    [Fact(Skip = "Template: implement NIP")]
+    [Fact]
     public async Task NIP_Drops_Second_Item()
     {
         // a b -- b
@@ -18,7 +18,7 @@ public class StackOpsTests
         Assert.Equal(new long[] { 2 }, forth.Stack.Select(o => (long)o).ToArray());
     }
 
-    [Fact(Skip = "Template: implement TUCK")]
+    [Fact]
     public async Task TUCK_Duplicates_Top_Under_Second()
     {
         // a b -- b a b
@@ -27,7 +27,7 @@ public class StackOpsTests
         Assert.Equal(new long[] { 2, 1, 2 }, forth.Stack.Select(o => (long)o).ToArray());
     }
 
-    [Fact(Skip = "Template: implement ?DUP")]
+    [Fact]
     public async Task QuestionDup_Only_Duplicates_NonZero()
     {
         var forth = new ForthInterpreter();

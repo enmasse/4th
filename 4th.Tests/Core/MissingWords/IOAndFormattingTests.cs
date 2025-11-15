@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class IOAndFormattingTests
 {
-    [Fact(Skip = "Template: implement EMIT KEY . CR .S and SPACE helpers")]
+    [Fact]
     public async Task IO_Words_Emit_Key_Dot()
     {
         var forth = new ForthInterpreter();
