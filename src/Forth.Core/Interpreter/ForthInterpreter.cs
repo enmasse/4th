@@ -394,11 +394,6 @@ public class ForthInterpreter : IForthInterpreter
         _tokens = Tokenizer.Tokenize(line);
         _tokenIndex = 0;
         if (!_isCompiling && _ilCache.Count < 1024 && IlScriptCompiler.TryCompile(_tokens, out var runner)) { _ilCache[line]=runner; await runner(this); return !_exitRequested; }
-        if (!_isCompiling)
-        {
-            var script = CompileSync(line);
-            if (script is not null) { script.Run(this); _tokens=null; return !_exitRequested; }
-        }
         while (TryReadNextToken(out var tok))
         {
             if (tok.Length==0) continue;
@@ -479,14 +474,6 @@ public class ForthInterpreter : IForthInterpreter
     internal void NewLine()=>_io.NewLine();
     internal void WriteText(string s)=>_io.Print(s);
     internal void ThrowExit()=>throw new ExitWordException();
-
-    internal ForthCompiledScript? CompileSync(string line)
-    {
-        var tokens=Tokenizer.Tokenize(line);
-        var steps=new List<Action<ForthInterpreter>>();
-        int i=0; while(i<tokens.Count){ var tok=tokens[i++]; if(tok.Length==0) continue; if(tok is ":" or ";" or "AWAIT" or "SPAWN" or "[" or "]" or "IF" or "ELSE" or "THEN" or "BEGIN" or "WHILE" or "REPEAT" or "UNTIL") return null; if(tok.Equals("MODULE",StringComparison.OrdinalIgnoreCase)|| tok.Equals("END-MODULE",StringComparison.OrdinalIgnoreCase)|| tok.Equals("USING",StringComparison.OrdinalIgnoreCase)) return null; if(tok.Equals("LOAD-ASM",StringComparison.OrdinalIgnoreCase)|| tok.Equals("LOAD-ASM-TYPE",StringComparison.OrdinalIgnoreCase)) return null; if(tok.Equals("VARIABLE",StringComparison.OrdinalIgnoreCase)|| tok.Equals("CONSTANT",StringComparison.OrdinalIgnoreCase)) return null; if(tok.Equals("CHAR",StringComparison.OrdinalIgnoreCase)){ if(i>=tokens.Count) return null; var s=tokens[i++]; steps.Add(intr=> intr.Push((long)(s.Length>0?s[0]:'\0'))); continue;} if(tok.Length>=2 && tok[0]=='"' && tok[^1]=='"'){ var s=tok[1..^1]; steps.Add(intr=> intr.Push(s)); continue;} if(TryParseNumber(tok,out var numVal)){ steps.Add(intr=> intr.Push(numVal)); continue;} if(TryResolveWord(tok,out var w) && w is not null && !w.IsAsync){ switch(tok.ToUpperInvariant()){ case "+": steps.Add(intr=> { EnsureStack(intr,2,"+"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2+b2);} ); break; case "-": steps.Add(intr=> { EnsureStack(intr,2,"-"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2-b2);} ); break; case "*": steps.Add(intr=> { EnsureStack(intr,2,"*"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); intr.Push(a2*b2);} ); break; case "/": steps.Add(intr=> { EnsureStack(intr,2,"/"); var b2=ToLongPublic(intr.Pop()); var a2=ToLongPublic(intr.Pop()); if(b2==0) throw new ForthException(ForthErrorCode.DivideByZero,"Divide by zero"); intr.Push(a2/b2);} ); break; case "DUP": steps.Add(intr=> { EnsureStack(intr,1,"DUP"); intr.Push(intr.StackTop()); }); break; case "DROP": steps.Add(intr=> { EnsureStack(intr,1,"DROP"); intr.DropTop(); }); break; case "SWAP": steps.Add(intr=> { EnsureStack(intr,2,"SWAP"); intr.SwapTop2(); }); break; case "OVER": steps.Add(intr=> { EnsureStack(intr,2,"OVER"); intr.Push(intr.StackNthFromTop(2)); }); break; case "ROT": steps.Add(intr=> { EnsureStack(intr,3,"ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(b3); intr.Push(c); intr.Push(a3); }); break; case "-ROT": steps.Add(intr=> { EnsureStack(intr,3,"-ROT"); var c=intr.PopInternal(); var b3=intr.PopInternal(); var a3=intr.PopInternal(); intr.Push(c); intr.Push(a3); intr.Push(b3); }); break; default: return null; } continue;} return null; }
-        return new ForthCompiledScript(steps);
-    }
 
     internal void WithModule(string name, Action action){ var prev=_currentModule; _currentModule=name; try{ action(); } finally { _currentModule=prev; } }
     public int LoadAssemblyWords(Assembly asm)=> AssemblyWordLoader.RegisterFromAssembly(this, asm);
