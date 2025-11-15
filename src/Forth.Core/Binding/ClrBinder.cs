@@ -15,12 +15,7 @@ internal static class ClrBinder
             ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
         bool isStatic = target.IsStatic;
         var pars = target.GetParameters();
-        var returnType = target.ReturnType;
-        bool isTask = typeof(Task).IsAssignableFrom(returnType);
-        bool isGenericTask = isTask && returnType.IsGenericType;
-        bool isValueTask = returnType == typeof(ValueTask);
-        bool isGenericValueTask = returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>);
-        return new ForthInterpreter.Word(async interp =>
+        return new ForthInterpreter.Word(interp =>
         {
             int totalPop = argCount + (isStatic ? 0 : 1);
             ForthInterpreter.EnsureStack(interp, totalPop, methodName);
@@ -40,6 +35,18 @@ internal static class ClrBinder
             try
             {
                 result = target.Invoke(instance, argVals);
+
+                switch (result)
+                {
+                    case null:
+                        break;
+                    case ValueTask t:
+                        ForthInterpreterPush(interp, t.AsTask());
+                        break;
+                    default:
+                        ForthInterpreterPush(interp, result);
+                        break;
+                }
             }
             catch (TargetInvocationException tie)
             {
@@ -49,101 +56,6 @@ internal static class ClrBinder
             {
                 throw WrapInterop(ex);
             }
-            try
-            {
-                if (isTask)
-                {
-                    var task = (Task)result!;
-                    await task.ConfigureAwait(false);
-                    if (isGenericTask)
-                    {
-                        var val = task.GetType().GetProperty("Result")!.GetValue(task);
-                        ForthInterpreterPush(interp, val);
-                    }
-                }
-                else if (isValueTask)
-                {
-                    var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-                    await asTask.ConfigureAwait(false);
-                }
-                else if (isGenericValueTask)
-                {
-                    var asTask = (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-                    await asTask.ConfigureAwait(false);
-                    var val = asTask.GetType().GetProperty("Result")!.GetValue(asTask);
-                    ForthInterpreterPush(interp, val);
-                }
-                else
-                {
-                    ForthInterpreterPush(interp, result);
-                }
-            }
-            catch (TargetInvocationException tie2)
-            {
-                throw WrapInterop(tie2.InnerException ?? tie2);
-            }
-            catch (Exception ex2)
-            {
-                throw WrapInterop(ex2);
-            }
-        });
-    }
-
-    public static ForthInterpreter.Word CreateBoundTaskWord(string typeName, string methodName, int argCount)
-    {
-        var type = ResolveType(typeName) ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
-        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
-        var target = methods.FirstOrDefault(m => m.Name == methodName && m.GetParameters().Length == argCount)
-            ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
-        bool isStatic = target.IsStatic;
-        var pars = target.GetParameters();
-        var returnType = target.ReturnType;
-        bool returnsTaskLike = typeof(Task).IsAssignableFrom(returnType) || returnType == typeof(ValueTask) || (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
-        if (!returnsTaskLike)
-            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, $"{typeName}.{methodName} does not return Task/ValueTask");
-        return new ForthInterpreter.Word(interp =>
-        {
-            int totalPop = argCount + (isStatic ? 0 : 1);
-            ForthInterpreter.EnsureStack(interp, totalPop, methodName);
-            object? instance = null;
-            var argVals = new object?[argCount];
-            for (int i = argCount - 1; i >= 0; i--)
-            {
-                var raw = interp.Pop();
-                argVals[i] = Coerce(raw, pars[i].ParameterType);
-            }
-            if (!isStatic)
-            {
-                instance = interp.Pop();
-            }
-            object? result;
-            try
-            {
-                result = target.Invoke(instance, argVals);
-            }
-            catch (TargetInvocationException tie)
-            {
-                throw WrapInterop(tie.InnerException ?? tie);
-            }
-            catch (Exception ex)
-            {
-                throw WrapInterop(ex);
-            }
-            Task toPush;
-            try
-            {
-                toPush = result is Task t ? t : (Task)result!.GetType().GetMethod("AsTask")!.Invoke(result, null)!;
-            }
-            catch (TargetInvocationException tie2)
-            {
-                throw WrapInterop(tie2.InnerException ?? tie2);
-            }
-            catch (Exception ex2)
-            {
-                throw WrapInterop(ex2);
-            }
-            interp.Push(toPush);
-            return Task.CompletedTask;
         });
     }
 

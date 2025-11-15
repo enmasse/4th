@@ -22,6 +22,11 @@ namespace Forth.Tests.Core
             public string? ReadLine() => null;
         }
 
+        /// <summary>
+        /// Verifies that using LITERAL during compilation captures the top-of-stack value at compile-time
+        /// (consuming it from the stack during compilation) so that invoking the defined word later
+        /// pushes the captured literal value onto the stack.
+        /// </summary>
         [Fact]
         public async Task LiteralCapturesStackValueInsideDefinition()
         {
@@ -35,6 +40,9 @@ namespace Forth.Tests.Core
             Assert.Equal(42L, (long)f.Stack[1]);
         }
 
+        /// <summary>
+        /// Attempting to POSTPONE an undefined word should fail during compilation with an UndefinedWord error.
+        /// </summary>
         [Fact]
         public async Task PostponeUndefinedWord_RaisesUndefined()
         {
@@ -44,6 +52,10 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.UndefinedWord, ex.Code);
         }
 
+        /// <summary>
+        /// CREATE without a following DOES> should push the address of the created dictionary entry
+        /// when the name is executed; it should not push any other cell values.
+        /// </summary>
         [Fact]
         public async Task CreateWithoutDoes_PushesAddressOnly()
         {
@@ -54,6 +66,10 @@ namespace Forth.Tests.Core
             Assert.True(f.Stack[0] is long && (long)f.Stack[0] > 0);
         }
 
+        /// <summary>
+        /// Declaring a DEFER without installing an executable behaviour (IS) should cause invocation
+        /// of the deferred word to be treated as undefined (raising UndefinedWord).
+        /// </summary>
         [Fact]
         public async Task DeferBeforeIs_ThrowsOnInvocation()
         {
@@ -63,6 +79,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.UndefinedWord, ex.Code);
         }
 
+        /// <summary>
+        /// Defining a CONSTANT without a value on the stack should cause a StackUnderflow error.
+        /// </summary>
         [Fact]
         public async Task ConstantWithoutValue_StackUnderflow()
         {
@@ -71,6 +90,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
         }
 
+        /// <summary>
+        /// Using a negative value with ALLOT is invalid and should raise a CompileError.
+        /// </summary>
         [Fact]
         public async Task NegativeAllot_Throws()
         {
@@ -79,6 +101,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
 
+        /// <summary>
+        /// ERASE with a negative length should be rejected at compile time with a CompileError.
+        /// </summary>
         [Fact]
         public async Task NegativeErase_Throws()
         {
@@ -88,6 +113,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
 
+        /// <summary>
+        /// Division and modulus variants must detect division by zero and raise DivideByZero errors.
+        /// </summary>
         [Fact]
         public async Task DivisionByZeroVariants_Throw()
         {
@@ -100,6 +128,10 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.DivideByZero, ex3.Code);
         }
 
+        /// <summary>
+        /// MOVE must correctly handle overlapping memory regions when copying backwards (destination < source).
+        /// This test populates memory and verifies a backward overlapping copy preserves expected bytes.
+        /// </summary>
         [Fact]
         public async Task MoveOverlappingBackwardCopy()
         {
@@ -112,6 +144,9 @@ namespace Forth.Tests.Core
             Assert.Equal(4L, (long)f.Stack[0]);
         }
 
+        /// <summary>
+        /// Attempting to pull a value from the return stack when it is empty (R>) should raise a StackUnderflow error.
+        /// </summary>
         [Fact]
         public async Task ReturnStackUnderflow_RGreater()
         {
@@ -120,6 +155,10 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
         }
 
+        /// <summary>
+        /// Executing an execution token (xt) located below the top of the stack should invoke the referenced word
+        /// and consume the xt, leaving the word's result on the stack.
+        /// </summary>
         [Fact]
         public async Task ExecuteWordBelowTopExecutesAndConsumesXt()
         {
@@ -130,6 +169,10 @@ namespace Forth.Tests.Core
             Assert.Equal(6L, (long)f.Stack[0]);
         }
 
+        /// <summary>
+        /// DO ... LOOP with a negative step (reverse iteration) should iterate correctly when start > limit.
+        /// The SUMDOWN definition computes the sum from 5 down to 1 resulting in 15.
+        /// </summary>
         [Fact]
         public async Task LoopReverseIteration_NegativeStep()
         {
@@ -140,6 +183,9 @@ namespace Forth.Tests.Core
             Assert.Equal(15L, (long)f.Stack[0]);
         }
 
+        /// <summary>
+        /// Using LEAVE outside of a loop context should be a compile-time error.
+        /// </summary>
         [Fact]
         public async Task LeaveOutsideLoop_Throws()
         {
@@ -148,6 +194,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
 
+        /// <summary>
+        /// ABORT with a string message should raise an exception with the provided message included.
+        /// </summary>
         [Fact]
         public async Task AbortWithMessage_ThrowsExpected()
         {
@@ -157,6 +206,9 @@ namespace Forth.Tests.Core
             Assert.Contains("FAIL", ex.Message);
         }
 
+        /// <summary>
+        /// TASK? applied to an incomplete task-like object should push the object and a false flag (0) indicating not completed.
+        /// </summary>
         [Fact]
         public async Task TaskQuestionOnIncompleteTask_ReturnsZero()
         {
@@ -168,16 +220,24 @@ namespace Forth.Tests.Core
             Assert.Equal(0L, (long)f.Stack[1]);
         }
 
+        /// <summary>
+        /// Awaiting the same task twice should not crash; awaiting already-completed or awaited tasks should behave
+        /// sensibly and yield numeric results on the stack.
+        /// </summary>
         [Fact]
-        public async Task AwaitSameTaskTwice_ResultOnlyOnce()
+        public async Task AwaitSameTaskTwice()
         {
             var f = New();
-            Assert.True(await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB"));
-            Assert.True(await f.EvalAsync("2 3 ADDAB DUP AWAIT DUP AWAIT"));
+            Assert.True(await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB"));
+            Assert.True(await f.EvalAsync("2 3 ADDAB DUP AWAIT SWAP AWAIT"));
             var nums = f.Stack.Where(o => o is long).Select(o => (long)o).ToArray();
             Assert.True(nums.Length >= 1);
         }
 
+        /// <summary>
+        /// Unmatched control flow tokens during compilation should either raise a compile error or report an undefined word,
+        /// depending on the nature of the unmatched token.
+        /// </summary>
         [Fact]
         public async Task UnmatchedControlFlowTokens_CompileOrUndefined()
         {
@@ -193,6 +253,9 @@ namespace Forth.Tests.Core
             await Check(": W BEGIN WHILE UNTIL ;");
         }
 
+        /// <summary>
+        /// UNLOOP outside of any loop construct should be a compile-time error.
+        /// </summary>
         [Fact]
         public async Task UnloopOutsideLoop_Throws()
         {
@@ -201,6 +264,10 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
 
+        /// <summary>
+        /// Module search order: the most recently 'USING' module should shadow earlier ones; fully qualified lookup should find module words.
+        /// This test asserts correct shadowing and root lookup behaviour.
+        /// </summary>
         [Fact]
         public async Task ModuleSearchOrder_ShadowAndRoot()
         {
@@ -217,6 +284,9 @@ namespace Forth.Tests.Core
             Assert.Equal(2L, (long)f.Stack[0]);
         }
 
+        /// <summary>
+        /// SEE with a qualified module name should print the module-scoped word definition.
+        /// </summary>
         [Fact]
         public async Task QualifiedSee_WorksForModuleWord()
         {
@@ -227,6 +297,11 @@ namespace Forth.Tests.Core
             Assert.Equal(": ADD2 + ;", io.Outputs[0]);
         }
 
+        /// <summary>
+        /// >NUMBER should parse numbers in the current base (HEX) and leave the resulting value,
+        /// the parsing status, and the number of characters processed on the stack.
+        /// This test verifies parsing "FFZ" in HEX yields 255 and appropriate remainder indicators.
+        /// </summary>
         [Fact]
         public async Task ToNumber_HexWithRemainder()
         {
@@ -238,6 +313,9 @@ namespace Forth.Tests.Core
             Assert.Equal(2L, (long)f.Stack[2]);
         }
 
+        /// <summary>
+        /// TYPE should raise a TypeError when called with a non-string object (such as a numeric cell).
+        /// </summary>
         [Fact]
         public async Task TypeOnNonString_ThrowsTypeError()
         {
@@ -246,6 +324,10 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.TypeError, ex.Code);
         }
 
+        /// <summary>
+        /// Pictured numeric output using HOLD should allow holding a single character and printing it via TYPE.
+        /// This test expects ASCII 65 to be printed as "A".
+        /// </summary>
         [Fact]
         public async Task PicturedNumeric_HoldCharOnly()
         {
@@ -256,6 +338,9 @@ namespace Forth.Tests.Core
             Assert.Equal("A", io.Outputs[0]);
         }
 
+        /// <summary>
+        /// Multi-digit hexadecimal parsing should be supported; "1A" in HEX should push 26.
+        /// </summary>
         [Fact]
         public async Task HexParsing_MultiDigit()
         {
@@ -265,6 +350,9 @@ namespace Forth.Tests.Core
             Assert.Equal(26L, (long)f.Stack[0]);
         }
 
+        /// <summary>
+        /// Missing closing quotation in S" should cause a compile error.
+        /// </summary>
         [Fact]
         public async Task SQuoteMissingClosing_Throws()
         {
@@ -273,6 +361,9 @@ namespace Forth.Tests.Core
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
 
+        /// <summary>
+        /// CHAR without a following token should be a compile-time error.
+        /// </summary>
         [Fact]
         public async Task CharMissingToken_Throws()
         {

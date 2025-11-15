@@ -206,7 +206,6 @@ public class ForthInterpreter : IForthInterpreter
             builder["S"] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S"); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,"S expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S" };
             builder[".\""] = new Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new ForthException(ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1].TrimStart(); if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { ii.WriteText(str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
             builder["BIND"] = new Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BIND"); var methodName=i.ReadNextTokenOrThrow("method after BIND"); var argToken=i.ReadNextTokenOrThrow("arg count after BIND"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new ForthException(ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BIND"); i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BIND" };
-            builder["BINDASYNC"] = new Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BINDASYNC"); var methodName=i.ReadNextTokenOrThrow("method after BINDASYNC"); var argToken=i.ReadNextTokenOrThrow("arg count after BINDASYNC"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new ForthException(ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BINDASYNC"); i.TargetDict()[forthName]= ClrBinder.CreateBoundTaskWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BINDASYNC" };
             builder["FORGET"] = new Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after FORGET"); i.ForgetWord(name); }) { IsImmediate = true, Name = "FORGET" };
 
             // Async/task helpers
@@ -214,17 +213,20 @@ public class ForthInterpreter : IForthInterpreter
             builder["AWAIT"] = new Word(async i => {
                 EnsureStack(i,1,"AWAIT");
                 var obj = i.PopInternal();
-                if (obj is not Task t)
-                    throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task");
-                await t.ConfigureAwait(false);
-                var tt = t.GetType();
-                if (tt.IsGenericType && !i.IsResultConsumed(t))
+                switch(obj)
                 {
-                    var prop = tt.GetProperty("Result");
-                    var val = prop?.GetValue(t);
-                    if (val is not null && !string.Equals(val.GetType().Name, "VoidTaskResult", StringComparison.Ordinal))
-                        i.Push(val);
-                    i.MarkResultConsumed(t);
+                    case Task t:
+                        await t.ConfigureAwait(false);
+                        var taskType = t.GetType();
+                        if (taskType.IsGenericType)
+                        {
+                            var resultProperty = taskType.GetProperty("Result");
+                            if (resultProperty != null && resultProperty.CanRead)
+                                i.Push(resultProperty.GetValue(t)!);
+                        }
+                        break;
+                    default:
+                        throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task or ValueTask");
                 }
             }) { Name = "AWAIT" };
 

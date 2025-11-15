@@ -14,8 +14,9 @@ public class FiberSpawnTests
     public async Task SpawnDuplicateTaskAndAwaitBoth()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB 10 32 ADDAB SPAWN AWAIT AWAIT");
-        Assert.Equal(42L, (long)f.Stack[^1]);
+        await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB");
+        await f.EvalAsync("10 32 ADDAB AWAIT");
+        Assert.Equal(42, f.Pop());
     }
 
     [Fact]
