@@ -177,7 +177,6 @@ internal static class CorePrimitives
         // Note: Additional convenience words (TRUE, FALSE, NOT, 2DROP, ?DUP, NIP, TUCK, 1+, 1-, 2*, 2/, ABS, SPACE, SPACES, 2@, 2!, U.) 
         // are defined in prelude.4th and loaded automatically after core initialization
 
-        dict["SPAWN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"SPAWN"); var obj=i.PopInternal(); if (obj is not Task t) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"SPAWN expects a Task"); i.Push(t); i.Push(t); });
         dict["YIELD"] = new ForthInterpreter.Word(async i => { await Task.Yield(); });
         dict["BYE"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
         dict["QUIT"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
