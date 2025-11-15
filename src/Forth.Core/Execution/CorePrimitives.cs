@@ -1,6 +1,9 @@
 using System.Text;
 using System.Threading.Tasks;
 using Forth.Core.Interpreter;
+using Forth.Core.Binding;
+using System.Globalization;
+using System.Reflection;
 
 namespace Forth.Core.Execution;
 
@@ -289,9 +292,99 @@ internal static class CorePrimitives
             var prod = n1 * n2;
             i.Push(prod / d);
         });
-    
-    
+    }
+
+    public static void InstallCompilerWords(ForthInterpreter intr)
+    {
+        var builder = new Dictionary<string, ForthInterpreter.Word>(StringComparer.OrdinalIgnoreCase);
+        builder[":"] = new ForthInterpreter.Word(i => { var name = i.ReadNextTokenOrThrow("Expected name after ':'"); i.BeginDefinition(name); }) { IsImmediate = true, Name = ":" };
+        builder[";"] = new ForthInterpreter.Word(i => { i.FinishDefinition(); }) { IsImmediate = true, Name = ";" };
+        builder["IMMEDIATE"] = new ForthInterpreter.Word(i => { if (i._lastDefinedWord is null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE"); i._lastDefinedWord.IsImmediate = true; }) { IsImmediate = true, Name = "IMMEDIATE" };
+        builder["POSTPONE"] = new ForthInterpreter.Word(async i => {
+            var name = i.ReadNextTokenOrThrow("POSTPONE expects a name");
+            if (i.TryResolveWord(name, out var wpost) && wpost is not null)
+            {
+                if (wpost.IsImmediate) await wpost.ExecuteAsync(i); else i.CurrentList().Add(async ii => await wpost.ExecuteAsync(ii));
+                return;
+            }
+            switch (name.ToUpperInvariant())
+            {
+                case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
+                case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'":
+                    i._tokens!.Insert(i._tokenIndex, name); return;
+            }
+            throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
+        }) { IsImmediate = true, Name = "POSTPONE" };
+        builder["'"] = new ForthInterpreter.Word(i => { var name = i.ReadNextTokenOrThrow("Expected word after '"); if (!i.TryResolveWord(name, out var wt) || wt is null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {name}"); if (!i._isCompiling) i.Push(wt); else i.CurrentList().Add(ii => { ii.Push(wt); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "'" };
+        builder["LITERAL"] = new ForthInterpreter.Word(i => { if (!i._isCompiling) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "LITERAL outside compilation"); ForthInterpreter.EnsureStack(i,1,"LITERAL"); var val=i.PopInternal(); i.CurrentList().Add(ii=> { ii.Push(val); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "LITERAL" };
+        builder["["] = new ForthInterpreter.Word(i => { i._isCompiling=false; i._mem[i.StateAddr]=0; }) { IsImmediate = true, Name = "[" };
+        builder["]"] = new ForthInterpreter.Word(i => { i._isCompiling=true; i._mem[i.StateAddr]=1; }) { IsImmediate = true, Name = "]" };
+        builder["IF"] = new ForthInterpreter.Word(i => { i._controlStack.Push(new ForthInterpreter.IfFrame()); }) { IsImmediate = true, Name = "IF" };
+        builder["ELSE"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.IfFrame ifr) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"ELSE without IF"); if(ifr.ElsePart is not null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Multiple ELSE"); ifr.ElsePart=new(); ifr.InElse=true; }) { IsImmediate = true, Name = "ELSE" };
+        builder["THEN"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.IfFrame ifr) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"THEN without IF"); i._controlStack.Pop(); var thenPart=ifr.ThenPart; var elsePart=ifr.ElsePart; i.CurrentList().Add(async ii=> { ForthInterpreter.EnsureStack(ii,1,"IF"); var flag=ii.PopInternal(); if(ToBool(flag)) foreach(var a in thenPart) await a(ii); else if(elsePart is not null) foreach(var a in elsePart) await a(ii); }); }) { IsImmediate = true, Name = "THEN" };
+        builder["BEGIN"] = new ForthInterpreter.Word(i => { i._controlStack.Push(new ForthInterpreter.BeginFrame()); }) { IsImmediate = true, Name = "BEGIN" };
+        builder["WHILE"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.BeginFrame bf) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"WHILE without BEGIN"); if(bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Multiple WHILE"); bf.InWhile=true; }) { IsImmediate = true, Name = "WHILE" };
+        builder["REPEAT"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.BeginFrame bf) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"REPEAT without BEGIN"); if(!bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"REPEAT requires WHILE"); i._controlStack.Pop(); var pre=bf.PrePart; var mid=bf.MidPart; i.CurrentList().Add(async ii=> { while(true){ foreach(var a in pre) await a(ii); ForthInterpreter.EnsureStack(ii,1,"WHILE"); var flag=ii.PopInternal(); if(!ToBool(flag)) break; foreach(var b in mid) await b(ii);} }); }) { IsImmediate = true, Name = "REPEAT" };
+        builder["UNTIL"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.BeginFrame bf) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"UNTIL without BEGIN"); if(bf.InWhile) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"UNTIL after WHILE use REPEAT"); i._controlStack.Pop(); var body=bf.PrePart; i.CurrentList().Add(async ii=> { while(true){ foreach(var a in body) await a(ii); ForthInterpreter.EnsureStack(ii,1,"UNTIL"); var flag=ii.PopInternal(); if(ToBool(flag)) break; } }); }) { IsImmediate = true, Name = "UNTIL" };
+        builder["DO"] = new ForthInterpreter.Word(i => { i._controlStack.Push(new ForthInterpreter.DoFrame()); }) { IsImmediate = true, Name = "DO" };
+        builder["LOOP"] = new ForthInterpreter.Word(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not ForthInterpreter.DoFrame df) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"LOOP without DO"); i._controlStack.Pop(); var body=df.Body; i.CurrentList().Add(async ii=> { ForthInterpreter.EnsureStack(ii,2,"DO"); var start=ToLong(ii.PopInternal()); var limit=ToLong(ii.PopInternal()); long step=start<=limit?1L:-1L; for(long idx=start; idx!=limit; idx+=step){ ii.PushLoopIndex(idx); try { foreach(var a in body) await a(ii);} catch(ForthInterpreter.LoopLeaveException){ break; } finally { ii.PopLoopIndexMaybe(); } } }); }) { IsImmediate = true, Name = "LOOP" };
+        builder["LEAVE"] = new ForthInterpreter.Word(i => { bool inside=false; foreach(var f in i._controlStack) if(f is ForthInterpreter.DoFrame){ inside=true; break; } if(!inside) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"LEAVE outside DO...LOOP"); i.CurrentList().Add(ii=> { throw new ForthInterpreter.LoopLeaveException(); }); }) { IsImmediate = true, Name = "LEAVE" };
+        builder["MODULE"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after MODULE"); i._currentModule=name; if(string.IsNullOrWhiteSpace(i._currentModule)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Invalid module name"); if(!i._modules.ContainsKey(i._currentModule)) i._modules[i._currentModule]= new(StringComparer.OrdinalIgnoreCase); }) { IsImmediate = true, Name = "MODULE" };
+        builder["END-MODULE"] = new ForthInterpreter.Word(i => { i._currentModule=null; }) { IsImmediate = true, Name = "END-MODULE" };
+        builder["USING"] = new ForthInterpreter.Word(i => { var m=i.ReadNextTokenOrThrow("Expected name after USING"); if(!i._usingModules.Contains(m)) i._usingModules.Add(m); }) { IsImmediate = true, Name = "USING" };
+        builder["LOAD-ASM"] = new ForthInterpreter.Word(i => { var path=i.ReadNextTokenOrThrow("Expected path after LOAD-ASM"); var count=AssemblyWordLoader.Load(i,path); i.Push((long)count); }) { IsImmediate = true, Name = "LOAD-ASM" };
+        builder["LOAD-ASM-TYPE"] = new ForthInterpreter.Word(i => { var tn=i.ReadNextTokenOrThrow("Expected type after LOAD-ASM-TYPE"); Type? t=Type.GetType(tn,false,false); if(t==null) foreach(var asm in AppDomain.CurrentDomain.GetAssemblies()){ t=asm.GetType(tn,false,false); if(t!=null) break; } if(t==null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,$"Type not found: {tn}"); var count=i.LoadAssemblyWords(t.Assembly); i.Push((long)count); }) { IsImmediate = true, Name = "LOAD-ASM-TYPE" };
+        builder["CREATE"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after CREATE"); if(string.IsNullOrWhiteSpace(name)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Invalid name for CREATE"); var addr=i._nextAddr; i._lastCreatedName=name; i._lastCreatedAddr=addr; i.TargetDict()[name]= new ForthInterpreter.Word(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule }; i.RegisterDefinition(name); }) { IsImmediate = true, Name = "CREATE" };
+        builder[","] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,","); var v=ToLong(i.PopInternal()); i._mem[i._nextAddr++]=v; }) { IsImmediate = true, Name = "," };
+        builder["DOES>"] = new ForthInterpreter.Word(i => { if(string.IsNullOrEmpty(i._lastCreatedName)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"DOES> without CREATE"); i._doesCollecting=true; i._doesTokens=new List<string>(); }) { IsImmediate = true, Name = "DOES>" };
+        builder["ALLOT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"ALLOT"); var cells=ToLong(i.PopInternal()); if(cells<0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Negative ALLOT size"); for(long k=0;k<cells;k++) i._mem[i._nextAddr++]=0; }) { IsImmediate = true, Name = "ALLOT" };
+        builder["VARIABLE"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr=i._nextAddr++; i._mem[addr]=0; i.TargetDict()[name]= new ForthInterpreter.Word(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule }; i.RegisterDefinition(name); }) { IsImmediate = true, Name = "VARIABLE" };
+        builder["CONSTANT"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after CONSTANT"); ForthInterpreter.EnsureStack(i,1,"CONSTANT"); var val=i.PopInternal(); i.TargetDict()[name]= new ForthInterpreter.Word(ii=> ii.Push(val)) { Name = name, Module = i._currentModule }; i.RegisterDefinition(name); }) { IsImmediate = true, Name = "CONSTANT" };
+        builder["VALUE"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after VALUE"); if(!i._values.ContainsKey(name)) i._values[name]=0; i.TargetDict()[name]= new ForthInterpreter.Word(ii=> ii.Push(ii.ValueGet(name))) { Name = name, Module = i._currentModule }; i.RegisterDefinition(name); }) { IsImmediate = true, Name = "VALUE" };
+        builder["TO"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after TO"); ForthInterpreter.EnsureStack(i,1,"TO"); var vv=ToLong(i.PopInternal()); i.ValueSet(name,vv); }) { IsImmediate = true, Name = "TO" };
+        builder["DEFER"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after DEFER"); i._deferred[name]=null; i.TargetDict()[name]= new ForthInterpreter.Word(async ii=> { if(!ii._deferred.TryGetValue(name,out var target) || target is null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord,$"Deferred word not set: {name}"); await target.ExecuteAsync(ii); }) { Name = name, Module = i._currentModule }; i.RegisterDefinition(name); }) { IsImmediate = true, Name = "DEFER" };
+        builder["IS"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected deferred name after IS"); ForthInterpreter.EnsureStack(i,1,"IS"); var xtObj=i.PopInternal(); if(xtObj is not ForthInterpreter.Word xt) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError,"IS expects an execution token"); if(!i._deferred.ContainsKey(name)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord,$"No such deferred: {name}"); i._deferred[name]=xt; }) { IsImmediate = true, Name = "IS" };
+        builder["SEE"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after SEE"); var plain=name; var cidx=name.IndexOf(':'); if(cidx>0) plain=name[(cidx+1)..]; var text=i._decompile.TryGetValue(plain,out var s) ? s : $": {plain} ;"; i.WriteText(text); }) { IsImmediate = true, Name = "SEE" };
+        builder["CHAR"] = new ForthInterpreter.Word(i => { var s=i.ReadNextTokenOrThrow("Expected char after CHAR"); if(!i._isCompiling) i.Push(s.Length>0?(long)s[0]:0L); else i.CurrentList().Add(ii=> { ii.Push(s.Length>0?(long)s[0]:0L); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "CHAR" };
+        builder["S\""] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"S\" expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S\"" };
+        builder["S"] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S"); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"S expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S" };
+        builder[".\""] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1].TrimStart(); if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { ii.WriteText(str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
+        builder["BIND"] = new ForthInterpreter.Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BIND"); var methodName=i.ReadNextTokenOrThrow("method after BIND"); var argToken=i.ReadNextTokenOrThrow("arg count after BIND"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BIND"); i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BIND" };
+        builder["FORGET"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after FORGET"); i.ForgetWord(name); }) { IsImmediate = true, Name = "FORGET" };
+        builder["TASK?"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TASK?"); var obj=i.PopInternal(); long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag); }) { Name = "TASK?" };
+        builder["AWAIT"] = new ForthInterpreter.Word(async i => {
+            ForthInterpreter.EnsureStack(i,1,"AWAIT");
+            var obj = i.PopInternal();
+            switch(obj)
+            {
+                case Task t:
+                    await t.ConfigureAwait(false);
+                    var taskType = t.GetType();
+                    if (taskType.IsGenericType)
+                    {
+                        var resultProperty = taskType.GetProperty("Result");
+                        if (resultProperty != null && resultProperty.CanRead)
+                            i.Push(resultProperty.GetValue(t)!);
+                    }
+                    break;
+                default:
+                    throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "AWAIT expects a Task or ValueTask");
+            }
+        }) { Name = "AWAIT" };
+
+        foreach (var kv in builder) intr._dict[kv.Key] = kv.Value;
+        intr.SnapshotWords();
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
+    private static bool ToBool(object v) => v switch
+    {
+        bool b => b,
+        long l => l != 0,
+        int i => i != 0,
+        short s => s != 0,
+        byte b8 => b8 != 0,
+        char c => c != '\0',
+        _ => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
+    };
 }
