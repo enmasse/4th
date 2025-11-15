@@ -213,7 +213,7 @@ namespace Forth.Tests.Core
         public async Task TaskQuestionOnIncompleteTask_ReturnsZero()
         {
             var f = New();
-            Assert.True(await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 5 DELAY DUP TASK?"));
+            Assert.True(await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 5 DELAY DUP TASK?"));
             Assert.Equal(2, f.Stack.Count);
             // First item: task-like object, second: flag 0
             Assert.True(!(f.Stack[0] is long));

@@ -135,6 +135,46 @@ public class ForthInterpreter : IForthInterpreter
         SnapshotWords(); // snapshot after primitives (step 1)
         CorePrimitives.InstallCompilerWords(this); // moved compiler words to CorePrimitives
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
+        LoadPreludeAsync().GetAwaiter().GetResult(); // Load pure Forth definitions
+    }
+
+    private async Task LoadPreludeAsync()
+    {
+        // Try to load embedded prelude resource
+        var asm = typeof(ForthInterpreter).Assembly;
+        var resourceName = "Forth.Core.prelude.4th";
+        using var stream = asm.GetManifestResourceStream(resourceName);
+        if (stream != null)
+        {
+            using var reader = new System.IO.StreamReader(stream);
+            var prelude = await reader.ReadToEndAsync();
+            await LoadPreludeText(prelude);
+            return;
+        }
+        
+        // Fallback: try loading from file system (for development)
+        var preludePath = System.IO.Path.Combine(
+            System.IO.Path.GetDirectoryName(asm.Location) ?? ".",
+            "prelude.4th");
+        if (System.IO.File.Exists(preludePath))
+        {
+            var prelude = await System.IO.File.ReadAllTextAsync(preludePath);
+            await LoadPreludeText(prelude);
+        }
+    }
+
+    private async Task LoadPreludeText(string prelude)
+    {
+        var lines = prelude.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            // Skip empty lines and comments
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('\\')) continue;
+            // Skip inline comments ( ... )
+            if (trimmed.StartsWith('(') && trimmed.EndsWith(')')) continue;
+            await EvalAsync(trimmed);
+        }
     }
 
     internal void ForgetWord(string token)

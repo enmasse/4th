@@ -174,6 +174,9 @@ internal static class CorePrimitives
         dict["2SWAP"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,4,"2SWAP"); var d=i.PopInternal(); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(c); i.Push(d); i.Push(a); i.Push(b); });
         dict["OVER"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"OVER"); i.Push(i.StackNthFromTop(2)); });
         dict["NEGATE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"NEGATE"); var a=ToLong(i.PopInternal()); i.Push(-a); });
+        // Note: Additional convenience words (TRUE, FALSE, NOT, 2DROP, ?DUP, NIP, TUCK, 1+, 1-, 2*, 2/, ABS, SPACE, SPACES, 2@, 2!, U.) 
+        // are defined in prelude.4th and loaded automatically after core initialization
+
         dict["SPAWN"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"SPAWN"); var obj=i.PopInternal(); if (obj is not Task t) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"SPAWN expects a Task"); i.Push(t); i.Push(t); });
         dict["YIELD"] = new ForthInterpreter.Word(async i => { await Task.Yield(); });
         dict["BYE"] = new ForthInterpreter.Word(i => { i.RequestExit(); });
@@ -258,7 +261,8 @@ internal static class CorePrimitives
             }
             catch (Exception)
             {
-                i.Push((long)Forth.Core.ForthErrorCode.Unknown);
+                // Push a non-zero error code for non-Forth exceptions (1 since Unknown is 0)
+                i.Push(1L);
             }
         });
         dict["THROW"] = new ForthInterpreter.Word(i => {
@@ -358,13 +362,36 @@ internal static class CorePrimitives
             switch(obj)
             {
                 case Task t:
+                    // This will throw if the task is faulted
                     await t.ConfigureAwait(false);
+                    
                     var taskType = t.GetType();
                     if (taskType.IsGenericType)
                     {
                         var resultProperty = taskType.GetProperty("Result");
                         if (resultProperty != null && resultProperty.CanRead)
-                            i.Push(resultProperty.GetValue(t)!);
+                        {
+                            var result = resultProperty.GetValue(t);
+                            if (result != null)
+                            {
+                                var resultType = result.GetType();
+                                // Skip VoidTaskResult - it's the internal marker for Task (non-generic)
+                                if (resultType.Name == "VoidTaskResult")
+                                    break;
+                                    
+                                // Convert result to Forth-compatible type (same as ClrBinder.ForthInterpreterPush)
+                                switch (result)
+                                {
+                                    case int iv: i.Push((long)iv); break;
+                                    case long lv: i.Push(lv); break;
+                                    case short sv: i.Push((long)sv); break;
+                                    case byte bv: i.Push((long)bv); break;
+                                    case char cv: i.Push((long)cv); break;
+                                    case bool bov: i.Push(bov ? 1L : 0L); break;
+                                    default: i.Push(result); break;
+                                }
+                            }
+                        }
                     }
                     break;
                 default:

@@ -16,7 +16,7 @@ public class FiberSpawnTests
         var f = New();
         await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB");
         await f.EvalAsync("10 32 ADDAB AWAIT");
-        Assert.Equal(42, f.Pop());
+        Assert.Equal(42L, (long)f.Pop());
     }
 
     [Fact]

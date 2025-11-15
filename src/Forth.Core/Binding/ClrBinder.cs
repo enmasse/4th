@@ -40,10 +40,23 @@ internal static class ClrBinder
                 {
                     case null:
                         break;
-                    case ValueTask t:
-                        ForthInterpreterPush(interp, t.AsTask());
+                    case ValueTask vt:
+                        ForthInterpreterPush(interp, vt.AsTask());
                         break;
                     default:
+                        // Check if it's ValueTask<T> using reflection
+                        var resultType = result.GetType();
+                        if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                        {
+                            // Convert ValueTask<T> to Task<T>
+                            var asTaskMethod = resultType.GetMethod("AsTask", BindingFlags.Public | BindingFlags.Instance);
+                            if (asTaskMethod != null)
+                            {
+                                var task = asTaskMethod.Invoke(result, null);
+                                ForthInterpreterPush(interp, task);
+                                break;
+                            }
+                        }
                         ForthInterpreterPush(interp, result);
                         break;
                 }

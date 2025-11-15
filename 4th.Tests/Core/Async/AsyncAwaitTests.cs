@@ -15,7 +15,7 @@ public class AsyncAwaitTests
     public async Task AwaitBoundAsyncMethod()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB 5 7 ADDAB AWAIT");
+        await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets AddAsync 2 ADDAB 5 7 ADDAB AWAIT");
         Assert.Equal(new long[]{12}, Longs(f));
     }
 
@@ -23,7 +23,7 @@ public class AsyncAwaitTests
     public async Task PollTaskCompletion()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 30 DELAY DUP TASK? DROP AWAIT");
+        await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelay 1 DELAY 30 DELAY DUP TASK? DROP AWAIT");
         Assert.Empty(f.Stack);
     }
 
@@ -31,7 +31,7 @@ public class AsyncAwaitTests
     public async Task AwaitBoundValueTaskMethod()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets AddValueTask 2 ADDVT 2 3 ADDVT AWAIT");
+        await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets AddValueTask 2 ADDVT 2 3 ADDVT AWAIT");
         Assert.Equal(new long[]{5}, Longs(f));
     }
 
@@ -39,7 +39,7 @@ public class AsyncAwaitTests
     public async Task AwaitBoundValueTaskVoid()
     {
         var f = New();
-        await f.EvalAsync("BINDASYNC Forth.Tests.Core.Binding.AsyncTestTargets VoidDelayValueTask 1 DVT 10 DVT AWAIT");
+        await f.EvalAsync("BIND Forth.Tests.Core.Binding.AsyncTestTargets VoidDelayValueTask 1 DVT 10 DVT AWAIT");
         Assert.Empty(f.Stack);
     }
 }
