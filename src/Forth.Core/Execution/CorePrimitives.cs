@@ -303,6 +303,13 @@ internal static class CorePrimitives
             var prod = n1 * n2;
             i.Push(prod / d);
         });
+
+        // LATEST: push the most recently defined word's execution token
+        dict["LATEST"] = new ForthInterpreter.Word(i => {
+            var last = i._lastDefinedWord;
+            if (last is null) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, "No latest word");
+            i.Push(last);
+        });
     }
 
     public static void InstallCompilerWords(ForthInterpreter intr)
@@ -321,7 +328,7 @@ internal static class CorePrimitives
             switch (name.ToUpperInvariant())
             {
                 case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
-                case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'":
+                case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'": case "RECURSE":
                     i._tokens!.Insert(i._tokenIndex, name); return;
             }
             throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
@@ -359,7 +366,7 @@ internal static class CorePrimitives
         builder["CHAR"] = new ForthInterpreter.Word(i => { var s=i.ReadNextTokenOrThrow("Expected char after CHAR"); if(!i._isCompiling) i.Push(s.Length>0?(long)s[0]:0L); else i.CurrentList().Add(ii=> { ii.Push(s.Length>0?(long)s[0]:0L); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "CHAR" };
         builder["S\""] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"S\" expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S\"" };
         builder["S"] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after S"); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"S expects quoted token"); var str=next[1..^1]; if(!i._isCompiling) i.Push(str); else i.CurrentList().Add(ii=> { ii.Push(str); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "S" };
-        builder[".\""] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1].TrimStart(); if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { ii.WriteText(str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
+        builder[".\""] = new ForthInterpreter.Word(i => { var next=i.ReadNextTokenOrThrow("Expected text after .\""); if(next.Length<2 || next[0] != '"' || next[^1] != '"') throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,".\" expects quoted token"); var str=next[1..^1].TrimStart(); if(!i._isCompiling) { i.WriteText(str);} else { i.CurrentList().Add(ii=> { iI_WriteText(ii, str); return Task.CompletedTask; }); } }) { IsImmediate = true, Name = ".\"" };
         builder["BIND"] = new ForthInterpreter.Word(i => { var typeName=i.ReadNextTokenOrThrow("type after BIND"); var methodName=i.ReadNextTokenOrThrow("method after BIND"); var argToken=i.ReadNextTokenOrThrow("arg count after BIND"); if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount)) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError,"Invalid arg count"); var forthName=i.ReadNextTokenOrThrow("forth name after BIND"); i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount); i.RegisterDefinition(forthName); }) { IsImmediate = true, Name = "BIND" };
         builder["FORGET"] = new ForthInterpreter.Word(i => { var name=i.ReadNextTokenOrThrow("Expected name after FORGET"); i.ForgetWord(name); }) { IsImmediate = true, Name = "FORGET" };
         builder["TASK?"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TASK?"); var obj=i.PopInternal(); long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag); }) { Name = "TASK?" };
@@ -477,6 +484,32 @@ internal static class CorePrimitives
             i.Push(task);
         }) { Name = "TASK" };
 
+        // RECURSE: compile a call to the word being defined
+        builder["RECURSE"] = new ForthInterpreter.Word(i => {
+            if (!i._isCompiling || string.IsNullOrEmpty(i._currentDefName))
+                throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "RECURSE outside of a definition");
+            if (!i.TryResolveWord(i._currentDefName, out var self) || self is null)
+            {
+                // If not yet resolvable, queue a placeholder that resolves at runtime by name lookup
+                var name = i._currentDefName;
+                i.CurrentList().Add(async ii => {
+                    if (!ii.TryResolveWord(name, out var w) || w is null)
+                        throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Undefined self word: {name}");
+                    await w.ExecuteAsync(ii);
+                });
+                return;
+            }
+            i.CurrentList().Add(async ii => await self.ExecuteAsync(ii));
+        }) { IsImmediate = true, Name = "RECURSE" };
+
+        // MARKER: create a word that when executed restores interpreter to this point
+        builder["MARKER"] = new ForthInterpreter.Word(i => {
+            var name = i.ReadNextTokenOrThrow("Expected name after MARKER");
+            var snap = i.CreateMarkerSnapshot();
+            i.TargetDict()[name] = new ForthInterpreter.Word(ii => { ii.RestoreSnapshot(snap); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+            i.RegisterDefinition(name);
+        }) { IsImmediate = true, Name = "MARKER" };
+
         foreach (var kv in builder) intr._dict[kv.Key] = kv.Value;
         intr.SnapshotWords();
     }
@@ -492,4 +525,10 @@ internal static class CorePrimitives
         char c => c != '\0',
         _ => throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
     };
+
+    private static Task iI_WriteText(ForthInterpreter ii, string str)
+    {
+        ii.WriteText(str);
+        return Task.CompletedTask;
+    }
 }

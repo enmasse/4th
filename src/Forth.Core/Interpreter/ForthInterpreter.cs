@@ -579,4 +579,108 @@ public class ForthInterpreter : IForthInterpreter
             _decompile[kvp.Key] = kvp.Value;
         }
     }
+
+    // ----- MARKER snapshots (for dictionary/time-travel) -----
+    internal sealed class MarkerSnapshot
+    {
+        public ImmutableDictionary<string, Word> Dict { get; }
+        public ImmutableDictionary<string, ImmutableDictionary<string, Word>> Modules { get; }
+        public ImmutableList<string> UsingModules { get; }
+        public ImmutableDictionary<string, long> Values { get; }
+        public ImmutableDictionary<long, long> Memory { get; }
+        public ImmutableDictionary<string, Word?> Deferred { get; }
+        public ImmutableDictionary<string, string> Decompile { get; }
+        public ImmutableArray<(string Name, string? Module)> Definitions { get; }
+        public long NextAddr { get; }
+        public MarkerSnapshot(
+            ImmutableDictionary<string, Word> dict,
+            ImmutableDictionary<string, ImmutableDictionary<string, Word>> modules,
+            ImmutableList<string> usingModules,
+            ImmutableDictionary<string, long> values,
+            ImmutableDictionary<long, long> memory,
+            ImmutableDictionary<string, Word?> deferred,
+            ImmutableDictionary<string, string> decompile,
+            ImmutableArray<(string Name, string? Module)> definitions,
+            long nextAddr)
+        { Dict=dict; Modules=modules; UsingModules=usingModules; Values=values; Memory=memory; Deferred=deferred; Decompile=decompile; Definitions=definitions; NextAddr=nextAddr; }
+    }
+
+    internal MarkerSnapshot CreateMarkerSnapshot()
+    {
+        var dict = _dict.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        var modulesBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableDictionary<string, Word>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in _modules)
+            modulesBuilder[kvp.Key] = kvp.Value.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        var modules = modulesBuilder.ToImmutable();
+        var usingMods = _usingModules.ToImmutableList();
+        var values = _values.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        var memory = _mem.ToImmutableDictionary();
+        var deferred = _deferred.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        var decompile = _decompile.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        var defs = _definitions.Select(d => (d.Name, d.Module)).ToImmutableArray();
+        return new MarkerSnapshot(dict, modules, usingMods, values, memory, deferred, decompile, defs, _nextAddr);
+    }
+
+    internal void RestoreSnapshot(MarkerSnapshot snap)
+    {
+        // Clear compile state
+        _isCompiling = false;
+        _currentDefName = null;
+        _currentInstructions = null;
+        _currentDefTokens = null;
+        _controlStack.Clear();
+        _doesCollecting = false; _doesTokens = null; _lastCreatedName = null; _lastCreatedAddr = 0;
+        _tokens = null; _tokenIndex = 0;
+
+        // Replace dictionaries
+        _dict.Clear();
+        foreach (var kv in snap.Dict) _dict[kv.Key] = kv.Value;
+
+        _modules.Clear();
+        foreach (var mod in snap.Modules)
+        {
+            _modules[mod.Key] = mod.Value.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
+        }
+
+        _usingModules.Clear();
+        _usingModules.AddRange(snap.UsingModules);
+
+        _values.Clear();
+        foreach (var kv in snap.Values) _values[kv.Key] = kv.Value;
+
+        _deferred.Clear();
+        foreach (var kv in snap.Deferred) _deferred[kv.Key] = kv.Value;
+
+        _decompile.Clear();
+        foreach (var kv in snap.Decompile) _decompile[kv.Key] = kv.Value;
+
+        // Memory and addresses
+        _mem.Clear();
+        foreach (var kv in snap.Memory) _mem[kv.Key] = kv.Value;
+        // Ensure STATE goes to interpret mode
+        _mem[_stateAddr] = 0;
+        _nextAddr = snap.NextAddr;
+
+        // Definition order
+        _definitions.Clear();
+        foreach (var (name, module) in snap.Definitions)
+            _definitions.Add(new DefinitionRecord(name, module));
+        // Update last defined
+        _lastDefinedWord = null;
+        if (_definitions.Count > 0)
+        {
+            var last = _definitions[^1];
+            if (string.IsNullOrWhiteSpace(last.Module))
+            {
+                _dict.TryGetValue(last.Name, out _lastDefinedWord);
+            }
+            else if (_modules.TryGetValue(last.Module!, out var md) && md.TryGetValue(last.Name, out var w))
+            {
+                _lastDefinedWord = w;
+            }
+        }
+
+        // Clear fast-path caches
+        _ilCache.Clear();
+    }
 }
