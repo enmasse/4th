@@ -191,6 +191,89 @@ public class PreludeWordsTests
         Assert.Contains("42", allOutput);
     }
 
+    [Fact]
+    public async Task WITHIN_TestsRange()
+    {
+        var forth = new ForthInterpreter();
+        // 5 is within [3, 10)
+        Assert.True(await forth.EvalAsync("5 3 10 WITHIN"));
+        Assert.Single(forth.Stack);
+        Assert.True((long)forth.Stack[0] != 0);
+        
+        // 10 is NOT within [3, 10)
+        var forth2 = new ForthInterpreter();
+        Assert.True(await forth2.EvalAsync("10 3 10 WITHIN"));
+        Assert.Single(forth2.Stack);
+        Assert.Equal(0L, (long)forth2.Stack[0]);
+        
+        // 2 is NOT within [3, 10)
+        var forth3 = new ForthInterpreter();
+        Assert.True(await forth3.EvalAsync("2 3 10 WITHIN"));
+        Assert.Single(forth3.Stack);
+        Assert.Equal(0L, (long)forth3.Stack[0]);
+    }
+
+    [Fact]
+    public async Task StarSlashMOD_MultiplyThenDivide()
+    {
+        var forth = new ForthInterpreter();
+        // 10 * 7 = 70, 70 / 3 = 23 rem 1
+        Assert.True(await forth.EvalAsync("10 7 3 */MOD"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[0]); // remainder
+        Assert.Equal(23L, (long)forth.Stack[1]); // quotient
+    }
+
+    [Fact]
+    public async Task CELLS_IdentityOperation()
+    {
+        var forth = new ForthInterpreter();
+        // CELLS is identity on our platform (1 cell = 1 address unit)
+        Assert.True(await forth.EvalAsync("5 CELLS"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(5L, (long)forth.Stack[0]);
+    }
+
+    [Fact]
+    public async Task PICK_CopiesNthItem()
+    {
+        var forth = new ForthInterpreter();
+        // Stack: 10 20 30, pick 0 should copy 30 (top)
+        Assert.True(await forth.EvalAsync("10 20 30 0 PICK"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(30L, (long)forth.Stack[3]);
+        
+        // Pick 1 should copy 20 (second from top)
+        var forth2 = new ForthInterpreter();
+        Assert.True(await forth2.EvalAsync("10 20 30 1 PICK"));
+        Assert.Equal(4, forth2.Stack.Count);
+        Assert.Equal(20L, (long)forth2.Stack[3]);
+        
+        // Pick 2 should copy 10 (third from top)
+        var forth3 = new ForthInterpreter();
+        Assert.True(await forth3.EvalAsync("10 20 30 2 PICK"));
+        Assert.Equal(4, forth3.Stack.Count);
+        Assert.Equal(10L, (long)forth3.Stack[3]);
+    }
+
+    [Fact]
+    public async Task PICK_NegativeIndexThrows()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<Forth.Core.ForthException>(
+            () => forth.EvalAsync("10 20 30 -1 PICK"));
+        Assert.Equal(Forth.Core.ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
+    [Fact]
+    public async Task PICK_OutOfRangeThrows()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<Forth.Core.ForthException>(
+            () => forth.EvalAsync("10 20 30 10 PICK"));
+        Assert.Equal(Forth.Core.ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
     private sealed class TestIO : Forth.Core.IForthIO
     {
         public readonly List<string> Outputs = new();

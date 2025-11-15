@@ -174,6 +174,14 @@ internal static class CorePrimitives
         dict["2SWAP"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,4,"2SWAP"); var d=i.PopInternal(); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(c); i.Push(d); i.Push(a); i.Push(b); });
         dict["OVER"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"OVER"); i.Push(i.StackNthFromTop(2)); });
         dict["NEGATE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"NEGATE"); var a=ToLong(i.PopInternal()); i.Push(-a); });
+        // PICK: ( xu ... x1 x0 u -- xu ... x1 x0 xu ) copy u-th item (0-indexed from top) to top
+        dict["PICK"] = new ForthInterpreter.Word(i => { 
+            ForthInterpreter.EnsureStack(i,1,"PICK"); 
+            var n=ToLong(i.PopInternal()); 
+            if(n<0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,$"PICK: negative index {n}"); 
+            if(n>=i.Stack.Count) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}"); 
+            i.Push(i.StackNthFromTop((int)n+1)); 
+        });
         // Note: Additional convenience words (TRUE, FALSE, NOT, 2DROP, ?DUP, NIP, TUCK, 1+, 1-, 2*, 2/, ABS, SPACE, SPACES, 2@, 2!, U.) 
         // are defined in prelude.4th and loaded automatically after core initialization
 
