@@ -53,10 +53,6 @@ public class ForthInterpreter : IForthInterpreter
     private int _baselineCount; // protect core/compiler words
     private readonly Task _loadPrelude;
 
-    // snapshots for potential FORGET implementation later
-    private readonly List<ImmutableDictionary<string, Word>> _dictSnapshots = new();
-    internal void SnapshotWords() => _dictSnapshots.Add(_dict.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase));
-
     private readonly struct DefinitionRecord
     {
         public readonly string Name;
@@ -121,7 +117,6 @@ public class ForthInterpreter : IForthInterpreter
         _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
         _baseAddr = _nextAddr++; _mem[_baseAddr] = 10;
         InstallPrimitives();
-        SnapshotWords(); // snapshot after primitives (step 1)
         CorePrimitives.InstallCompilerWords(this); // moved compiler words to CorePrimitives
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions

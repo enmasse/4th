@@ -531,7 +531,6 @@ internal static class CorePrimitives
         }) { IsImmediate = true, Name = "MARKER" };
 
         foreach (var kv in builder) intr._dict[kv.Key] = kv.Value;
-        intr.SnapshotWords();
     }
 
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
