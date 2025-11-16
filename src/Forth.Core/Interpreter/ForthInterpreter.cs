@@ -57,6 +57,7 @@ public class ForthInterpreter : IForthInterpreter
     // definition order tracking for classic FORGET
     private readonly List<DefinitionRecord> _definitions = new();
     private int _baselineCount; // protect core/compiler words
+    private readonly Task _loadPrelude;
 
     // snapshots for potential FORGET implementation later
     private readonly List<ImmutableDictionary<string, Word>> _dictSnapshots = new();
@@ -70,12 +71,6 @@ public class ForthInterpreter : IForthInterpreter
     }
     internal void RegisterDefinition(string name) => _definitions.Add(new DefinitionRecord(name, _currentModule));
 
-    // Token stream helpers for immediate words
-    internal void SetTokenStream(List<string> tokens)
-    {
-        _tokens = tokens;
-        _tokenIndex = 0;
-    }
     internal bool TryReadNextToken(out string token)
     {
         token = string.Empty;
@@ -135,7 +130,7 @@ public class ForthInterpreter : IForthInterpreter
         SnapshotWords(); // snapshot after primitives (step 1)
         CorePrimitives.InstallCompilerWords(this); // moved compiler words to CorePrimitives
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
-        LoadPreludeAsync().GetAwaiter().GetResult(); // Load pure Forth definitions
+        _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions
     }
 
     private async Task LoadPreludeAsync()
@@ -173,7 +168,7 @@ public class ForthInterpreter : IForthInterpreter
             if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('\\')) continue;
             // Skip inline comments ( ... )
             if (trimmed.StartsWith('(') && trimmed.EndsWith(')')) continue;
-            await EvalAsync(trimmed);
+            await EvalInternalAsync(trimmed);
         }
     }
 
@@ -326,6 +321,12 @@ public class ForthInterpreter : IForthInterpreter
     }
 
     public async Task<bool> EvalAsync(string line)
+    {
+        await _loadPrelude;
+        return await EvalInternalAsync(line);
+    }
+
+    private async Task<bool> EvalInternalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
         if (_ilCache.TryGetValue(line, out var cached)) { await cached(this); return !_exitRequested; }
