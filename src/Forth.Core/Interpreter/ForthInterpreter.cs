@@ -117,7 +117,6 @@ public class ForthInterpreter : IForthInterpreter
         _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
         _baseAddr = _nextAddr++; _mem[_baseAddr] = 10;
         InstallPrimitives();
-        CorePrimitives.InstallCompilerWords(this); // moved compiler words to CorePrimitives
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions
     }
