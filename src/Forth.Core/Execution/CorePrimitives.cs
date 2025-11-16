@@ -11,30 +11,181 @@ internal static class CorePrimitives
 {
     public static void Install(ForthInterpreter interp, Dictionary<string, Word> dict)
     {
-        dict["+"] = new(i => { Ensure(i,2,"+"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a+b); });
-        dict["-"] = new(i => { Ensure(i,2,"-"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a-b); });
-        dict["*"] = new(i => { Ensure(i,2,"*"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a*b); });
-        dict["/"] = new(i => { Ensure(i,2,"/"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero"); i.Push(a/b); });
-        dict["/MOD"] = new(i => { Ensure(i,2,"/MOD"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero"); var quot=a/b; var rem=a % b; i.Push(rem); i.Push(quot); });
-        dict["MOD"] = new(i => { Ensure(i,2,"MOD"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero"); i.Push(a % b); });
-        dict["<"] = new(i => { Ensure(i,2,"<"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a < b ? 1L : 0L); });
-        dict["="] = new(i => { Ensure(i,2,"="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a == b ? 1L : 0L); });
-        dict[">"] = new(i => { Ensure(i,2,">"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a > b ? 1L : 0L); });
-        dict["0="] = new(i => { Ensure(i,1,"0="); var a=ToLong(i.PopInternal()); i.Push(a==0 ? 1L : 0L); });
-        dict["0<>"] = new(i => { Ensure(i,1,"0<>"); var a=ToLong(i.PopInternal()); i.Push(a!=0 ? 1L : 0L); });
-        dict["<>"] = new(i => { Ensure(i,2,"<>"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a!=b ? 1L : 0L); });
-        dict["<="] = new(i => { Ensure(i,2,"<="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a<=b ? 1L : 0L); });
-        dict[">="] = new(i => { Ensure(i,2,">="); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a>=b ? 1L : 0L); });
-        dict["MIN"] = new(i => { Ensure(i,2,"MIN"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a<b ? a : b); });
-        dict["MAX"] = new(i => { Ensure(i,2,"MAX"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a>b ? a : b); });
-        dict["ROT"] = new(i => { Ensure(i,3,"ROT"); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(b); i.Push(c); i.Push(a); });
-        dict["-ROT"] = new(i => { Ensure(i,3,"-ROT"); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(c); i.Push(a); i.Push(b); });
-        dict["@"] = new(i => { Ensure(i,1,"@"); var addr=ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); });
-        dict["!"] = new(i => { Ensure(i,2,"!"); var addr=ToLong(i.PopInternal()); var val=ToLong(i.PopInternal()); i.MemSet(addr,val); });
-        dict["+!"] = new(i => { Ensure(i,2,"+!"); var addr=ToLong(i.PopInternal()); var add=ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); });
+        dict["+"] = new(i =>
+            {
+                Ensure(i,2,"+");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a+b);
+            });
+        dict["-"] = new(i =>
+            {
+                Ensure(i,2,"-");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a-b);
+            });
+        dict["*"] = new(i =>
+            {
+                Ensure(i,2,"*");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a*b);
+            });
+        dict["/"] = new(i =>
+            {
+                Ensure(i,2,"/");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                if (b==0)
+                    throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+                i.Push(a/b);
+            });
+        dict["/MOD"] = new(i =>
+            {
+                Ensure(i,2,"/MOD");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+                var quot=a/b;
+                var rem=a % b;
+                i.Push(rem);
+                i.Push(quot);
+            });
+        dict["MOD"] = new(i =>
+            {
+                Ensure(i,2,"MOD");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+                i.Push(a % b);
+            });
+        dict["<"] = new(i =>
+            {
+                Ensure(i,2,"<");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a < b ? 1L : 0L);
+            });
+        dict["="] = new(i =>
+            {
+                Ensure(i,2,"=");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a == b ? 1L : 0L);
+            });
+        dict[">"] = new(i =>
+            {
+                Ensure(i,2,">");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a > b ? 1L : 0L);
+            });
+        dict["0="] = new(i =>
+            {
+                Ensure(i,1,"0=");
+                var a=ToLong(i.PopInternal());
+                i.Push(a==0 ? 1L : 0L);
+            });
+        dict["0<>"] = new(i =>
+            {
+                Ensure(i,1,"0<>");
+                var a=ToLong(i.PopInternal());
+                i.Push(a!=0 ? 1L : 0L);
+            });
+        dict["<>"] = new(i =>
+            {
+                Ensure(i,2,"<>");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a!=b ? 1L : 0L);
+            });
+        dict["<="] = new(i =>
+            {
+                Ensure(i,2,"<=");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a<=b ? 1L : 0L);
+            });
+        dict[">="] = new(i =>
+            {
+                Ensure(i,2,">=");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a>=b ? 1L : 0L);
+            });
+        dict["MIN"] = new(i =>
+            {
+                Ensure(i,2,"MIN");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a<b ? a : b);
+            });
+        dict["MAX"] = new(i =>
+            {
+                Ensure(i,2,"MAX");
+                var b=ToLong(i.PopInternal());
+                var a=ToLong(i.PopInternal());
+                i.Push(a>b ? a : b);
+            });
+        dict["ROT"] = new(i =>
+            {
+                Ensure(i,3,"ROT");
+                var c=i.PopInternal();
+                var b=i.PopInternal();
+                var a=i.PopInternal();
+                i.Push(b);
+                i.Push(c);
+                i.Push(a);
+            });
+        dict["-ROT"] = new(i =>
+            {
+                Ensure(i,3,"-ROT");
+                var c=i.PopInternal();
+                var b=i.PopInternal();
+                var a=i.PopInternal();
+                i.Push(c);
+                i.Push(a);
+                i.Push(b);
+            });
+        dict["@"] = new(i =>
+            {
+                Ensure(i,1,"@");
+                var addr=ToLong(i.PopInternal());
+                i.MemTryGet(addr, out var v);
+                i.Push(v);
+            });
+        dict["!"] = new(i =>
+            {
+                Ensure(i,2,"!");
+                var addr=ToLong(i.PopInternal());
+                var val=ToLong(i.PopInternal());
+                i.MemSet(addr,val);
+            });
+        dict["+!"] = new(i =>
+            {
+                Ensure(i,2,"+!");
+                var addr=ToLong(i.PopInternal());
+                var add=ToLong(i.PopInternal());
+                i.MemTryGet(addr, out var cur);
+                i.MemSet(addr, cur + add);
+            });
         // Byte memory operations
-        dict["C!"] = new(i => { Ensure(i,2,"C!"); var addr=ToLong(i.PopInternal()); var val=ToLong(i.PopInternal()); var b=(long)((byte)val); i.MemSet(addr, b); });
-        dict["C@"] = new(i => { Ensure(i,1,"C@"); var addr=ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push((long)((byte)v)); });
+        dict["C!"] = new(i =>
+            {
+                Ensure(i,2,"C!");
+                var addr=ToLong(i.PopInternal());
+                var val=ToLong(i.PopInternal());
+                var b=(long)((byte)val);
+                i.MemSet(addr, b);
+            });
+        dict["C@"] = new(i =>
+            {
+                Ensure(i,1,"C@");
+                var addr=ToLong(i.PopInternal());
+                i.MemTryGet(addr, out var v);
+                i.Push((long)((byte)v));
+            });
         // Block memory ops: MOVE (src dst u --), FILL (addr u char --), ERASE (addr u --)
         dict["MOVE"] = new(i => {
             Ensure(i,3,"MOVE");
@@ -128,92 +279,181 @@ internal static class CorePrimitives
             i.Push((long)(consumed + digits));
         });
         // Pictured numeric output primitives (single-cell variant)
-        dict["<#"] = new(i => { i.PicturedBegin(); });
-        dict["HOLD"] = new(i => { Ensure(i,1,"HOLD"); var n=ToLong(i.PopInternal()); i.PicturedHold((char)(n & 0xFFFF)); });
-        dict["#"] = new(i => {
-            Ensure(i,1,"#");
-            var n = ToLong(i.PopInternal());
-            // For this implementation, pictured numeric output is decimal-only regardless of BASE
-            const long b = 10;
-            long u = n < 0 ? -n : n;
-            long rem = u % b;
-            long q = u / b;
-            i.PicturedHoldDigit(rem);
-            i.Push(q);
-        });
-        dict["#S"] = new(i => {
-            Ensure(i,1,"#S");
-            var n = ToLong(i.PopInternal());
-            // Decimal-only pictured numeric output regardless of BASE
-            const long b = 10;
-            long u = n < 0 ? -n : n;
-            if (u == 0)
+        dict["<#"] = new(i => i.PicturedBegin());
+        dict["HOLD"] = new(i => 
+            { 
+                Ensure(i,1,"HOLD");
+                var n=ToLong(i.PopInternal());
+                i.PicturedHold((char)(n & 0xFFFF));
+            });
+        dict["#"] = new(i =>
             {
-                i.PicturedHoldDigit(0);
-                i.Push(0L);
-                return;
-            }
-            while (u > 0)
-            {
+                Ensure(i,1,"#");
+                var n = ToLong(i.PopInternal());
+                // For this implementation, pictured numeric output is decimal-only regardless of BASE
+                const long b = 10;
+                long u = n < 0 ? -n : n;
                 long rem = u % b;
+                long q = u / b;
                 i.PicturedHoldDigit(rem);
-                u /= b;
-            }
-            i.Push(0L);
+                i.Push(q);
+            });
+        dict["#S"] = new(i =>
+            {
+                Ensure(i,1,"#S");
+                var n = ToLong(i.PopInternal());
+                // Decimal-only pictured numeric output regardless of BASE
+                const long b = 10;
+                long u = n < 0 ? -n : n;
+                if (u == 0)
+                {
+                    i.PicturedHoldDigit(0);
+                    i.Push(0L);
+                    return;
+                }
+                while (u > 0)
+                {
+                    long rem = u % b;
+                    i.PicturedHoldDigit(rem);
+                    u /= b;
+                }
+                i.Push(0L);
+            });
+        dict["SIGN"] = new(i =>
+            {
+                Ensure(i,1,"SIGN");
+                var n=ToLong(i.PopInternal());
+                if (n < 0)
+                    i.PicturedHold('-');
+            });
+        dict["#>"] = new(i =>
+            {
+                var s=i.PicturedEnd();
+                i.Push(s);
+            });
+        dict[">R"] = new(i =>
+            {
+                Ensure(i,1,">R");
+                var a=i.PopInternal();
+                i.RPush(a);
+            });
+        dict["R>"] = new(i => 
+        {
+            if (i.RCount==0)
+                throw new ForthException(ForthErrorCode.StackUnderflow,"Return stack underflow in R>");
+            var a=i.RPop();
+            i.Push(a);
         });
-        dict["SIGN"] = new(i => { Ensure(i,1,"SIGN"); var n=ToLong(i.PopInternal()); if (n < 0) i.PicturedHold('-'); });
-        dict["#>"] = new(i => { var s=i.PicturedEnd(); i.Push(s); });
-        dict[">R"] = new(i => { Ensure(i,1,">R"); var a=i.PopInternal(); i.RPush(a); });
-        dict["R>"] = new(i => { if (i.RCount==0) throw new ForthException(ForthErrorCode.StackUnderflow,"Return stack underflow in R>"); var a=i.RPop(); i.Push(a); });
-        dict["2>R"] = new(i => { Ensure(i,2,"2>R"); var b=i.PopInternal(); var a=i.PopInternal(); i.RPush(a); i.RPush(b); });
-        dict["2R>"] = new(i => { if (i.RCount<2) throw new ForthException(ForthErrorCode.StackUnderflow,"Return stack underflow in 2R>"); var b=i.RPop(); var a=i.RPop(); i.Push(a); i.Push(b); });
-        dict["DUP"] = new(i => { Ensure(i,1,"DUP"); i.Push(i.StackTop()); });
-        dict["2DUP"] = new(i => { Ensure(i,2,"2DUP"); var a=i.StackNthFromTop(2); var b=i.StackNthFromTop(1); i.Push(a); i.Push(b); });
-        dict["DROP"] = new(i => { Ensure(i,1,"DROP"); i.DropTop(); });
-        dict["SWAP"] = new(i => { Ensure(i,2,"SWAP"); i.SwapTop2(); });
-        dict["2SWAP"] = new(i => { Ensure(i,4,"2SWAP"); var d=i.PopInternal(); var c=i.PopInternal(); var b=i.PopInternal(); var a=i.PopInternal(); i.Push(c); i.Push(d); i.Push(a); i.Push(b); });
-        dict["OVER"] = new(i => { Ensure(i,2,"OVER"); i.Push(i.StackNthFromTop(2)); });
-        dict["NEGATE"] = new(i => { Ensure(i,1,"NEGATE"); var a=ToLong(i.PopInternal()); i.Push(-a); });
+        dict["2>R"] = new(i =>
+            {
+                Ensure(i,2,"2>R");
+                var b=i.PopInternal();
+                var a=i.PopInternal();
+                i.RPush(a);
+                i.RPush(b);
+            });
+        dict["2R>"] = new(i =>
+            {
+                if (i.RCount<2)
+                    throw new ForthException(ForthErrorCode.StackUnderflow,"Return stack underflow in 2R>");
+                var b=i.RPop();
+                var a=i.RPop();
+                i.Push(a);
+                i.Push(b);
+            });
+        dict["DUP"] = new(i =>
+            {
+                Ensure(i,1,"DUP");
+                i.Push(i.StackTop());
+            });
+        dict["2DUP"] = new(i =>
+            {
+                Ensure(i,2,"2DUP");
+                var a=i.StackNthFromTop(2);
+                var b=i.StackNthFromTop(1);
+                i.Push(a);
+                i.Push(b);
+            });
+        dict["DROP"] = new(i =>
+            {
+                Ensure(i,1,"DROP");
+                i.DropTop();
+            });
+        dict["SWAP"] = new(i =>
+            {
+                Ensure(i,2,"SWAP");
+                i.SwapTop2();
+            });
+        dict["2SWAP"] = new(i =>
+            { 
+                Ensure(i,4,"2SWAP");
+                var d=i.PopInternal();
+                var c=i.PopInternal();
+                var b=i.PopInternal();
+                var a=i.PopInternal();
+                i.Push(c);
+                i.Push(d);
+                i.Push(a);
+                i.Push(b);
+            });
+        dict["OVER"] = new(i =>
+            {
+                Ensure(i,2,"OVER");
+                i.Push(i.StackNthFromTop(2));
+            });
+        dict["NEGATE"] = new(i =>
+            {
+                Ensure(i,1,"NEGATE");
+                var a=ToLong(i.PopInternal());
+                i.Push(-a);
+            });
         // PICK: ( xu ... x1 x0 u -- xu ... x1 x0 xu ) copy u-th item (0-indexed from top) to top
-        dict["PICK"] = new(i => { 
-            Ensure(i,1,"PICK"); 
-            var n=ToLong(i.PopInternal()); 
-            if(n<0) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: negative index {n}"); 
-            if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}"); 
-            i.Push(i.StackNthFromTop((int)n+1)); 
-        });
+        dict["PICK"] = new(i =>
+            { 
+                Ensure(i,1,"PICK"); 
+                var n=ToLong(i.PopInternal()); 
+                if(n<0) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: negative index {n}"); 
+                if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}"); 
+                i.Push(i.StackNthFromTop((int)n+1)); 
+            });
         // Note: Additional convenience words (TRUE, FALSE, NOT, 2DROP, ?DUP, NIP, TUCK, 1+, 1-, 2*, 2/, ABS, SPACE, SPACES, 2@, 2!, U.) 
         // are defined in prelude.4th and loaded automatically after core initialization
 
-        dict["YIELD"] = new(async i => { await Task.Yield(); });
-        dict["BYE"] = new(i => { i.RequestExit(); });
-        dict["QUIT"] = new(i => { i.RequestExit(); });
-        dict["ABORT"] = new(i => { throw new ForthException(ForthErrorCode.Unknown, "ABORT"); });
-        dict["."] = new(i => { Ensure(i,1,"."); var n=ToLong(i.PopInternal()); i.WriteNumber(n); });
-        dict[".S"] = new(i => {
-            var items = i.Stack;
-            var sb = new StringBuilder();
-            sb.Append('<').Append(items.Count).Append("> ");
-            for (int idx = 0; idx < items.Count; idx++)
+        dict["YIELD"] = new(async i => await Task.Yield());
+        dict["BYE"] = new(i => i.RequestExit());
+        dict["QUIT"] = new(i => i.RequestExit());
+        dict["ABORT"] = new(i => throw new ForthException(ForthErrorCode.Unknown, "ABORT"));
+        dict["."] = new(i => 
             {
-                if (idx > 0) sb.Append(' ');
-                var o = items[idx];
-                switch (o)
+                Ensure(i,1,".");
+                var n=ToLong(i.PopInternal());
+                i.WriteNumber(n);
+            });
+        dict[".S"] = new(i =>
+            {
+                var items = i.Stack;
+                var sb = new StringBuilder();
+                sb.Append('<').Append(items.Count).Append("> ");
+                for (int idx = 0; idx < items.Count; idx++)
                 {
-                    case long l: sb.Append(l); break;
-                    case int ii: sb.Append(ii); break;
-                    case short s: sb.Append((long)s); break;
-                    case byte b: sb.Append((long)b); break;
-                    case char ch: sb.Append((int)ch); break;
-                    case bool bo: sb.Append(bo ? 1 : 0); break;
-                    default:
-                        sb.Append(o?.ToString() ?? "null");
-                        break;
+                    if (idx > 0) sb.Append(' ');
+                    var o = items[idx];
+                    switch (o)
+                    {
+                        case long l: sb.Append(l); break;
+                        case int ii: sb.Append(ii); break;
+                        case short s: sb.Append((long)s); break;
+                        case byte b: sb.Append((long)b); break;
+                        case char ch: sb.Append((int)ch); break;
+                        case bool bo: sb.Append(bo ? 1 : 0); break;
+                        default:
+                            sb.Append(o?.ToString() ?? "null");
+                            break;
+                    }
                 }
-            }
-            i.WriteText(sb.ToString());
-        });
-        dict["CR"] = new(i => { i.NewLine(); });
+                i.WriteText(sb.ToString());
+            });
+        dict["CR"] = new(i => i.NewLine());
         dict["EMIT"] = new(i => { Ensure(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
         dict["TYPE"] = new(i => { Ensure(i,1,"TYPE"); var obj=i.PopInternal(); if (obj is string s) { i.WriteText(s); } else throw new ForthException(ForthErrorCode.TypeError, "TYPE expects a string"); });
         // COUNT: ( s -- s u ) for strings; or ( c-addr1 -- c-addr2 u ) for counted buffers
@@ -242,15 +482,15 @@ internal static class CorePrimitives
         dict["INVERT"] = new(i => { Ensure(i,1,"INVERT"); var a=ToLong(i.PopInternal()); i.Push(~a); });
         dict["LSHIFT"] = new(i => { Ensure(i,2,"LSHIFT"); var u=ToLong(i.PopInternal()); var x=ToLong(i.PopInternal()); i.Push((long)((ulong)x << (int)u)); });
         dict["RSHIFT"] = new(i => { Ensure(i,2,"RSHIFT"); var u=ToLong(i.PopInternal()); var x=ToLong(i.PopInternal()); i.Push((long)((ulong)x >> (int)u)); });
-        dict["EXIT"] = new(i => { i.ThrowExit(); });
-        dict["UNLOOP"] = new(i => { i.Unloop(); });
-        dict["DEPTH"] = new(i => { i.Push((long)i.Stack.Count); });
-        dict["RP@"] = new(i => { i.Push((long)i.RCount); });
-        dict["STATE"] = new(i => { i.Push(i.StateAddr); });
-        dict["BASE"] = new(i => { i.Push(i.BaseAddr); });
-        dict["DECIMAL"] = new(i => { i.MemSet(i.BaseAddr, 10); });
-        dict["HEX"] = new(i => { i.MemSet(i.BaseAddr, 16); });
-        dict["I"] = new(i => { i.Push(i.CurrentLoopIndex()); });
+        dict["EXIT"] = new(i => i.ThrowExit());
+        dict["UNLOOP"] = new(i => i.Unloop());
+        dict["DEPTH"] = new(i => i.Push((long)i.Stack.Count));
+        dict["RP@"] = new(i => i.Push((long)i.RCount));
+        dict["STATE"] = new(i => i.Push(i.StateAddr));
+        dict["BASE"] = new(i => i.Push(i.BaseAddr));
+        dict["DECIMAL"] = new(i => i.MemSet(i.BaseAddr, 10));
+        dict["HEX"] = new(i => i.MemSet(i.BaseAddr, 16));
+        dict["I"] = new(i => i.Push(i.CurrentLoopIndex()));
         dict["EXECUTE"] = new(async i => {
             Ensure(i,1,"EXECUTE");
             var top = i.StackTop();
@@ -336,7 +576,7 @@ internal static class CorePrimitives
     {
         var builder = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
         builder[":"] = new(i => { var name = i.ReadNextTokenOrThrow("Expected name after ':'"); i.BeginDefinition(name); }) { IsImmediate = true, Name = ":" };
-        builder[";"] = new(i => { i.FinishDefinition(); }) { IsImmediate = true, Name = ";" };
+        builder[";"] = new(i => i.FinishDefinition()) { IsImmediate = true, Name = ";" };
         builder["IMMEDIATE"] = new(i => { if (i._lastDefinedWord is null) throw new ForthException(ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE"); i._lastDefinedWord.IsImmediate = true; }) { IsImmediate = true, Name = "IMMEDIATE" };
         builder["POSTPONE"] = new(async i => {
             var name = i.ReadNextTokenOrThrow("POSTPONE expects a name");
@@ -357,18 +597,18 @@ internal static class CorePrimitives
         builder["LITERAL"] = new(i => { if (!i._isCompiling) throw new ForthException(ForthErrorCode.CompileError, "LITERAL outside compilation"); Ensure(i,1,"LITERAL"); var val=i.PopInternal(); i.CurrentList().Add(ii=> { ii.Push(val); return Task.CompletedTask; }); }) { IsImmediate = true, Name = "LITERAL" };
         builder["["] = new(i => { i._isCompiling=false; i._mem[i.StateAddr]=0; }) { IsImmediate = true, Name = "[" };
         builder["]"] = new(i => { i._isCompiling=true; i._mem[i.StateAddr]=1; }) { IsImmediate = true, Name = "]" };
-        builder["IF"] = new(i => { i._controlStack.Push(new FI.IfFrame()); }) { IsImmediate = true, Name = "IF" };
+        builder["IF"] = new(i => i._controlStack.Push(new FI.IfFrame())) { IsImmediate = true, Name = "IF" };
         builder["ELSE"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF"); if(ifr.ElsePart is not null) throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE"); ifr.ElsePart=new(); ifr.InElse=true; }) { IsImmediate = true, Name = "ELSE" };
         builder["THEN"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.IfFrame ifr) throw new ForthException(ForthErrorCode.CompileError, "THEN without IF"); i._controlStack.Pop(); var thenPart=ifr.ThenPart; var elsePart=ifr.ElsePart; i.CurrentList().Add(async ii=> { Ensure(ii,1,"IF"); var flag=ii.PopInternal(); if(ToBool(flag)) foreach(var a in thenPart) await a(ii); else if(elsePart is not null) foreach(var a in elsePart) await a(ii); }); }) { IsImmediate = true, Name = "THEN" };
-        builder["BEGIN"] = new(i => { i._controlStack.Push(new FI.BeginFrame()); }) { IsImmediate = true, Name = "BEGIN" };
+        builder["BEGIN"] = new(i => i._controlStack.Push(new FI.BeginFrame())) { IsImmediate = true, Name = "BEGIN" };
         builder["WHILE"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError, "WHILE without BEGIN"); if(bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "Multiple WHILE"); bf.InWhile=true; }) { IsImmediate = true, Name = "WHILE" };
         builder["REPEAT"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError, "REPEAT without BEGIN"); if(!bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "REPEAT requires WHILE"); i._controlStack.Pop(); var pre=bf.PrePart; var mid=bf.MidPart; i.CurrentList().Add(async ii=> { while(true){ foreach(var a in pre) await a(ii); Ensure(ii,1,"WHILE"); var flag=ii.PopInternal(); if(!ToBool(flag)) break; foreach(var b in mid) await b(ii);} }); }) { IsImmediate = true, Name = "REPEAT" };
         builder["UNTIL"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.BeginFrame bf) throw new ForthException(ForthErrorCode.CompileError, "UNTIL without BEGIN"); if(bf.InWhile) throw new ForthException(ForthErrorCode.CompileError, "UNTIL after WHILE use REPEAT"); i._controlStack.Pop(); var body=bf.PrePart; i.CurrentList().Add(async ii=> { while(true){ foreach(var a in body) await a(ii); Ensure(ii,1,"UNTIL"); var flag=ii.PopInternal(); if(ToBool(flag)) break; } }); }) { IsImmediate = true, Name = "UNTIL" };
-        builder["DO"] = new(i => { i._controlStack.Push(new FI.DoFrame()); }) { IsImmediate = true, Name = "DO" };
+        builder["DO"] = new(i => i._controlStack.Push(new FI.DoFrame())) { IsImmediate = true, Name = "DO" };
         builder["LOOP"] = new(i => { if(i._controlStack.Count==0 || i._controlStack.Peek() is not FI.DoFrame df) throw new ForthException(ForthErrorCode.CompileError, "LOOP without DO"); i._controlStack.Pop(); var body=df.Body; i.CurrentList().Add(async ii=> { Ensure(ii,2,"DO"); var start=ToLong(ii.PopInternal()); var limit=ToLong(ii.PopInternal()); long step=start<=limit?1L:-1L; for(long idx=start; idx!=limit; idx+=step){ ii.PushLoopIndex(idx); try { foreach(var a in body) await a(ii);} catch(ForthInterpreter.LoopLeaveException){ break; } finally { ii.PopLoopIndexMaybe(); } } }); }) { IsImmediate = true, Name = "LOOP" };
         builder["LEAVE"] = new(i => { bool inside=false; foreach(var f in i._controlStack) if(f is FI.DoFrame){ inside=true; break; } if(!inside) throw new ForthException(ForthErrorCode.CompileError, "LEAVE outside DO...LOOP"); i.CurrentList().Add(ii=> { throw new FI.LoopLeaveException(); }); }) { IsImmediate = true, Name = "LEAVE" };
         builder["MODULE"] = new(i => { var name=i.ReadNextTokenOrThrow("Expected name after MODULE"); i._currentModule=name; if(string.IsNullOrWhiteSpace(i._currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name"); if(!i._modules.ContainsKey(i._currentModule)) i._modules[i._currentModule]= new(StringComparer.OrdinalIgnoreCase); }) { IsImmediate = true, Name = "MODULE" };
-        builder["END-MODULE"] = new(i => { i._currentModule=null; }) { IsImmediate = true, Name = "END-MODULE" };
+        builder["END-MODULE"] = new(i => i._currentModule = null) { IsImmediate = true, Name = "END-MODULE" };
         builder["USING"] = new(i => { var m=i.ReadNextTokenOrThrow("Expected name after USING"); if(!i._usingModules.Contains(m)) i._usingModules.Add(m); }) { IsImmediate = true, Name = "USING" };
         builder["LOAD-ASM"] = new(i => { var path=i.ReadNextTokenOrThrow("Expected path after LOAD-ASM"); var count=AssemblyWordLoader.Load(i,path); i.Push((long)count); }) { IsImmediate = true, Name = "LOAD-ASM" };
         builder["LOAD-ASM-TYPE"] = new(i => { var tn=i.ReadNextTokenOrThrow("Expected type after LOAD-ASM-TYPE"); Type? t=Type.GetType(tn,false,false); if(t==null) foreach(var asm in AppDomain.CurrentDomain.GetAssemblies()){ t=asm.GetType(tn,false,false); if(t!=null) break; } if(t==null) throw new ForthException(ForthErrorCode.CompileError, $"Type not found: {tn}"); var count=i.LoadAssemblyWords(t.Assembly); i.Push((long)count); }) { IsImmediate = true, Name = "LOAD-ASM-TYPE" };
