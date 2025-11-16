@@ -437,149 +437,6 @@ public class ForthInterpreter : IForthInterpreter
     internal sealed class DoFrame: CompileFrame { public List<Func<ForthInterpreter, Task>> Body { get; } = new(); public override List<Func<ForthInterpreter, Task>> GetCurrentList()=> Body; }
     internal sealed class LoopLeaveException: Exception {}
 
-    /// <summary>
-    /// Immutable snapshot of interpreter state for passing to spawned tasks
-    /// </summary>
-    internal sealed class InterpreterContext
-    {
-        public ImmutableDictionary<string, Word> Dictionary { get; }
-        public ImmutableDictionary<string, ImmutableDictionary<string, Word>> Modules { get; }
-        public ImmutableList<string> UsingModules { get; }
-        public ImmutableDictionary<string, long> Values { get; }
-        public ImmutableDictionary<long, long> Memory { get; }
-        public ImmutableDictionary<string, Word?> Deferred { get; }
-        public ImmutableDictionary<string, string> Decompile { get; }
-        public long BaseValue { get; }
-
-        public InterpreterContext(
-            ImmutableDictionary<string, Word> dictionary,
-            ImmutableDictionary<string, ImmutableDictionary<string, Word>> modules,
-            ImmutableList<string> usingModules,
-            ImmutableDictionary<string, long> values,
-            ImmutableDictionary<long, long> memory,
-            ImmutableDictionary<string, Word?> deferred,
-            ImmutableDictionary<string, string> decompile,
-            long baseValue)
-        {
-            Dictionary = dictionary;
-            Modules = modules;
-            UsingModules = usingModules;
-            Values = values;
-            Memory = memory;
-            Deferred = deferred;
-            Decompile = decompile;
-            BaseValue = baseValue;
-        }
-    }
-
-    /// <summary>
-    /// Capture current interpreter state as immutable context for spawning
-    /// </summary>
-    internal InterpreterContext CaptureContext()
-    {
-        // Capture dictionary
-        var dictSnapshot = _dict.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        
-        // Capture modules
-        var modulesBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableDictionary<string, Word>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var kvp in _modules)
-        {
-            modulesBuilder[kvp.Key] = kvp.Value.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        }
-        var modulesSnapshot = modulesBuilder.ToImmutable();
-        
-        // Capture using modules
-        var usingSnapshot = _usingModules.ToImmutableList();
-        
-        // Capture values
-        var valuesSnapshot = _values.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        
-        // Capture memory (excluding special addresses like STATE which are per-interpreter)
-        var memorySnapshot = _mem.ToImmutableDictionary();
-        
-        // Capture deferred words
-        var deferredSnapshot = _deferred.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        
-        // Capture decompile info
-        var decompileSnapshot = _decompile.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        
-        // Capture BASE value
-        MemTryGet(_baseAddr, out var baseValue);
-        
-        return new InterpreterContext(
-            dictSnapshot,
-            modulesSnapshot,
-            usingSnapshot,
-            valuesSnapshot,
-            memorySnapshot,
-            deferredSnapshot,
-            decompileSnapshot,
-            baseValue);
-    }
-
-    /// <summary>
-    /// Create a new interpreter with captured context from parent
-    /// </summary>
-    internal ForthInterpreter(InterpreterContext context, IForthIO? io = null)
-    {
-        _io = io ?? new ConsoleForthIO();
-        _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
-        _baseAddr = _nextAddr++; _mem[_baseAddr] = context.BaseValue;
-        
-        // Restore dictionary
-        foreach (var kvp in context.Dictionary)
-        {
-            _dict[kvp.Key] = kvp.Value;
-        }
-        
-        // Restore modules
-        foreach (var modKvp in context.Modules)
-        {
-            var moduleDict = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
-            foreach (var wordKvp in modKvp.Value)
-            {
-                moduleDict[wordKvp.Key] = wordKvp.Value;
-            }
-            _modules[modKvp.Key] = moduleDict;
-        }
-        
-        // Restore using modules
-        _usingModules.AddRange(context.UsingModules);
-        
-        // Restore values
-        foreach (var kvp in context.Values)
-        {
-            _values[kvp.Key] = kvp.Value;
-        }
-        
-        // Restore memory (starting from where child's addresses begin)
-        var maxContextAddr = context.Memory.Keys.Any() ? context.Memory.Keys.Max() : 0L;
-        if (maxContextAddr >= _nextAddr)
-        {
-            _nextAddr = maxContextAddr + 1;
-        }
-        foreach (var kvp in context.Memory)
-        {
-            // Skip special addresses that were already initialized
-            if (kvp.Key != _stateAddr && kvp.Key != _baseAddr)
-            {
-                _mem[kvp.Key] = kvp.Value;
-            }
-        }
-        
-        // Restore deferred
-        foreach (var kvp in context.Deferred)
-        {
-            _deferred[kvp.Key] = kvp.Value;
-        }
-        
-        // Restore decompile
-        foreach (var kvp in context.Decompile)
-        {
-            _decompile[kvp.Key] = kvp.Value;
-        }
-    }
-
     // ----- MARKER snapshots (for dictionary/time-travel) -----
     internal sealed class MarkerSnapshot
     {
@@ -619,6 +476,80 @@ public class ForthInterpreter : IForthInterpreter
         var decompile = _decompile.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
         var defs = _definitions.Select(d => (d.Name, d.Module)).ToImmutableArray();
         return new MarkerSnapshot(dict, modules, usingMods, values, memory, deferred, decompile, defs, _nextAddr);
+    }
+
+    /// <summary>
+    /// Create a new interpreter with captured snapshot from parent (used by SPAWN)
+    /// </summary>
+    internal ForthInterpreter(MarkerSnapshot snapshot, IForthIO? io = null)
+    {
+        _io = io ?? new ConsoleForthIO();
+        _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
+        
+        // Get BASE value from snapshot
+        long baseValue = 10;
+        if (snapshot.Memory.TryGetValue(snapshot.Memory.Keys.FirstOrDefault(k => k == 2), out var snapBase))
+            baseValue = snapBase;
+        _baseAddr = _nextAddr++; _mem[_baseAddr] = baseValue;
+        
+        // Restore dictionary
+        foreach (var kvp in snapshot.Dict)
+        {
+            _dict[kvp.Key] = kvp.Value;
+        }
+        
+        // Restore modules
+        foreach (var modKvp in snapshot.Modules)
+        {
+            var moduleDict = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
+            foreach (var wordKvp in modKvp.Value)
+            {
+                moduleDict[wordKvp.Key] = wordKvp.Value;
+            }
+            _modules[modKvp.Key] = moduleDict;
+        }
+        
+        // Restore using modules
+        _usingModules.AddRange(snapshot.UsingModules);
+        
+        // Restore values
+        foreach (var kvp in snapshot.Values)
+        {
+            _values[kvp.Key] = kvp.Value;
+        }
+        
+        // Restore memory (adjust addresses for child interpreter)
+        var maxSnapAddr = snapshot.NextAddr;
+        if (maxSnapAddr >= _nextAddr)
+        {
+            _nextAddr = maxSnapAddr + 1;
+        }
+        foreach (var kvp in snapshot.Memory)
+        {
+            // Skip special addresses that were already initialized
+            if (kvp.Key != _stateAddr && kvp.Key != _baseAddr)
+            {
+                _mem[kvp.Key] = kvp.Value;
+            }
+        }
+        
+        // Restore deferred
+        foreach (var kvp in snapshot.Deferred)
+        {
+            _deferred[kvp.Key] = kvp.Value;
+        }
+        
+        // Restore decompile
+        foreach (var kvp in snapshot.Decompile)
+        {
+            _decompile[kvp.Key] = kvp.Value;
+        }
+        
+        // Restore definitions list
+        foreach (var (name, module) in snapshot.Definitions)
+        {
+            _definitions.Add(new DefinitionRecord(name, module));
+        }
     }
 
     internal void RestoreSnapshot(MarkerSnapshot snap)
