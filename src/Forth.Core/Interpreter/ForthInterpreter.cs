@@ -1,13 +1,8 @@
-using System; 
-using System.Collections.Concurrent;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Forth.Core;
 using Forth.Core.Binding;
 using Forth.Core.Execution;
 using System.Collections.Immutable; // added
+using System.Reflection;
+using System.Text;
 
 namespace Forth.Core.Interpreter;
 
@@ -31,7 +26,6 @@ public class ForthInterpreter : IForthInterpreter
     internal readonly List<string> _usingModules = new(); // internal
     internal string? _currentModule; // internal
 
-    private readonly ConcurrentDictionary<string, Func<ForthInterpreter, Task>> _ilCache = new();
     private readonly ControlFlowRuntime _controlFlow = new();
 
     private readonly long _stateAddr;
@@ -316,10 +310,9 @@ public class ForthInterpreter : IForthInterpreter
     private async Task<bool> EvalInternalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
-        if (_ilCache.TryGetValue(line, out var cached)) { await cached(this); return !_exitRequested; }
         _tokens = Tokenizer.Tokenize(line);
         _tokenIndex = 0;
-        if (!_isCompiling && _ilCache.Count < 1024 && IlScriptCompiler.TryCompile(_tokens, out var runner)) { _ilCache[line]=runner; await runner(this); return !_exitRequested; }
+        // IL fast-path removed; interpret tokens normally
         while (TryReadNextToken(out var tok))
         {
             if (tok.Length==0) continue;
@@ -598,8 +591,5 @@ public class ForthInterpreter : IForthInterpreter
                 _lastDefinedWord = w;
             }
         }
-
-        // Clear fast-path caches
-        _ilCache.Clear();
     }
 }
