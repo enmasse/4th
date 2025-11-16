@@ -11,6 +11,7 @@ internal static class CorePrimitives
 {
     public static void Install(ForthInterpreter interp, Dictionary<string, Word> dict)
     {
+        // + : ( n1 n2 -- sum ) add two numbers
         dict["+"] = new(i =>
             {
                 Ensure(i,2,"+");
@@ -18,6 +19,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a+b);
             });
+        // - : ( n1 n2 -- diff ) subtract second from first
         dict["-"] = new(i =>
             {
                 Ensure(i,2,"-");
@@ -25,6 +27,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a-b);
             });
+        // * : ( n1 n2 -- prod ) multiply two numbers
         dict["*"] = new(i =>
             {
                 Ensure(i,2,"*");
@@ -32,6 +35,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a*b);
             });
+        // / : ( n1 n2 -- quotient ) integer division, throws on divide by zero
         dict["/"] = new(i =>
             {
                 Ensure(i,2,"/");
@@ -41,6 +45,7 @@ internal static class CorePrimitives
                     throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
                 i.Push(a/b);
             });
+        // /MOD : ( n1 n2 -- rem quot ) compute quotient and remainder; pushes remainder then quotient
         dict["/MOD"] = new(i =>
             {
                 Ensure(i,2,"/MOD");
@@ -52,6 +57,7 @@ internal static class CorePrimitives
                 i.Push(rem);
                 i.Push(quot);
             });
+        // MOD : ( n1 n2 -- rem ) remainder of integer division
         dict["MOD"] = new(i =>
             {
                 Ensure(i,2,"MOD");
@@ -60,6 +66,7 @@ internal static class CorePrimitives
                 if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
                 i.Push(a % b);
             });
+        // < : ( a b -- flag ) compare less-than, returns 1/0
         dict["<"] = new(i =>
             {
                 Ensure(i,2,"<");
@@ -67,6 +74,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a < b ? 1L : 0L);
             });
+        // = : ( a b -- flag ) equality comparison, returns 1 if equal else 0
         dict["="] = new(i =>
             {
                 Ensure(i,2,"=");
@@ -74,6 +82,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a == b ? 1L : 0L);
             });
+        // > : ( a b -- flag ) greater-than comparison, returns 1/0
         dict[">"] = new(i =>
             {
                 Ensure(i,2,">");
@@ -81,18 +90,21 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a > b ? 1L : 0L);
             });
+        // 0= : ( n -- flag ) true if zero
         dict["0="] = new(i =>
             {
                 Ensure(i,1,"0=");
                 var a=ToLong(i.PopInternal());
                 i.Push(a==0 ? 1L : 0L);
             });
+        // 0<> : ( n -- flag ) true if non-zero
         dict["0<>"] = new(i =>
             {
                 Ensure(i,1,"0<>");
                 var a=ToLong(i.PopInternal());
                 i.Push(a!=0 ? 1L : 0L);
             });
+        // <> : ( a b -- flag ) not equal comparison
         dict["<>"] = new(i =>
             {
                 Ensure(i,2,"<>");
@@ -100,6 +112,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a!=b ? 1L : 0L);
             });
+        // <= : ( a b -- flag ) less-or-equal comparison
         dict["<="] = new(i =>
             {
                 Ensure(i,2,"<=");
@@ -107,6 +120,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a<=b ? 1L : 0L);
             });
+        // >= : ( a b -- flag ) greater-or-equal comparison
         dict[">="] = new(i =>
             {
                 Ensure(i,2,">=");
@@ -114,6 +128,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a>=b ? 1L : 0L);
             });
+        // MIN : ( a b -- min ) push smaller of two
         dict["MIN"] = new(i =>
             {
                 Ensure(i,2,"MIN");
@@ -121,6 +136,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a<b ? a : b);
             });
+        // MAX : ( a b -- max ) push larger of two
         dict["MAX"] = new(i =>
             {
                 Ensure(i,2,"MAX");
@@ -128,6 +144,7 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a>b ? a : b);
             });
+        // ROT : ( a b c -- b c a ) rotate third element to top
         dict["ROT"] = new(i =>
             {
                 Ensure(i,3,"ROT");
@@ -138,6 +155,7 @@ internal static class CorePrimitives
                 i.Push(c);
                 i.Push(a);
             });
+        // -ROT : ( a b c -- c a b ) reverse rotation
         dict["-ROT"] = new(i =>
             {
                 Ensure(i,3,"-ROT");
@@ -148,6 +166,7 @@ internal static class CorePrimitives
                 i.Push(a);
                 i.Push(b);
             });
+        // @ : ( addr -- value ) fetch cell from memory
         dict["@"] = new(i =>
             {
                 Ensure(i,1,"@");
@@ -155,6 +174,7 @@ internal static class CorePrimitives
                 i.MemTryGet(addr, out var v);
                 i.Push(v);
             });
+        // ! : ( addr val -- ) store cell to memory
         dict["!"] = new(i =>
             {
                 Ensure(i,2,"!");
@@ -162,6 +182,7 @@ internal static class CorePrimitives
                 var val=ToLong(i.PopInternal());
                 i.MemSet(addr,val);
             });
+        // +! : ( addr add -- ) add value to memory cell
         dict["+!"] = new(i =>
             {
                 Ensure(i,2,"+!");
@@ -170,7 +191,7 @@ internal static class CorePrimitives
                 i.MemTryGet(addr, out var cur);
                 i.MemSet(addr, cur + add);
             });
-        // Byte memory operations
+        // C! : ( addr char -- ) store low byte to memory
         dict["C!"] = new(i =>
             {
                 Ensure(i,2,"C!");
@@ -179,6 +200,7 @@ internal static class CorePrimitives
                 var b=(long)((byte)val);
                 i.MemSet(addr, b);
             });
+        // C@ : ( addr -- char ) fetch low byte from memory
         dict["C@"] = new(i =>
             {
                 Ensure(i,1,"C@");
@@ -186,7 +208,7 @@ internal static class CorePrimitives
                 i.MemTryGet(addr, out var v);
                 i.Push((long)((byte)v));
             });
-        // Block memory ops: MOVE (src dst u --), FILL (addr u char --), ERASE (addr u --)
+        // MOVE : ( src dst u -- ) memory block move, handles overlap correctly
         dict["MOVE"] = new(i => {
             Ensure(i,3,"MOVE");
             var u = ToLong(i.PopInternal());
@@ -212,6 +234,7 @@ internal static class CorePrimitives
                 }
             }
         });
+        // FILL : ( addr u char -- ) fill u bytes at addr with char
         dict["FILL"] = new(i => {
             Ensure(i,3,"FILL");
             var ch = ToLong(i.PopInternal());
@@ -221,6 +244,7 @@ internal static class CorePrimitives
             var b = (long)((byte)ch);
             for (long k = 0; k < u; k++) i.MemSet(addr + k, b);
         });
+        // ERASE : ( addr u -- ) set u bytes at addr to zero
         dict["ERASE"] = new(i => {
             Ensure(i,2,"ERASE");
             var u = ToLong(i.PopInternal());
@@ -228,7 +252,7 @@ internal static class CorePrimitives
             if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length");
             for (long k = 0; k < u; k++) i.MemSet(addr + k, 0);
         });
-        // Introspection: DUMP (addr u --) prints u bytes starting at addr as two-digit hex separated by spaces
+        // DUMP : ( addr u -- ) write u bytes as hex string for inspection
         dict["DUMP"] = new(i => {
             Ensure(i,2,"DUMP");
             var u = ToLong(i.PopInternal());
@@ -244,7 +268,7 @@ internal static class CorePrimitives
             }
             i.WriteText(sb.ToString());
         });
-        // Number parsing: >NUMBER ( str start consumed -- value remainderLen totalConsumed )
+        // >NUMBER : ( str start consumed -- value remainderLen totalConsumed ) parse digits from string according to BASE
         dict[">NUMBER"] = new(i => {
             Ensure(i,3,">NUMBER");
             var consumed = (int)ToLong(i.PopInternal());
@@ -278,14 +302,16 @@ internal static class CorePrimitives
             i.Push((long)remainder);
             i.Push((long)(consumed + digits));
         });
-        // Pictured numeric output primitives (single-cell variant)
+        // <# : pictured numeric output start
         dict["<#"] = new(i => i.PicturedBegin());
+        // HOLD : ( char -- ) push character into pictured output buffer
         dict["HOLD"] = new(i => 
             { 
                 Ensure(i,1,"HOLD");
                 var n=ToLong(i.PopInternal());
                 i.PicturedHold((char)(n & 0xFFFF));
             });
+        // # : pictured output digit extraction, return remaining quotient
         dict["#"] = new(i =>
             {
                 Ensure(i,1,"#");
@@ -298,6 +324,7 @@ internal static class CorePrimitives
                 i.PicturedHoldDigit(rem);
                 i.Push(q);
             });
+        // #S : pictured output produce digits of a number onto pictured buffer
         dict["#S"] = new(i =>
             {
                 Ensure(i,1,"#S");
@@ -319,6 +346,7 @@ internal static class CorePrimitives
                 }
                 i.Push(0L);
             });
+        // SIGN : pictured output sign handling (push '-' if negative)
         dict["SIGN"] = new(i =>
             {
                 Ensure(i,1,"SIGN");
@@ -326,17 +354,20 @@ internal static class CorePrimitives
                 if (n < 0)
                     i.PicturedHold('-');
             });
+        // #> : pictured output finish and push resulting string
         dict["#>"] = new(i =>
             {
                 var s=i.PicturedEnd();
                 i.Push(s);
             });
+        // >R : ( x -- ) move top of data stack to return stack
         dict[">R"] = new(i =>
             {
                 Ensure(i,1,">R");
                 var a=i.PopInternal();
                 i.RPush(a);
             });
+        // R> : ( -- x ) move top of return stack to data stack
         dict["R>"] = new(i => 
         {
             if (i.RCount==0)
@@ -344,6 +375,7 @@ internal static class CorePrimitives
             var a=i.RPop();
             i.Push(a);
         });
+        // 2>R : ( x1 x2 -- ) move two cells to return stack
         dict["2>R"] = new(i =>
             {
                 Ensure(i,2,"2>R");
@@ -352,6 +384,7 @@ internal static class CorePrimitives
                 i.RPush(a);
                 i.RPush(b);
             });
+        // 2R> : ( -- x1 x2 ) pop two cells from return stack onto data stack
         dict["2R>"] = new(i =>
             {
                 if (i.RCount<2)
@@ -361,11 +394,13 @@ internal static class CorePrimitives
                 i.Push(a);
                 i.Push(b);
             });
+        // DUP : duplicate top of stack
         dict["DUP"] = new(i =>
             {
                 Ensure(i,1,"DUP");
                 i.Push(i.StackTop());
             });
+        // 2DUP : duplicate top two stack items
         dict["2DUP"] = new(i =>
             {
                 Ensure(i,2,"2DUP");
@@ -374,16 +409,19 @@ internal static class CorePrimitives
                 i.Push(a);
                 i.Push(b);
             });
+        // DROP : remove top of stack
         dict["DROP"] = new(i =>
             {
                 Ensure(i,1,"DROP");
                 i.DropTop();
             });
+        // SWAP : swap top two stack items
         dict["SWAP"] = new(i =>
             {
                 Ensure(i,2,"SWAP");
                 i.SwapTop2();
             });
+        // 2SWAP : swap top two pairs on the stack
         dict["2SWAP"] = new(i =>
             { 
                 Ensure(i,4,"2SWAP");
@@ -396,18 +434,20 @@ internal static class CorePrimitives
                 i.Push(a);
                 i.Push(b);
             });
+        // OVER : copy second item to top
         dict["OVER"] = new(i =>
             {
                 Ensure(i,2,"OVER");
                 i.Push(i.StackNthFromTop(2));
             });
+        // NEGATE : ( n -- -n ) negate number
         dict["NEGATE"] = new(i =>
             {
                 Ensure(i,1,"NEGATE");
                 var a=ToLong(i.PopInternal());
                 i.Push(-a);
             });
-        // PICK: ( xu ... x1 x0 u -- xu ... x1 x0 xu ) copy u-th item (0-indexed from top) to top
+        // PICK : ( ... u -- ... xu ) copy u-th item from top to top
         dict["PICK"] = new(i =>
             { 
                 Ensure(i,1,"PICK"); 
@@ -416,19 +456,23 @@ internal static class CorePrimitives
                 if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}"); 
                 i.Push(i.StackNthFromTop((int)n+1)); 
             });
-        // Note: Additional convenience words (TRUE, FALSE, NOT, 2DROP, ?DUP, NIP, TUCK, 1+, 1-, 2*, 2/, ABS, SPACE, SPACES, 2@, 2!, U.) 
-        // are defined in prelude.4th and loaded automatically after core initialization
+        // Note: Additional convenience words are in prelude.4th
 
+        // YIELD : yield execution to scheduler
         dict["YIELD"] = new(async i => await Task.Yield());
+        // BYE, QUIT : request interpreter exit
         dict["BYE"] = new(i => i.RequestExit());
         dict["QUIT"] = new(i => i.RequestExit());
+        // ABORT : raise an abort exception
         dict["ABORT"] = new(i => throw new ForthException(ForthErrorCode.Unknown, "ABORT"));
+        // . : ( n -- ) write number to output
         dict["."] = new(i => 
             {
                 Ensure(i,1,".");
                 var n=ToLong(i.PopInternal());
                 i.WriteNumber(n);
             });
+        // .S : show stack contents as list
         dict[".S"] = new(i =>
             {
                 var items = i.Stack;
@@ -453,7 +497,9 @@ internal static class CorePrimitives
                 }
                 i.WriteText(sb.ToString());
             });
+        // CR : write newline
         dict["CR"] = new(i => i.NewLine());
+        // EMIT : ( char -- ) output character
         dict["EMIT"] = new(i =>
             {
                 Ensure(i,1,"EMIT");
@@ -461,6 +507,7 @@ internal static class CorePrimitives
                 char ch=(char)(n & 0xFFFF);
                 i.WriteText(ch.ToString());
             });
+        // TYPE : ( s -- ) output a string
         dict["TYPE"] = new(i =>
             {
                 Ensure(i,1,"TYPE");
@@ -471,7 +518,7 @@ internal static class CorePrimitives
                 }
                 else
                     throw new ForthException(ForthErrorCode.TypeError, "TYPE expects a string"); });
-        // COUNT: ( s -- s u ) for strings; or ( c-addr1 -- c-addr2 u ) for counted buffers
+        // COUNT : for strings return string and length; for counted buffers return address+1 and length
         dict["COUNT"] = new(i =>
             {
                 Ensure(i,1,"COUNT");
@@ -492,6 +539,7 @@ internal static class CorePrimitives
                         throw new ForthException(ForthErrorCode.TypeError, "COUNT expects a string or address");
                 }
             });
+        // AND, OR, XOR : bitwise operations
         dict["AND"] = new(i =>
             {
                 Ensure(i,2,"AND");
@@ -513,12 +561,14 @@ internal static class CorePrimitives
                 var a=ToLong(i.PopInternal());
                 i.Push(a ^ b);
             });
+        // INVERT : bitwise complement
         dict["INVERT"] = new(i =>
             {
                 Ensure(i,1,"INVERT");
                 var a=ToLong(i.PopInternal());
                 i.Push(~a);
             });
+        // LSHIFT, RSHIFT : logical shifts using unsigned semantics
         dict["LSHIFT"] = new(i =>
             {
                 Ensure(i,2,"LSHIFT");
@@ -533,15 +583,24 @@ internal static class CorePrimitives
                 var x=ToLong(i.PopInternal());
                 i.Push((long)((ulong)x >> (int)u));
             });
+        // EXIT : signal exit from current compiled word
         dict["EXIT"] = new(i => i.ThrowExit());
+        // UNLOOP : helper to unwind loop state
         dict["UNLOOP"] = new(i => i.Unloop());
+        // DEPTH : push current stack depth
         dict["DEPTH"] = new(i => i.Push((long)i.Stack.Count));
+        // RP@ : push return stack depth
         dict["RP@"] = new(i => i.Push((long)i.RCount));
+        // STATE : push address of STATE flag (compiling/interpreting)
         dict["STATE"] = new(i => i.Push(i.StateAddr));
+        // BASE : push address of BASE (numeric base storage)
         dict["BASE"] = new(i => i.Push(i.BaseAddr));
+        // DECIMAL, HEX : set numeric base
         dict["DECIMAL"] = new(i => i.MemSet(i.BaseAddr, 10));
         dict["HEX"] = new(i => i.MemSet(i.BaseAddr, 16));
+        // I : push current loop index
         dict["I"] = new(i => i.Push(i.CurrentLoopIndex()));
+        // EXECUTE : execute an execution token or (xt value) pair
         dict["EXECUTE"] = new(async i =>
             {
                 Ensure(i,1,"EXECUTE");
@@ -562,7 +621,7 @@ internal static class CorePrimitives
                 }
                 throw new ForthException(ForthErrorCode.TypeError, "EXECUTE expects an execution token");
             });
-        // Exception model: CATCH ( xt -- 0 | err ) and THROW ( err -- )
+        // CATCH : ( xt -- 0 | err ) execute xt and catch Forth exceptions, returning error code
         dict["CATCH"] = new(async i =>
             {
                 Ensure(i,1,"CATCH");
@@ -585,6 +644,7 @@ internal static class CorePrimitives
                     i.Push(1L);
                 }
             });
+        // THROW : ( err -- ) rethrow a non-zero error as a ForthException
         dict["THROW"] = new(i =>
             {
                 Ensure(i,1,"THROW");
@@ -593,7 +653,7 @@ internal static class CorePrimitives
                     throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}");
             });
 
-        // WORDS: list all available word names
+        // WORDS : list all available word names
         dict["WORDS"] = new(i =>
             {
                 var names = i.GetAllWordNames();
@@ -608,7 +668,7 @@ internal static class CorePrimitives
                 i.WriteText(sb.ToString());
             });
 
-        // Multiply then divide: ( n1 n2 n3 -- n ) -> (n1 * n2) / n3
+        // */ : ( n1 n2 n3 -- n ) multiply-then-divide
         dict["*/"] = new(i =>
             {
                 Ensure(i,3,"*/");
@@ -620,7 +680,7 @@ internal static class CorePrimitives
                 i.Push(prod / d);
             });
 
-        // LATEST: push the most recently defined word's execution token
+        // LATEST : push execution token of most recently defined word
         dict["LATEST"] = new(i =>
             {
                 var last = i._lastDefinedWord;
@@ -632,18 +692,22 @@ internal static class CorePrimitives
     public static void InstallCompilerWords(ForthInterpreter intr)
     {
         var builder = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
+        // : ( compile ) start a new word definition
         builder[":"] = new(i =>
             {
                 var name = i.ReadNextTokenOrThrow("Expected name after ':'");
                 i.BeginDefinition(name);
             }) { IsImmediate = true, Name = ":" };
+        // ; ( immediate ) finish current definition
         builder[";"] = new(i => i.FinishDefinition()) { IsImmediate = true, Name = ";" };
+        // IMMEDIATE : mark last defined word immediate
         builder["IMMEDIATE"] = new(i =>
             {
                 if (i._lastDefinedWord is null)
                     throw new ForthException(ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE");
                 i._lastDefinedWord.IsImmediate = true;
             }) { IsImmediate = true, Name = "IMMEDIATE" };
+        // POSTPONE : compile a word invocation to be executed later; handles special compile-only tokens
         builder["POSTPONE"] = new(async i =>
             {
                 var name = i.ReadNextTokenOrThrow("POSTPONE expects a name");
@@ -661,6 +725,7 @@ internal static class CorePrimitives
                 }
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
             }) { IsImmediate = true, Name = "POSTPONE" };
+        // ' : ( -- xt ) push execution token of named word or compile a push of xt
         builder["'"] = new(i =>
             {
                 var name = i.ReadNextTokenOrThrow("Expected word after '");
@@ -675,6 +740,7 @@ internal static class CorePrimitives
                             return Task.CompletedTask;
                         });
             }) { IsImmediate = true, Name = "'" };
+        // LITERAL : compile literal value into definition
         builder["LITERAL"] = new(i =>
             {
                 if (!i._isCompiling)
@@ -687,16 +753,19 @@ internal static class CorePrimitives
                         return Task.CompletedTask;
                     });
             }) { IsImmediate = true, Name = "LITERAL" };
+        // [ : enter interpret mode during compilation
         builder["["] = new(i =>
             {
                 i._isCompiling=false;
                 i._mem[i.StateAddr]=0;
             }) { IsImmediate = true, Name = "[" };
+        // ] : return to compile mode
         builder["]"] = new(i =>
             {
                 i._isCompiling=true;
                 i._mem[i.StateAddr]=1;
             }) { IsImmediate = true, Name = "]" };
+        // IF/ELSE/THEN : compile-time control flow for conditional execution
         builder["IF"] = new(i => i._controlStack.Push(new FI.IfFrame())) { IsImmediate = true, Name = "IF" };
         builder["ELSE"] = new(i =>
             {
@@ -726,6 +795,7 @@ internal static class CorePrimitives
                                 await a(ii);
                     });
             }) { IsImmediate = true, Name = "THEN" };
+        // BEGIN/WHILE/REPEAT/UNTIL : compile-time loop constructs
         builder["BEGIN"] = new(i => i._controlStack.Push(new FI.BeginFrame())) { IsImmediate = true, Name = "BEGIN" };
         builder["WHILE"] = new(i =>
             {
@@ -780,6 +850,7 @@ internal static class CorePrimitives
                         }
                     });
             }) { IsImmediate = true, Name = "UNTIL" };
+        // DO/LOOP/LEAVE : compile-time loop for counted loops
         builder["DO"] = new(i => i._controlStack.Push(new FI.DoFrame())) { IsImmediate = true, Name = "DO" };
         builder["LOOP"] = new(i =>
             {
@@ -799,7 +870,7 @@ internal static class CorePrimitives
                             try
                             {
                                 foreach(var a in body)
-                                    await a(ii);}
+                                    await a(ii);} 
                             catch(FI.LoopLeaveException)
                             {
                                 break;
@@ -824,6 +895,7 @@ internal static class CorePrimitives
                         throw new ForthException(ForthErrorCode.CompileError, "LEAVE outside DO...LOOP");
                     i.CurrentList().Add(ii=> throw new FI.LoopLeaveException());
             }) { IsImmediate = true, Name = "LEAVE" };
+        // MODULE/END-MODULE/USING : module and vocabulary management
         builder["MODULE"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after MODULE");
@@ -840,6 +912,7 @@ internal static class CorePrimitives
                 if(!i._usingModules.Contains(m))
                     i._usingModules.Add(m);
             }) { IsImmediate = true, Name = "USING" };
+        // LOAD-ASM, LOAD-ASM-TYPE : load native assembly methods as Forth words
         builder["LOAD-ASM"] = new(i =>
             {
                 var path=i.ReadNextTokenOrThrow("Expected path after LOAD-ASM");
@@ -858,9 +931,10 @@ internal static class CorePrimitives
                     }
                     if(t==null)
                         throw new ForthException(ForthErrorCode.CompileError, $"Type not found: {tn}");
-                    var count=i.LoadAssemblyWords(t.Assembly);
-                    i.Push((long)count);
+                var count=i.LoadAssemblyWords(t.Assembly);
+                i.Push((long)count);
             }) { IsImmediate = true, Name = "LOAD-ASM-TYPE" };
+        // CREATE : create a new dictionary entry with allocated address
         builder["CREATE"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after CREATE");
@@ -872,12 +946,14 @@ internal static class CorePrimitives
                 i.TargetDict()[name]= new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule };
                 i.RegisterDefinition(name);
             }) { IsImmediate = true, Name = "CREATE" };
+        // , : compile-time comma store cell into dictionary
         builder[","] = new(i =>
             {
                 Ensure(i,1,",");
                 var v=ToLong(i.PopInternal());
                 i._mem[i._nextAddr++]=v;
             }) { IsImmediate = true, Name = "," };
+        // DOES> : begin collecting DOES> clause for last CREATE
         builder["DOES>"] = new(i =>
             {
                 if(string.IsNullOrEmpty(i._lastCreatedName))
@@ -885,6 +961,7 @@ internal static class CorePrimitives
                 i._doesCollecting=true;
                 i._doesTokens=new List<string>();
             }) { IsImmediate = true, Name = "DOES>" };
+        // ALLOT : reserve n cells in dictionary
         builder["ALLOT"] = new(i =>
             {
                 Ensure(i,1,"ALLOT");
@@ -894,6 +971,7 @@ internal static class CorePrimitives
                 for(long k=0;k<cells;k++)
                     i._mem[i._nextAddr++]=0;
             }) { IsImmediate = true, Name = "ALLOT" };
+        // VARIABLE : create a named variable (address) in dictionary
         builder["VARIABLE"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after VARIABLE");
@@ -901,6 +979,7 @@ internal static class CorePrimitives
                 i.TargetDict()[name]= new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule };
                 i.RegisterDefinition(name);
             }) { IsImmediate = true, Name = "VARIABLE" };
+        // CONSTANT : define a named constant pushing its value
         builder["CONSTANT"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after CONSTANT");
@@ -909,6 +988,7 @@ internal static class CorePrimitives
                 i.TargetDict()[name]= new(ii=> ii.Push(val)) { Name = name, Module = i._currentModule };
                 i.RegisterDefinition(name);
             }) { IsImmediate = true, Name = "CONSTANT" };
+        // VALUE / TO : mutable named values and assignment
         builder["VALUE"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after VALUE");
@@ -924,6 +1004,7 @@ internal static class CorePrimitives
                 var vv=ToLong(i.PopInternal());
                 i.ValueSet(name,vv);
             }) { IsImmediate = true, Name = "TO" };
+        // DEFER / IS : create deferred words and set their target
         builder["DEFER"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after DEFER");
@@ -947,6 +1028,7 @@ internal static class CorePrimitives
                     throw new ForthException(ForthErrorCode.UndefinedWord, $"No such deferred: {name}");
                 i._deferred[name]=xt;
             }) { IsImmediate = true, Name = "IS" };
+        // SEE : decompile or show source for a word
         builder["SEE"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after SEE");
@@ -957,6 +1039,7 @@ internal static class CorePrimitives
                 var text=i._decompile.TryGetValue(plain,out var s) ? s : $": {plain} ;";
                 i.WriteText(text);
             }) { IsImmediate = true, Name = "SEE" };
+        // CHAR : return numeric code of next token's first char
         builder["CHAR"] = new(i =>
             {
                 var s=i.ReadNextTokenOrThrow("Expected char after CHAR");
@@ -969,6 +1052,7 @@ internal static class CorePrimitives
                             return Task.CompletedTask;
                         });
             }) { IsImmediate = true, Name = "CHAR" };
+        // S" and S : push quoted string at compile or runtime
         builder["S\""] = new(i =>
             {
                 var next=i.ReadNextTokenOrThrow("Expected text after S\"");
@@ -999,6 +1083,7 @@ internal static class CorePrimitives
                             return Task.CompletedTask;
                         });
             }) { IsImmediate = true, Name = "S" };
+        // ." : compile-time or immediate print of quoted string
         builder[".\""] = new(i =>
             {
                 var next=i.ReadNextTokenOrThrow("Expected text after .\"");
@@ -1018,6 +1103,7 @@ internal static class CorePrimitives
                         });
                 }
             }) { IsImmediate = true, Name = ".\"" };
+        // BIND : bind a CLR method as a Forth word
         builder["BIND"] = new(i =>
             {
                 var typeName=i.ReadNextTokenOrThrow("type after BIND");
@@ -1029,17 +1115,20 @@ internal static class CorePrimitives
                 i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount);
                 i.RegisterDefinition(forthName);
             }) { IsImmediate = true, Name = "BIND" };
+        // FORGET : remove a word from dictionary
         builder["FORGET"] = new(i =>
             {
                 var name=i.ReadNextTokenOrThrow("Expected name after FORGET");
                 i.ForgetWord(name);
             }) { IsImmediate = true, Name = "FORGET" };
+        // TASK? : check if object is a completed Task
         builder["TASK?"] = new(i =>
             {
                 Ensure(i,1,"TASK?");
                 var obj=i.PopInternal();
                 long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag);
             }) { Name = "TASK?" };
+        // AWAIT : await a Task and push its result if any
         builder["AWAIT"] = new(async i => {
             Ensure(i,1,"AWAIT");
             var obj = i.PopInternal();
