@@ -9,9 +9,7 @@ namespace Forth.Core.Execution;
 
 internal static class CorePrimitives
 {
-    public static Dictionary<string, Word> Install()
-    {
-        var dict = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase)
+    public static Dictionary<string, Word> Words => new(StringComparer.OrdinalIgnoreCase)
         {
             // + : ( n1 n2 -- sum ) add two numbers
             { "+", new(i =>
@@ -312,8 +310,8 @@ internal static class CorePrimitives
             // <# : pictured numeric output start
             { "<#", new(i => i.PicturedBegin()) },
             // HOLD : ( char -- ) push character into pictured output buffer
-            { "HOLD", new(i => 
-                { 
+            { "HOLD", new(i =>
+                {
                     Ensure(i,1,"HOLD");
                     var n=ToLong(i.PopInternal());
                     i.PicturedHold((char)(n & 0xFFFF));
@@ -375,7 +373,7 @@ internal static class CorePrimitives
                     i.RPush(a);
                 }) },
             // R> : ( -- x ) move top of return stack to data stack
-            { "R>", new(i => 
+            { "R>", new(i =>
                 {
                     if (i.RCount==0)
                         throw new ForthException(ForthErrorCode.StackUnderflow,"Return stack underflow in R>");
@@ -430,7 +428,7 @@ internal static class CorePrimitives
                 }) },
             // 2SWAP : swap top two pairs on the stack
             { "2SWAP", new(i =>
-                { 
+                {
                     Ensure(i,4,"2SWAP");
                     var d=i.PopInternal();
                     var c=i.PopInternal();
@@ -456,12 +454,12 @@ internal static class CorePrimitives
                 }) },
             // PICK : ( ... u -- ... xu ) copy u-th item from top to top
             { "PICK", new(i =>
-                { 
-                    Ensure(i,1,"PICK"); 
-                    var n=ToLong(i.PopInternal()); 
-                    if(n<0) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: negative index {n}"); 
-                    if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}"); 
-                    i.Push(i.StackNthFromTop((int)n+1)); 
+                {
+                    Ensure(i,1,"PICK");
+                    var n=ToLong(i.PopInternal());
+                    if(n<0) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: negative index {n}");
+                    if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}");
+                    i.Push(i.StackNthFromTop((int)n+1));
                 }) },
             // Note: Additional convenience words are in prelude.4th
 
@@ -473,7 +471,7 @@ internal static class CorePrimitives
             // ABORT : raise an abort exception
             { "ABORT", new(i => throw new ForthException(ForthErrorCode.Unknown, "ABORT")) },
             // . : ( n -- ) write number to output
-            { ".", new(i => 
+            { ".", new(i =>
                 {
                     Ensure(i,1,".");
                     var n=ToLong(i.PopInternal());
@@ -875,7 +873,7 @@ internal static class CorePrimitives
                                 try
                                 {
                                     foreach(var a in body)
-                                        await a(ii);} 
+                                        await a(ii);}
                                 catch(FI.LoopLeaveException)
                                 {
                                     break;
@@ -1142,7 +1140,7 @@ internal static class CorePrimitives
                     case Task t:
                         // This will throw if the task is faulted
                         await t.ConfigureAwait(false);
-                        
+
                         var taskType = t.GetType();
                         if (taskType.IsGenericType)
                         {
@@ -1216,7 +1214,7 @@ internal static class CorePrimitives
                 
                     // Capture parent snapshot
                     var snapshot = i.CreateMarkerSnapshot();
-                
+
                     var task = Task.Run(async () =>
                     {
                         // Create child interpreter with parent's snapshot
@@ -1238,7 +1236,7 @@ internal static class CorePrimitives
                 
                     // Capture parent snapshot
                     var snapshot = i.CreateMarkerSnapshot();
-                
+
                     var task = Task.Run(async () =>
                     {
                         // Create child interpreter with parent's snapshot
@@ -1281,9 +1279,6 @@ internal static class CorePrimitives
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "MARKER" } },
         };
-
-        return dict;
-    }
 
     private static long ToLong(object v) =>
         ForthInterpreter.ToLongPublic(v);

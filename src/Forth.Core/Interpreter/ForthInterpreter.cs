@@ -10,7 +10,7 @@ public class ForthInterpreter : IForthInterpreter
 {
     internal readonly ForthStack _stack = new();
     internal readonly ForthStack _rstack = new();
-    internal readonly Dictionary<string, Word> _dict = CorePrimitives.Install();
+    internal readonly Dictionary<string, Word> _dict = CorePrimitives.Words;
     private readonly IForthIO _io;
     private bool _exitRequested;
     internal bool _isCompiling; // made internal
