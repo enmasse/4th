@@ -160,7 +160,7 @@ public class ForthInterpreter : IForthInterpreter
 
     private async Task LoadPreludeText(string prelude)
     {
-        var lines = prelude.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var lines = prelude.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
         {
             var trimmed = line.Trim();
@@ -269,18 +269,6 @@ public class ForthInterpreter : IForthInterpreter
         bool bo => bo ? 1L : 0L,
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
     };
-    private static bool ToBool(object v) => v switch
-    {
-        bool b => b,
-        long l => l != 0,
-        int i => i != 0,
-        short s => s != 0,
-        byte b8 => b8 != 0,
-        char c => c != '\0',
-        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
-    };
-    private bool IsResultConsumed(object taskRef) => _consumedTaskResults.Contains(taskRef);
-    private void MarkResultConsumed(object taskRef) => _consumedTaskResults.Add(taskRef);
 
     // Return stack helpers
     internal void RPush(object value) => _rstack.Push(value);
@@ -291,7 +279,6 @@ public class ForthInterpreter : IForthInterpreter
     internal void ValueSet(string name, long v) => _values[name] = v;
 
     internal void PushLoopIndex(long idx) => _controlFlow.Push(idx);
-    internal void PopLoopIndex() => _controlFlow.Pop();
     internal void PopLoopIndexMaybe() => _controlFlow.PopMaybe();
     internal void Unloop() => _controlFlow.Unloop();
     internal long CurrentLoopIndex() => _controlFlow.Current();
@@ -392,7 +379,8 @@ public class ForthInterpreter : IForthInterpreter
         return !_exitRequested;
     }
 
-    internal List<Func<ForthInterpreter, Task>> CurrentList() => _controlStack.Count==0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
+    internal List<Func<ForthInterpreter, Task>> CurrentList() =>
+        _controlStack.Count==0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
     private bool TryParseNumber(string token, out long value)
     {
@@ -416,7 +404,6 @@ public class ForthInterpreter : IForthInterpreter
 
     internal void WithModule(string name, Action action){ var prev=_currentModule; _currentModule=name; try{ action(); } finally { _currentModule=prev; } }
     public int LoadAssemblyWords(Assembly asm)=> AssemblyWordLoader.RegisterFromAssembly(this, asm);
-    public void BeginModuleScope(string moduleName, Action register){ ArgumentException.ThrowIfNullOrWhiteSpace(moduleName); ArgumentNullException.ThrowIfNull(register); WithModule(moduleName, register);}    
 
     private sealed class ExitWordException: Exception {}
     internal sealed class Word
