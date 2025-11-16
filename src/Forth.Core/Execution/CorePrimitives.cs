@@ -1179,7 +1179,11 @@ internal static class CorePrimitives
             {
                 var name = i.ReadNextTokenOrThrow("Expected name after MARKER");
                 var snap = i.CreateMarkerSnapshot();
-                i.TargetDict()[name] = new(ii => { ii.RestoreSnapshot(snap); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+                i.TargetDict()[name] = new(ii =>
+                    {
+                        ii.RestoreSnapshot(snap);
+                        return Task.CompletedTask;
+                    }) { Name = name, Module = i._currentModule };
                 i.RegisterDefinition(name);
             }) { IsImmediate = true, Name = "MARKER" };
 
