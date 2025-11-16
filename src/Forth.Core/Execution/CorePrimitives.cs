@@ -216,6 +216,26 @@ internal static class CorePrimitives
         dict["CR"] = new ForthInterpreter.Word(i => { i.NewLine(); });
         dict["EMIT"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"EMIT"); var n=ToLong(i.PopInternal()); char ch=(char)(n & 0xFFFF); i.WriteText(ch.ToString()); });
         dict["TYPE"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,1,"TYPE"); var obj=i.PopInternal(); if (obj is string s) { i.WriteText(s); } else throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError,"TYPE expects a string"); });
+        // COUNT: ( s -- s u ) for strings; or ( c-addr1 -- c-addr2 u ) for counted buffers
+        dict["COUNT"] = new ForthInterpreter.Word(i => {
+            ForthInterpreter.EnsureStack(i,1,"COUNT");
+            var obj = i.PopInternal();
+            switch (obj)
+            {
+                case string s:
+                    i.Push(s);
+                    i.Push((long)s.Length);
+                    break;
+                case long addr:
+                    i.MemTryGet(addr, out var v);
+                    var len = (long)((byte)v);
+                    i.Push(addr + 1);
+                    i.Push(len);
+                    break;
+                default:
+                    throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.TypeError, "COUNT expects a string or address");
+            }
+        });
         dict["AND"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"AND"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a & b); });
         dict["OR"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"OR"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a | b); });
         dict["XOR"] = new ForthInterpreter.Word(i => { ForthInterpreter.EnsureStack(i,2,"XOR"); var b=ToLong(i.PopInternal()); var a=ToLong(i.PopInternal()); i.Push(a ^ b); });
