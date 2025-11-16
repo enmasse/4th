@@ -10,7 +10,7 @@ public class ForthInterpreter : IForthInterpreter
 {
     internal readonly ForthStack _stack = new();
     internal readonly ForthStack _rstack = new();
-    internal readonly Dictionary<string, Word> _dict = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, Word> _dict = CorePrimitives.Install();
     private readonly IForthIO _io;
     private bool _exitRequested;
     internal bool _isCompiling; // made internal
@@ -116,7 +116,6 @@ public class ForthInterpreter : IForthInterpreter
         _io = io ?? new ConsoleForthIO();
         _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
         _baseAddr = _nextAddr++; _mem[_baseAddr] = 10;
-        InstallPrimitives();
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions
     }
@@ -374,8 +373,6 @@ public class ForthInterpreter : IForthInterpreter
         long GetBase(long def){ MemTryGet(_baseAddr,out var b); return b<=0?def:b; }
         return NumberParser.TryParse(token, GetBase, out value);
     }
-
-    private void InstallPrimitives() => CorePrimitives.Install(this, _dict);
 
     internal object StackTop()=>_stack.Top();
     internal object StackNthFromTop(int n)=>_stack.NthFromTop(n);
