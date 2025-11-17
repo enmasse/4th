@@ -1,10 +1,6 @@
-using Forth.Core.Binding;
 using Forth.Core.Interpreter;
 using System.Collections.Immutable;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
@@ -27,21 +23,13 @@ internal static partial class CorePrimitives
         }
     }
 
-    // Aggregate all primitives discovered via reflection into a single immutable dictionary
-    public static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> Words
-    {
-        get
-        {
-            var dict = new Dictionary<(string? Module, string Name), ForthInterpreter.Word>(new KeyComparer());
-            foreach (var kv in GroupedWords)
-                dict[kv.Key] = kv.Value;
-            return dict.ToImmutableDictionary(new KeyComparer());
-        }
-    }
+    private static readonly Lazy<ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word>> _words =
+        new(CreateWords);
 
-    private static IReadOnlyDictionary<(string? Module, string Name), ForthInterpreter.Word> GroupedWords { get; } = CreateGroupedWords();
+    public static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> Words =>
+        _words.Value;
 
-    private static IReadOnlyDictionary<(string? Module, string Name), ForthInterpreter.Word> CreateGroupedWords()
+    private static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> CreateWords()
     {
         var d = new Dictionary<(string? Module, string Name), ForthInterpreter.Word>(new KeyComparer());
 
@@ -65,7 +53,7 @@ internal static partial class CorePrimitives
             d[(pa.Module, pa.Name)] = w;
         }
 
-        return d;
+        return d.ToImmutableDictionary(new KeyComparer());
     }
 
     // Helpers used across groups
