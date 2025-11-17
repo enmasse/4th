@@ -2,6 +2,9 @@ using Forth.Core.Binding;
 using Forth.Core.Interpreter;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
@@ -24,7 +27,7 @@ internal static partial class CorePrimitives
         }
     }
 
-    // Aggregate all group-specific dictionaries into a single immutable dictionary
+    // Aggregate all primitives discovered via reflection into a single immutable dictionary
     public static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> Words
     {
         get
@@ -36,43 +39,34 @@ internal static partial class CorePrimitives
         }
     }
 
-    // Each partial file will populate this with its own entries
     private static IReadOnlyDictionary<(string? Module, string Name), ForthInterpreter.Word> GroupedWords { get; } = CreateGroupedWords();
 
     private static IReadOnlyDictionary<(string? Module, string Name), ForthInterpreter.Word> CreateGroupedWords()
     {
         var d = new Dictionary<(string? Module, string Name), ForthInterpreter.Word>(new KeyComparer());
-        // call partial methods implemented by group files
-        AddArithmeticEntries(d);
-        AddComparisonEntries(d);
-        AddStackOpsEntries(d);
-        AddReturnStackEntries(d);
-        AddMemoryEntries(d);
-        AddIOFormattingEntries(d);
-        AddPicturedNumericEntries(d);
-        AddNumericBaseEntries(d);
-        AddBitwiseEntries(d);
-        AddControlExecutionEntries(d);
-        AddCompilationEntries(d);
-        AddDictionaryVocabEntries(d);
-        AddConcurrencyEntries(d);
+
+        // Find all private static methods on this type decorated with PrimitiveAttribute
+        var methods = typeof(CorePrimitives).GetMethods(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
+        foreach (var m in methods)
+        {
+            var pa = m.GetCustomAttribute<PrimitiveAttribute>(false);
+            if (pa is null) continue;
+
+            // Create a delegate Func<ForthInterpreter, Task>
+            var del = (Func<ForthInterpreter, Task>)Delegate.CreateDelegate(typeof(Func<ForthInterpreter, Task>), m);
+
+            // Build Word
+            var w = new ForthInterpreter.Word(del)
+            {
+                Name = pa.Name,
+                IsImmediate = pa.IsImmediate
+            };
+
+            d[(pa.Module, pa.Name)] = w;
+        }
+
         return d;
     }
-
-    // Partial methods implemented in other files to add group-specific entries
-    static partial void AddArithmeticEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddComparisonEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddStackOpsEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddReturnStackEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddMemoryEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddIOFormattingEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddPicturedNumericEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddNumericBaseEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddBitwiseEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddControlExecutionEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddCompilationEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddDictionaryVocabEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
-    static partial void AddConcurrencyEntries(Dictionary<(string? Module, string Name), ForthInterpreter.Word> d);
 
     // Helpers used across groups
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
