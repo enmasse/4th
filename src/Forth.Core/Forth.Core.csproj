@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -9,7 +9,7 @@
     <PackageId>Forth.Core</PackageId>
     <Version>0.1.0</Version>
     <Authors>enmasse</Authors>
-    <Description>Minimal async-capable Forth interpreter core library for .NET 9.</Description>
+    <Description>Minimal async-capable Forth interpreter core library for .NET 10.</Description>
     <RepositoryUrl>https://github.com/enmasse/4th</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
