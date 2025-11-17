@@ -1,6 +1,5 @@
 using Forth.Core.Interpreter;
 using System.Collections.Immutable;
-using System.Reflection;
 
 namespace Forth.Core.Execution;
 
@@ -28,33 +27,6 @@ internal static partial class CorePrimitives
 
     public static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> Words =>
         _words.Value;
-
-    private static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> CreateWords()
-    {
-        var d = new Dictionary<(string? Module, string Name), ForthInterpreter.Word>(new KeyComparer());
-
-        // Find all private static methods on this type decorated with PrimitiveAttribute
-        var methods = typeof(CorePrimitives).GetMethods(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
-        foreach (var m in methods)
-        {
-            var pa = m.GetCustomAttribute<PrimitiveAttribute>(false);
-            if (pa is null) continue;
-
-            // Create a delegate Func<ForthInterpreter, Task>
-            var del = (Func<ForthInterpreter, Task>)Delegate.CreateDelegate(typeof(Func<ForthInterpreter, Task>), m);
-
-            // Build Word
-            var w = new ForthInterpreter.Word(del)
-            {
-                Name = pa.Name,
-                IsImmediate = pa.IsImmediate
-            };
-
-            d[(pa.Module, pa.Name)] = w;
-        }
-
-        return d.ToImmutableDictionary(new KeyComparer());
-    }
 
     // Helpers used across groups
     private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
