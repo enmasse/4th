@@ -10,7 +10,7 @@ public class ForthInterpreter : IForthInterpreter
 {
     internal readonly ForthStack _stack = new();
     internal readonly ForthStack _rstack = new();
-    internal readonly Dictionary<string, Word> _dict = CorePrimitives.Words;
+    internal ImmutableDictionary<string, Word> _dict = CorePrimitives.Words;
     private readonly IForthIO _io;
     private bool _exitRequested;
     internal bool _isCompiling; // made internal
@@ -22,7 +22,7 @@ public class ForthInterpreter : IForthInterpreter
     private readonly HashSet<object> _consumedTaskResults = new();
 
     internal readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase); // internal
-    internal readonly Dictionary<string, Dictionary<string, Word>> _modules = new(StringComparer.OrdinalIgnoreCase); // internal
+    internal LazyDictionary<string?, ImmutableDictionary<string, Word>> _modules; // internal
     internal readonly List<string> _usingModules = new(); // internal
     internal string? _currentModule; // internal
 
@@ -101,11 +101,21 @@ public class ForthInterpreter : IForthInterpreter
             throw new ForthException(ForthErrorCode.CompileError, "Unmatched control structure");
         var body = _currentInstructions;
         var nameForDecomp = _currentDefName;
-        var compiled = new Word(async intr => { try { foreach (var a in body) await a(intr); } catch (ExitWordException) { } });
+        var compiled = new Word(async intr =>
+            {
+                try
+                {
+                    foreach (var a in body)
+                        await a(intr);
+                } 
+                catch (ExitWordException) { }
+            });
         compiled.BodyTokens = _currentDefTokens is { Count: > 0 } ? new List<string>(_currentDefTokens) : null;
         compiled.Name = _currentDefName;
         compiled.Module = _currentModule;
-        TargetDict()[_currentDefName] = compiled; RegisterDefinition(_currentDefName); _lastDefinedWord = compiled;
+        var modDict = _modules[_currentModule];
+        _modules[_currentModule] = modDict.SetItem(_currentDefName, compiled);
+        RegisterDefinition(_currentDefName); _lastDefinedWord = compiled;
         var bodyText = _currentDefTokens is { Count: > 0 } ? string.Join(' ', _currentDefTokens) : string.Empty;
         _decompile[nameForDecomp] = string.IsNullOrEmpty(bodyText) ? $": {nameForDecomp} ;" : $": {nameForDecomp} {bodyText} ;";
         _isCompiling = false; _mem[_stateAddr] = 0; _currentDefName = null; _currentInstructions = null; _currentDefTokens = null;
@@ -116,6 +126,8 @@ public class ForthInterpreter : IForthInterpreter
         _io = io ?? new ConsoleForthIO();
         _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
         _baseAddr = _nextAddr++; _mem[_baseAddr] = 10;
+        // Create per-module dictionaries; default (null) module falls back to core dictionary
+        _modules = new(k => k is null ? _dict : ImmutableDictionary<string, Word>.Empty, StringComparer.OrdinalIgnoreCase);
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions
     }
@@ -173,8 +185,25 @@ public class ForthInterpreter : IForthInterpreter
             for (int j = _definitions.Count - 1; j >= idx; j--)
             {
                 var d = _definitions[j];
-                var dict = string.IsNullOrWhiteSpace(d.Module) ? _dict : (_modules.TryGetValue(d.Module!, out var md) ? md : null);
-                if (dict != null) dict.Remove(d.Name);
+                if (string.IsNullOrWhiteSpace(d.Module))
+                {
+                    // If a default module entry exists, remove from _modules[null], otherwise remove from global dict
+                    if (_modules.TryGetValue(null, out var defMod) && defMod.ContainsKey(d.Name))
+                    {
+                        _modules[null] = defMod.Remove(d.Name);
+                    }
+                    else
+                    {
+                        _dict = _dict.Remove(d.Name);
+                    }
+                }
+                else
+                {
+                    if (_modules.TryGetValue(d.Module!, out var md))
+                    {
+                        _modules[d.Module!] = md.Remove(d.Name);
+                    }
+                }
                 _decompile.Remove(d.Name);
                 _deferred.Remove(d.Name);
                 _values.Remove(d.Name);
@@ -195,29 +224,15 @@ public class ForthInterpreter : IForthInterpreter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
-        TargetDict()[name] = new Word(i => body(i)) { Name = name, Module = _currentModule };
+        _modules[_currentModule] = _modules[_currentModule].Add(name, new(i => body(i)) { Name = name, Module = _currentModule });
         RegisterDefinition(name);
     }
     public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(body);
-        TargetDict()[name] = new Word(i => body(i)) { Name = name, Module = _currentModule };
+        _modules[_currentModule] = _modules[_currentModule].Add(name, new (i => body(i)) { Name = name, Module = _currentModule });
         RegisterDefinition(name);
-    }
-
-    internal Dictionary<string, Word> TargetDict()
-    {
-        if (!string.IsNullOrWhiteSpace(_currentModule))
-        {
-            if (!_modules.TryGetValue(_currentModule!, out var d))
-            {
-                d = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
-                _modules[_currentModule!] = d;
-            }
-            return d;
-        }
-        return _dict;
     }
 
     internal bool TryResolveWord(string token, out Word? word)
@@ -236,6 +251,13 @@ public class ForthInterpreter : IForthInterpreter
             var mn = _usingModules[i];
             if (_modules.TryGetValue(mn, out var md) && md.TryGetValue(token, out var wu)) { word = wu; return true; }
         }
+        // Check the default (null) module entries which may contain unqualified definitions from prelude or user
+        try
+        {
+            var defaultModule = _modules[null];
+            if (defaultModule != null && defaultModule.TryGetValue(token, out var wdef)) { word = wdef; return true; }
+        }
+        catch {}
         return _dict.TryGetValue(token, out word);
     }
 
@@ -357,8 +379,16 @@ public class ForthInterpreter : IForthInterpreter
         {
             var bodyLine = string.Join(' ', _doesTokens);
             var addr = _lastCreatedAddr;
-            var newWord = new Word(async intr => { intr.MemTryGet(addr, out var cur); intr.Push(addr); intr.Push(cur); await intr.EvalAsync(bodyLine).ConfigureAwait(false); }) { Name = _lastCreatedName, Module = _currentModule };
-            TargetDict()[_lastCreatedName] = newWord; RegisterDefinition(_lastCreatedName); _lastDefinedWord=newWord;
+            var newWord = new Word(async intr =>
+                {
+                    intr.MemTryGet(addr, out var cur);
+                    intr.Push(addr);
+                    intr.Push(cur);
+                    await intr.EvalAsync(bodyLine).ConfigureAwait(false);
+                }) { Name = _lastCreatedName, Module = _currentModule };
+            var md = _modules[_currentModule];
+            _modules[_currentModule] = md.SetItem(_lastCreatedName, newWord);
+            RegisterDefinition(_lastCreatedName); _lastDefinedWord=newWord;
             _doesCollecting=false; _doesTokens=null; _lastCreatedName=null;
         }
         _tokens=null; // clear stream
@@ -401,7 +431,7 @@ public class ForthInterpreter : IForthInterpreter
         public bool IsHidden { get; set; }
         public Word(Action<ForthInterpreter> sync){ _run= intr => { sync(intr); return Task.CompletedTask; }; IsAsync=false; }
         public Word(Func<ForthInterpreter, Task> asyncRun){ _run=asyncRun; IsAsync=true; }
-        public Task ExecuteAsync(ForthInterpreter intr) => _run(intr);
+        public Task ExecuteAsync(ForthInterpreter intr = null!) => _run(intr);
     }
     internal abstract class CompileFrame { public abstract List<Func<ForthInterpreter, Task>> GetCurrentList(); }
     internal sealed class IfFrame: CompileFrame { public List<Func<ForthInterpreter, Task>> ThenPart { get; } = new(); public List<Func<ForthInterpreter, Task>>? ElsePart { get; set; } public bool InElse { get; set; } public override List<Func<ForthInterpreter, Task>> GetCurrentList()=> InElse? (ElsePart ??= new()) : ThenPart; }
@@ -439,7 +469,10 @@ public class ForthInterpreter : IForthInterpreter
         var dict = _dict.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
         var modulesBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableDictionary<string, Word>>(StringComparer.OrdinalIgnoreCase);
         foreach (var kvp in _modules)
-            modulesBuilder[kvp.Key] = kvp.Value.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        {
+            var key = kvp.Key ?? string.Empty; // represent null module key as empty string for immutable snapshot
+            modulesBuilder[key] = kvp.Value.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        }
         var modules = modulesBuilder.ToImmutable();
         var usingMods = _usingModules.ToImmutableList();
         var values = _values.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
@@ -457,39 +490,36 @@ public class ForthInterpreter : IForthInterpreter
     {
         _io = io ?? new ConsoleForthIO();
         _stateAddr = _nextAddr++; _mem[_stateAddr] = 0;
-        
+
         // Get BASE value from snapshot
         long baseValue = 10;
         if (snapshot.Memory.TryGetValue(snapshot.Memory.Keys.FirstOrDefault(k => k == 2), out var snapBase))
             baseValue = snapBase;
         _baseAddr = _nextAddr++; _mem[_baseAddr] = baseValue;
-        
+
         // Restore dictionary
-        foreach (var kvp in snapshot.Dict)
-        {
-            _dict[kvp.Key] = kvp.Value;
-        }
-        
+        _dict = snapshot.Dict;
+
+        // Initialize modules lazy dictionary using restored _dict as fallback
+        _modules = new(k => _dict, StringComparer.OrdinalIgnoreCase);
+        _loadPrelude = Task.CompletedTask; // no prelude load for child snapshot
+
         // Restore modules
         foreach (var modKvp in snapshot.Modules)
         {
-            var moduleDict = new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase);
-            foreach (var wordKvp in modKvp.Value)
-            {
-                moduleDict[wordKvp.Key] = wordKvp.Value;
-            }
-            _modules[modKvp.Key] = moduleDict;
+            var key = string.IsNullOrEmpty(modKvp.Key) ? null : modKvp.Key;
+            _modules[key] = modKvp.Value;
         }
-        
+
         // Restore using modules
         _usingModules.AddRange(snapshot.UsingModules);
-        
+
         // Restore values
         foreach (var kvp in snapshot.Values)
         {
             _values[kvp.Key] = kvp.Value;
         }
-        
+
         // Restore memory (adjust addresses for child interpreter)
         var maxSnapAddr = snapshot.NextAddr;
         if (maxSnapAddr >= _nextAddr)
@@ -504,19 +534,19 @@ public class ForthInterpreter : IForthInterpreter
                 _mem[kvp.Key] = kvp.Value;
             }
         }
-        
+
         // Restore deferred
         foreach (var kvp in snapshot.Deferred)
         {
             _deferred[kvp.Key] = kvp.Value;
         }
-        
+
         // Restore decompile
         foreach (var kvp in snapshot.Decompile)
         {
             _decompile[kvp.Key] = kvp.Value;
         }
-        
+
         // Restore definitions list
         foreach (var (name, module) in snapshot.Definitions)
         {
@@ -536,13 +566,13 @@ public class ForthInterpreter : IForthInterpreter
         _tokens = null; _tokenIndex = 0;
 
         // Replace dictionaries
-        _dict.Clear();
-        foreach (var kv in snap.Dict) _dict[kv.Key] = kv.Value;
+        _dict = snap.Dict;
 
         _modules.Clear();
         foreach (var mod in snap.Modules)
         {
-            _modules[mod.Key] = mod.Value.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
+            var key = string.IsNullOrEmpty(mod.Key) ? null : mod.Key;
+            _modules[key] = mod.Value;
         }
 
         _usingModules.Clear();

@@ -4,12 +4,13 @@ using System.Globalization;
 using System.Text;
 using Word = Forth.Core.Interpreter.ForthInterpreter.Word;
 using FI = Forth.Core.Interpreter.ForthInterpreter;
+using System.Collections.Immutable;
 
 namespace Forth.Core.Execution;
 
 internal static class CorePrimitives
 {
-    public static Dictionary<string, Word> Words => new(StringComparer.OrdinalIgnoreCase)
+    public static ImmutableDictionary<string, Word> Words => new Dictionary<string, Word>(StringComparer.OrdinalIgnoreCase)
         {
             // + : ( n1 n2 -- sum ) add two numbers
             { "+", new(i =>
@@ -905,8 +906,6 @@ internal static class CorePrimitives
                     i._currentModule=name;
                     if(string.IsNullOrWhiteSpace(i._currentModule))
                         throw new ForthException(ForthErrorCode.CompileError, "Invalid module name");
-                    if(!i._modules.ContainsKey(i._currentModule))
-                        i._modules[i._currentModule]= new(StringComparer.OrdinalIgnoreCase);
                 }) { IsImmediate = true, Name = "MODULE" } },
             { "END-MODULE", new(i => i._currentModule = null) { IsImmediate = true, Name = "END-MODULE" } },
             { "USING", new(i =>
@@ -946,7 +945,7 @@ internal static class CorePrimitives
                     var addr=i._nextAddr;
                     i._lastCreatedName=name;
                     i._lastCreatedAddr=addr;
-                    i.TargetDict()[name]= new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule };
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(name, new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "CREATE" } },
             // , : compile-time comma store cell into dictionary
@@ -979,7 +978,7 @@ internal static class CorePrimitives
                 {
                     var name=i.ReadNextTokenOrThrow("Expected name after VARIABLE");
                     var addr=i._nextAddr++; i._mem[addr]=0;
-                    i.TargetDict()[name]= new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule };
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(name, new(ii=> ii.Push(addr)) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "VARIABLE" } },
             // CONSTANT : define a named constant pushing its value
@@ -988,7 +987,7 @@ internal static class CorePrimitives
                     var name=i.ReadNextTokenOrThrow("Expected name after CONSTANT");
                     Ensure(i,1,"CONSTANT");
                     var val=i.PopInternal();
-                    i.TargetDict()[name]= new(ii=> ii.Push(val)) { Name = name, Module = i._currentModule };
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(name, new(ii=> ii.Push(val)) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "CONSTANT" } },
             // VALUE / TO : mutable named values and assignment
@@ -997,7 +996,7 @@ internal static class CorePrimitives
                     var name=i.ReadNextTokenOrThrow("Expected name after VALUE");
                     if(!i._values.ContainsKey(name))
                         i._values[name]=0;
-                    i.TargetDict()[name]= new(ii=> ii.Push(ii.ValueGet(name))) { Name = name, Module = i._currentModule };
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(name, new(ii=> ii.Push(ii.ValueGet(name))) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "VALUE" } },
             { "TO", new(i =>
@@ -1012,12 +1011,12 @@ internal static class CorePrimitives
                 {
                     var name=i.ReadNextTokenOrThrow("Expected name after DEFER");
                     i._deferred[name]=null;
-                    i.TargetDict()[name]= new(async ii=>
+                    i._modules[i._currentModule] = i._modules[ i._currentModule].Add(name, new(async ii=>
                         {
                             if(!ii._deferred.TryGetValue(name,out var target) || target is null)
                                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Deferred word not set: {name}");
                             await target.ExecuteAsync(ii);
-                        }) { Name = name, Module = i._currentModule };
+                        }) { Name = name, Module = i._currentModule });
                         i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "DEFER" } },
             { "IS", new(i =>
@@ -1115,7 +1114,8 @@ internal static class CorePrimitives
                     if(!int.TryParse(argToken,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argCount))
                         throw new ForthException(ForthErrorCode.CompileError, "Invalid arg count");
                     var forthName=i.ReadNextTokenOrThrow("forth name after BIND");
-                    i.TargetDict()[forthName]= ClrBinder.CreateBoundWord(typeName,methodName,argCount);
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(forthName,
+                        ClrBinder.CreateBoundWord(typeName,methodName,argCount));
                     i.RegisterDefinition(forthName);
                 }) { IsImmediate = true, Name = "BIND" } },
             // FORGET : remove a word from dictionary
@@ -1271,14 +1271,14 @@ internal static class CorePrimitives
                 {
                     var name = i.ReadNextTokenOrThrow("Expected name after MARKER");
                     var snap = i.CreateMarkerSnapshot();
-                    i.TargetDict()[name] = new(ii =>
+                    i._modules[i._currentModule] = i._modules[i._currentModule].Add(name, new(ii =>
                         {
                             ii.RestoreSnapshot(snap);
                             return Task.CompletedTask;
-                        }) { Name = name, Module = i._currentModule };
+                        }) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
                 }) { IsImmediate = true, Name = "MARKER" } },
-        };
+        }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
 
     private static long ToLong(object v) =>
         ForthInterpreter.ToLongPublic(v);
