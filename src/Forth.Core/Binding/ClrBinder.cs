@@ -18,7 +18,8 @@ internal static class ClrBinder
         return new ForthInterpreter.Word(interp =>
         {
             int totalPop = argCount + (isStatic ? 0 : 1);
-            ForthInterpreter.EnsureStack(interp, totalPop, methodName);
+            // Use the instance EnsureStack on the interpreter
+            interp.EnsureStack(totalPop, methodName);
             object? instance = null;
             var argVals = new object?[argCount];
             for (int i = argCount - 1; i >= 0; i--)

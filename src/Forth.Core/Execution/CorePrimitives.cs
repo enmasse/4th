@@ -33,7 +33,7 @@ internal static class CorePrimitives
             // + : ( n1 n2 -- sum ) add two numbers
             { (null, "+"), new(i =>
                 {
-                    Ensure(i,2,"+");
+                    i.EnsureStack(2,"+");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a+b);
@@ -41,7 +41,7 @@ internal static class CorePrimitives
             // - : ( n1 n2 -- diff ) subtract second from first
             { (null, "-"), new(i =>
                 {
-                    Ensure(i,2,"-");
+                    i.EnsureStack(2,"-");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a-b);
@@ -49,7 +49,7 @@ internal static class CorePrimitives
             // * : ( n1 n2 -- prod ) multiply two numbers
             { (null, "*"), new(i =>
                 {
-                    Ensure(i,2,"*");
+                    i.EnsureStack(2,"*");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a*b);
@@ -57,7 +57,7 @@ internal static class CorePrimitives
             // / : ( n1 n2 -- quotient ) integer division, throws on divide by zero
             { (null, "/"), new(i =>
                 {
-                    Ensure(i,2,"/");
+                    i.EnsureStack(2,"/");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     if (b==0)
@@ -67,7 +67,7 @@ internal static class CorePrimitives
             // /MOD : ( n1 n2 -- rem quot ) compute quotient and remainder; pushes remainder then quotient
             { (null, "/MOD"), new(i =>
                 {
-                    Ensure(i,2,"/MOD");
+                    i.EnsureStack(2,"/MOD");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
@@ -79,7 +79,7 @@ internal static class CorePrimitives
             // MOD : ( n1 n2 -- rem ) remainder of integer division
             { (null, "MOD"), new(i =>
                 {
-                    Ensure(i,2,"MOD");
+                    i.EnsureStack(2,"MOD");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     if (b==0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
@@ -88,7 +88,7 @@ internal static class CorePrimitives
             // < : ( a b -- flag ) compare less-than, returns 1/0
             { (null, "<"), new(i =>
                 {
-                    Ensure(i,2,"<");
+                    i.EnsureStack(2,"<");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a < b ? 1L : 0L);
@@ -96,7 +96,7 @@ internal static class CorePrimitives
             // = : ( a b -- flag ) equality comparison, returns 1 if equal else 0
             { (null, "="), new(i =>
                 {
-                    Ensure(i,2,"=");
+                    i.EnsureStack(2,"=");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a == b ? 1L : 0L);
@@ -104,7 +104,7 @@ internal static class CorePrimitives
             // > : ( a b -- flag ) greater-than comparison, returns 1/0
             { (null, ">"), new(i =>
                 {
-                    Ensure(i,2,">");
+                    i.EnsureStack(2,">");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a > b ? 1L : 0L);
@@ -112,21 +112,21 @@ internal static class CorePrimitives
             // 0= : ( n -- flag ) true if zero
             { (null, "0="), new(i =>
                 {
-                    Ensure(i,1,"0=");
+                    i.EnsureStack(1,"0=");
                     var a=ToLong(i.PopInternal());
                     i.Push(a==0 ? 1L : 0L);
                 }) },
             // 0<> : ( n -- flag ) true if non-zero
             { (null, "0<>"), new(i =>
                 {
-                    Ensure(i,1,"0<>");
+                    i.EnsureStack(1,"0<>");
                     var a=ToLong(i.PopInternal());
                     i.Push(a!=0 ? 1L : 0L);
                 }) },
             // <> : ( a b -- flag ) not equal comparison
-            { (null, "<>"), new(i =>
+            { (null, "<>") , new(i =>
                 {
-                    Ensure(i,2,"<>");
+                    i.EnsureStack(2,"<>");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a!=b ? 1L : 0L);
@@ -134,7 +134,7 @@ internal static class CorePrimitives
             // <= : ( a b -- flag ) less-or-equal comparison
             { (null, "<="), new(i =>
                 {
-                    Ensure(i,2,"<=");
+                    i.EnsureStack(2,"<=");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a<=b ? 1L : 0L);
@@ -142,7 +142,7 @@ internal static class CorePrimitives
             // >= : ( a b -- flag ) greater-or-equal comparison
             { (null, ">="), new(i =>
                 {
-                    Ensure(i,2,">=");
+                    i.EnsureStack(2,">=");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a>=b ? 1L : 0L);
@@ -150,7 +150,7 @@ internal static class CorePrimitives
             // MIN : ( a b -- min ) push smaller of two
             { (null, "MIN"), new(i =>
                 {
-                    Ensure(i,2,"MIN");
+                    i.EnsureStack(2,"MIN");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a<b ? a : b);
@@ -158,7 +158,7 @@ internal static class CorePrimitives
             // MAX : ( a b -- max ) push larger of two
             { (null, "MAX"), new(i =>
                 {
-                    Ensure(i,2,"MAX");
+                    i.EnsureStack(2,"MAX");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a>b ? a : b);
@@ -166,7 +166,7 @@ internal static class CorePrimitives
             // ROT : ( a b c -- b c a ) rotate third element to top
             { (null, "ROT"), new(i =>
                 {
-                    Ensure(i,3,"ROT");
+                    i.EnsureStack(3,"ROT");
                     var c=i.PopInternal();
                     var b=i.PopInternal();
                     var a=i.PopInternal();
@@ -177,7 +177,7 @@ internal static class CorePrimitives
             // -ROT : ( a b c -- c a b ) reverse rotation
             { (null, "-ROT"), new(i =>
                 {
-                    Ensure(i,3,"-ROT");
+                    i.EnsureStack(3,"-ROT");
                     var c=i.PopInternal();
                     var b=i.PopInternal();
                     var a=i.PopInternal();
@@ -188,7 +188,7 @@ internal static class CorePrimitives
             // @ : ( addr -- value ) fetch cell from memory
             { (null, "@"), new(i =>
                 {
-                    Ensure(i,1,"@");
+                    i.EnsureStack(1,"@");
                     var addr=ToLong(i.PopInternal());
                     i.MemTryGet(addr, out var v);
                     i.Push(v);
@@ -196,7 +196,7 @@ internal static class CorePrimitives
             // ! : ( addr val -- ) store cell to memory
             { (null, "!"), new(i =>
                 {
-                    Ensure(i,2,"!");
+                    i.EnsureStack(2,"!");
                     var addr=ToLong(i.PopInternal());
                     var val=ToLong(i.PopInternal());
                     i.MemSet(addr,val);
@@ -204,7 +204,7 @@ internal static class CorePrimitives
             // +! : ( addr add -- ) add value to memory cell
             { (null, "+!"), new(i =>
                 {
-                    Ensure(i,2,"+!");
+                    i.EnsureStack(2,"+!");
                     var addr=ToLong(i.PopInternal());
                     var add=ToLong(i.PopInternal());
                     i.MemTryGet(addr, out var cur);
@@ -213,7 +213,7 @@ internal static class CorePrimitives
             // C! : ( addr char -- ) store low byte to memory
             { (null, "C!"), new(i =>
                 {
-                    Ensure(i,2,"C!");
+                    i.EnsureStack(2,"C!");
                     var addr=ToLong(i.PopInternal());
                     var val=ToLong(i.PopInternal());
                     var b=(long)((byte)val);
@@ -222,7 +222,7 @@ internal static class CorePrimitives
             // C@ : ( addr -- char ) fetch low byte from memory
             { (null, "C@"), new(i =>
                 {
-                    Ensure(i,1,"C@");
+                    i.EnsureStack(1,"C@");
                     var addr=ToLong(i.PopInternal());
                     i.MemTryGet(addr, out var v);
                     i.Push((long)((byte)v));
@@ -230,7 +230,7 @@ internal static class CorePrimitives
             // MOVE : ( src dst u -- ) memory block move, handles overlap correctly
             { (null, "MOVE"), new(i =>
                 {
-                    Ensure(i,3,"MOVE");
+                    i.EnsureStack(3,"MOVE");
                     var u = ToLong(i.PopInternal());
                     var dst = ToLong(i.PopInternal());
                     var src = ToLong(i.PopInternal());
@@ -257,7 +257,7 @@ internal static class CorePrimitives
             // FILL : ( addr u char -- ) fill u bytes at addr with char
             { (null, "FILL"), new(i =>
                 {
-                    Ensure(i,3,"FILL");
+                    i.EnsureStack(3,"FILL");
                     var ch = ToLong(i.PopInternal());
                     var u = ToLong(i.PopInternal());
                     var addr = ToLong(i.PopInternal());
@@ -268,7 +268,7 @@ internal static class CorePrimitives
             // ERASE : ( addr u -- ) set u bytes at addr to zero
             { (null, "ERASE"), new(i =>
                 {
-                    Ensure(i,2,"ERASE");
+                    i.EnsureStack(2,"ERASE");
                     var u = ToLong(i.PopInternal());
                     var addr = ToLong(i.PopInternal());
                     if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length");
@@ -277,7 +277,7 @@ internal static class CorePrimitives
             // DUMP : ( addr u -- ) write u bytes as hex string for inspection
             { (null, "DUMP"), new(i =>
                 {
-                    Ensure(i,2,"DUMP");
+                    i.EnsureStack(2,"DUMP");
                     var u = ToLong(i.PopInternal());
                     var addr = ToLong(i.PopInternal());
                     if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative DUMP length");
@@ -294,7 +294,7 @@ internal static class CorePrimitives
             // >NUMBER : ( str start consumed -- value remainderLen totalConsumed ) parse digits from string according to BASE
             { (null, ">NUMBER"), new(i =>
                 {
-                    Ensure(i,3,">NUMBER");
+                    i.EnsureStack(3,">NUMBER");
                     var consumed = (int)ToLong(i.PopInternal());
                     var start = (int)ToLong(i.PopInternal());
                     var obj = i.PopInternal();
@@ -331,14 +331,14 @@ internal static class CorePrimitives
             // HOLD : ( char -- ) push character into pictured output buffer
             { (null, "HOLD"), new(i =>
                 {
-                    Ensure(i,1,"HOLD");
+                    i.EnsureStack(1,"HOLD");
                     var n=ToLong(i.PopInternal());
                     i.PicturedHold((char)(n & 0xFFFF));
                 }) },
             // # : pictured output digit extraction, return remaining quotient
             { (null, "#"), new(i =>
                 {
-                    Ensure(i,1,"#");
+                    i.EnsureStack(1,"#");
                     var n = ToLong(i.PopInternal());
                     // For this implementation, pictured numeric output is decimal-only regardless of BASE
                     const long b = 10;
@@ -351,7 +351,7 @@ internal static class CorePrimitives
             // #S : pictured output produce digits of a number onto pictured buffer
             { (null, "#S"), new(i =>
                 {
-                    Ensure(i,1,"#S");
+                    i.EnsureStack(1,"#S");
                     var n = ToLong(i.PopInternal());
                     // Decimal-only pictured numeric output regardless of BASE
                     const long b = 10;
@@ -373,7 +373,7 @@ internal static class CorePrimitives
             // SIGN : pictured output sign handling (push '-' if negative)
             { (null, "SIGN"), new(i =>
                 {
-                    Ensure(i,1,"SIGN");
+                    i.EnsureStack(1,"SIGN");
                     var n=ToLong(i.PopInternal());
                     if (n < 0)
                         i.PicturedHold('-');
@@ -387,7 +387,7 @@ internal static class CorePrimitives
             // >R : ( x -- ) move top of data stack to return stack
             { (null, ">R"), new(i =>
                 {
-                    Ensure(i,1,">R");
+                    i.EnsureStack(1,">R");
                     var a=i.PopInternal();
                     i.RPush(a);
                 }) },
@@ -402,7 +402,7 @@ internal static class CorePrimitives
             // 2>R : ( x1 x2 -- ) move two cells to return stack
             { (null, "2>R"), new(i =>
                 {
-                    Ensure(i,2,"2>R");
+                    i.EnsureStack(2,"2>R");
                     var b=i.PopInternal();
                     var a=i.PopInternal();
                     i.RPush(a);
@@ -421,13 +421,13 @@ internal static class CorePrimitives
             // DUP : duplicate top of stack
             { (null, "DUP"), new(i =>
                 {
-                    Ensure(i,1,"DUP");
+                    i.EnsureStack(1,"DUP");
                     i.Push(i.StackTop());
                 }) },
             // 2DUP : duplicate top two stack items
             { (null, "2DUP"), new(i =>
                 {
-                    Ensure(i,2,"2DUP");
+                    i.EnsureStack(2,"2DUP");
                     var a=i.StackNthFromTop(2);
                     var b=i.StackNthFromTop(1);
                     i.Push(a);
@@ -436,19 +436,19 @@ internal static class CorePrimitives
             // DROP : remove top of stack
             { (null, "DROP"), new(i =>
                 {
-                    Ensure(i,1,"DROP");
+                    i.EnsureStack(1,"DROP");
                     i.DropTop();
                 }) },
             // SWAP : swap top two stack items
             { (null, "SWAP"), new(i =>
                 {
-                    Ensure(i,2,"SWAP");
+                    i.EnsureStack(2,"SWAP");
                     i.SwapTop2();
                 }) },
             // 2SWAP : swap top two pairs on the stack
             { (null, "2SWAP"), new(i =>
                 {
-                    Ensure(i,4,"2SWAP");
+                    i.EnsureStack(4,"2SWAP");
                     var d=i.PopInternal();
                     var c=i.PopInternal();
                     var b=i.PopInternal();
@@ -461,20 +461,20 @@ internal static class CorePrimitives
             // OVER : copy second item to top
             { (null, "OVER"), new(i =>
                 {
-                    Ensure(i,2,"OVER");
+                    i.EnsureStack(2,"OVER");
                     i.Push(i.StackNthFromTop(2));
                 }) },
             // NEGATE : ( n -- -n ) negate number
             { (null, "NEGATE"), new(i =>
                 {
-                    Ensure(i,1,"NEGATE");
+                    i.EnsureStack(1,"NEGATE");
                     var a=ToLong(i.PopInternal());
                     i.Push(-a);
                 }) },
             // PICK : ( ... u -- ... xu ) copy u-th item from top to top
             { (null, "PICK"), new(i =>
                 {
-                    Ensure(i,1,"PICK");
+                    i.EnsureStack(1,"PICK");
                     var n=ToLong(i.PopInternal());
                     if(n<0) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: negative index {n}");
                     if(n>=i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow,$"PICK: index {n} exceeds stack depth {i.Stack.Count}");
@@ -492,7 +492,7 @@ internal static class CorePrimitives
             // . : ( n -- ) write number to output
             { (null, "."), new(i =>
                 {
-                    Ensure(i,1,".");
+                    i.EnsureStack(1,".");
                     var n=ToLong(i.PopInternal());
                     i.WriteNumber(n);
                 }) },
@@ -526,7 +526,7 @@ internal static class CorePrimitives
             // EMIT : ( char -- ) output character
             { (null, "EMIT"), new(i =>
                 {
-                    Ensure(i,1,"EMIT");
+                    i.EnsureStack(1,"EMIT");
                     var n=ToLong(i.PopInternal());
                     char ch=(char)(n & 0xFFFF);
                     i.WriteText(ch.ToString());
@@ -534,7 +534,7 @@ internal static class CorePrimitives
             // TYPE : ( s -- ) output a string
             { (null, "TYPE"), new(i =>
                 {
-                    Ensure(i,1,"TYPE");
+                    i.EnsureStack(1,"TYPE");
                     var obj=i.PopInternal();
                     if (obj is string s)
                     {
@@ -545,7 +545,7 @@ internal static class CorePrimitives
             // COUNT : for strings return string and length; for counted buffers return address+1 and length
             { (null, "COUNT"), new(i =>
                 {
-                    Ensure(i,1,"COUNT");
+                    i.EnsureStack(1,"COUNT");
                     var obj = i.PopInternal();
                     switch (obj)
                     {
@@ -566,21 +566,21 @@ internal static class CorePrimitives
             // AND, OR, XOR : bitwise operations
             { (null, "AND"), new(i =>
                 {
-                    Ensure(i,2,"AND");
+                    i.EnsureStack(2,"AND");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a & b);
                 }) },
             { (null, "OR"), new(i =>
                 {
-                    Ensure(i,2,"OR");
+                    i.EnsureStack(2,"OR");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a | b);
                 }) },
             { (null, "XOR"), new(i =>
                 {
-                    Ensure(i,2,"XOR");
+                    i.EnsureStack(2,"XOR");
                     var b=ToLong(i.PopInternal());
                     var a=ToLong(i.PopInternal());
                     i.Push(a ^ b);
@@ -588,21 +588,21 @@ internal static class CorePrimitives
             // INVERT : bitwise complement
             { (null, "INVERT"), new(i =>
                 {
-                    Ensure(i,1,"INVERT");
+                    i.EnsureStack(1,"INVERT");
                     var a=ToLong(i.PopInternal());
                     i.Push(~a);
                 }) },
             // LSHIFT, RSHIFT : logical shifts using unsigned semantics
             { (null, "LSHIFT"), new(i =>
                 {
-                    Ensure(i,2,"LSHIFT");
+                    i.EnsureStack(2,"LSHIFT");
                     var u=ToLong(i.PopInternal());
                     var x=ToLong(i.PopInternal());
                     i.Push((long)((ulong)x << (int)u));
                 }) },
             { (null, "RSHIFT"), new(i =>
                 {
-                    Ensure(i,2,"RSHIFT");
+                    i.EnsureStack(2,"RSHIFT");
                     var u=ToLong(i.PopInternal());
                     var x=ToLong(i.PopInternal());
                     i.Push((long)((ulong)x >> (int)u));
@@ -627,7 +627,7 @@ internal static class CorePrimitives
             // EXECUTE : execute an execution token or (xt value) pair
             { (null, "EXECUTE"), new(async i =>
                 {
-                    Ensure(i,1,"EXECUTE");
+                    i.EnsureStack(1,"EXECUTE");
                     var top = i.StackTop();
                     if (top is Word wTop)
                     {
@@ -648,7 +648,7 @@ internal static class CorePrimitives
             // CATCH : ( xt -- 0 | err ) execute xt and catch Forth exceptions, returning error code
             { (null, "CATCH"), new(async i =>
                 {
-                    Ensure(i,1,"CATCH");
+                    i.EnsureStack(1,"CATCH");
                     var obj = i.PopInternal();
                     if (obj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "CATCH expects an execution token");
                     try
@@ -671,7 +671,7 @@ internal static class CorePrimitives
             // THROW : ( err -- ) rethrow a non-zero error as a ForthException
             { (null, "THROW"), new(i =>
                 {
-                    Ensure(i,1,"THROW");
+                    i.EnsureStack(1,"THROW");
                     var err = ToLong(i.PopInternal());
                     if (err != 0)
                         throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}");
@@ -695,7 +695,7 @@ internal static class CorePrimitives
             // */ : ( n1 n2 n3 -- n ) multiply-then-divide
             { (null, "*/"), new(i =>
                 {
-                    Ensure(i,3,"*/");
+                    i.EnsureStack(3,"*/");
                     var d = ToLong(i.PopInternal());
                     var n2 = ToLong(i.PopInternal());
                     var n1 = ToLong(i.PopInternal());
@@ -767,7 +767,7 @@ internal static class CorePrimitives
                 {
                     if (!i._isCompiling)
                         throw new ForthException(ForthErrorCode.CompileError, "LITERAL outside compilation");
-                    Ensure(i,1,"LITERAL");
+                    i.EnsureStack(1,"LITERAL");
                     var val=i.PopInternal();
                     i.CurrentList().Add(ii=>
                         {
@@ -807,7 +807,7 @@ internal static class CorePrimitives
                     var elsePart=ifr.ElsePart;
                     i.CurrentList().Add(async ii=>
                         {
-                            Ensure(ii,1,"IF");
+                            i.EnsureStack(1,"IF");
                             var flag=ii.PopInternal();
                             if(ToBool(flag))
                                 foreach(var a in thenPart)
@@ -842,7 +842,7 @@ internal static class CorePrimitives
                             {
                                 foreach (var a in pre)
                                     await a(ii);
-                                Ensure(ii,1,"WHILE");
+                                i.EnsureStack(1,"WHILE");
                                 var flag=ii.PopInternal();
                                 if(!ToBool(flag))
                                     break;
@@ -865,7 +865,7 @@ internal static class CorePrimitives
                             {
                                 foreach (var a in body)
                                     await a(ii);
-                                Ensure(ii,1,"UNTIL");
+                                i.EnsureStack(1,"UNTIL");
                                 var flag=ii.PopInternal();
                                 if(ToBool(flag))
                                     break;
@@ -882,7 +882,7 @@ internal static class CorePrimitives
                     var body=df.Body;
                     i.CurrentList().Add(async ii=>
                         {
-                            Ensure(ii,2,"DO");
+                            i.EnsureStack(2,"DO");
                             var start=ToLong(ii.PopInternal());
                             var limit=ToLong(ii.PopInternal());
                             long step=start<=limit?1L:-1L;
@@ -969,7 +969,7 @@ internal static class CorePrimitives
             // , : compile-time comma store cell into dictionary
             { (null, ","), new(i =>
                 {
-                    Ensure(i,1,",");
+                    i.EnsureStack(1,",");
                     var v=ToLong(i.PopInternal());
                     i._mem[i._nextAddr++]=v;
                 }) { IsImmediate = true, Name = "," } },
@@ -984,7 +984,7 @@ internal static class CorePrimitives
             // ALLOT : reserve n cells in dictionary
             { (null, "ALLOT"), new(i =>
                 {
-                    Ensure(i,1,"ALLOT");
+                    i.EnsureStack(1,"ALLOT");
                     var cells=ToLong(i.PopInternal());
                     if(cells<0)
                         throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size");
@@ -1003,7 +1003,7 @@ internal static class CorePrimitives
             { (null, "CONSTANT"), new(i =>
                 {
                     var name=i.ReadNextTokenOrThrow("Expected name after CONSTANT");
-                    Ensure(i,1,"CONSTANT");
+                    i.EnsureStack(1,"CONSTANT");
                     var val=i.PopInternal();
                     i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii=> ii.Push(val)) { Name = name, Module = i._currentModule });
                     i.RegisterDefinition(name);
@@ -1019,7 +1019,7 @@ internal static class CorePrimitives
                 }) { IsImmediate = true, Name = "VALUE" } },
             { (null, "TO"), new(i =>
                 {
-                    Ensure(i,1,"TO");
+                    i.EnsureStack(1,"TO");
                     var name=i.ReadNextTokenOrThrow("Expected name after TO");
                     var vv=ToLong(i.PopInternal());
                     i.ValueSet(name,vv);
@@ -1039,7 +1039,7 @@ internal static class CorePrimitives
                 }) { IsImmediate = true, Name = "DEFER" } },
             { (null, "IS"), new(i =>
                 {
-                    Ensure(i,1,"IS");
+                    i.EnsureStack(1,"IS");
                     var name=i.ReadNextTokenOrThrow("Expected deferred name after IS");
                     var xtObj=i.PopInternal();
                     if(xtObj is not Word xt)
@@ -1145,13 +1145,13 @@ internal static class CorePrimitives
             // TASK? : check if object is a completed Task
             { (null, "TASK?"), new(i =>
                 {
-                    Ensure(i,1,"TASK?");
+                    i.EnsureStack(1,"TASK?");
                     var obj=i.PopInternal();
                     long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag);
                 }) { Name = "TASK?" } },
             // AWAIT : await a Task and push its result if any
             { (null, "AWAIT"), new(async i => {
-                Ensure(i,1,"AWAIT");
+                i.EnsureStack(1,"AWAIT");
                 var obj = i.PopInternal();
                 switch(obj)
                 {
@@ -1196,7 +1196,7 @@ internal static class CorePrimitives
             // JOIN is an idiomatic alias for AWAIT in Forth concurrency
             { (null, "JOIN"), new(async i => {
                 // Delegate to AWAIT behavior
-                Ensure(i,1,"JOIN");
+                i.EnsureStack(1,"JOIN");
                 i._dict.TryGetValue((null, "AWAIT"), out var awaitWord);
                 if (awaitWord is null)
                     throw new ForthException(ForthErrorCode.UndefinedWord, "AWAIT not found for JOIN");
@@ -1205,7 +1205,7 @@ internal static class CorePrimitives
 
             // SPAWN: ( xt -- task ) start xt on a background Task without result
             { (null, "SPAWN"), new(i => {
-                Ensure(i, 1, "SPAWN");
+                i.EnsureStack(1, "SPAWN");
                 var obj = i.PopInternal();
                 if (obj is not Word xt)
                     throw new ForthException(ForthErrorCode.TypeError, "SPAWN expects an execution token");
@@ -1225,7 +1225,7 @@ internal static class CorePrimitives
             // FUTURE: ( xt -- task ) run xt on a fresh interpreter and return its top-of-stack as the task result
             { (null, "FUTURE"), new(i =>
                 {
-                    Ensure(i,1,"FUTURE");
+                    i.EnsureStack(1,"FUTURE");
                     var obj = i.PopInternal();
                     if (obj is not Word xt)
                         throw new ForthException(ForthErrorCode.TypeError, "FUTURE expects an execution token");
@@ -1247,7 +1247,7 @@ internal static class CorePrimitives
             // TASK is a synonym for FUTURE for brevity, with same semantics
             { (null, "TASK"), new(i =>
                 {
-                    Ensure(i,1,"TASK");
+                    i.EnsureStack(1,"TASK");
                     var obj = i.PopInternal();
                     if (obj is not Word xt)
                         throw new ForthException(ForthErrorCode.TypeError, "TASK expects an execution token");
@@ -1312,6 +1312,4 @@ internal static class CorePrimitives
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
     };
 
-    private static void Ensure(ForthInterpreter i, int count, string name) =>
-        ForthInterpreter.EnsureStack(i, count, name);
 }

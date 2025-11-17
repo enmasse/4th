@@ -65,10 +65,8 @@ public class ForthInterpreter : IForthInterpreter
         }
     }
 
-    internal void RegisterDefinition(string name)
-    {
+    internal void RegisterDefinition(string name) =>
         _definitions.Add(new DefinitionRecord(name, _currentModule));
-    }
 
     internal bool TryReadNextToken(out string token)
     {
@@ -380,9 +378,9 @@ public class ForthInterpreter : IForthInterpreter
     internal object PopInternal() =>
         Pop();
 
-    internal static void EnsureStack(ForthInterpreter interp, int needed, string word)
+    internal void EnsureStack(int needed, string word)
     {
-        if (interp._stack.Count < needed)
+        if (_stack.Count < needed)
         {
             throw new ForthException(ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
         }
