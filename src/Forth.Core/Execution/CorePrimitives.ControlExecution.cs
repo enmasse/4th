@@ -24,7 +24,16 @@ internal static partial class CorePrimitives
     private static Task Prim_QUIT(ForthInterpreter i) { i.RequestExit(); return Task.CompletedTask; }
 
     [Primitive("ABORT", HelpString = "Abort execution with error")]
-    private static Task Prim_ABORT(ForthInterpreter i) => throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+    private static Task Prim_ABORT(ForthInterpreter i)
+    {
+        // If a string is on the stack, use it as the abort message
+        if (i.Stack.Count > 0 && i.StackTop() is string s)
+        {
+            i.PopInternal();
+            throw new ForthException(ForthErrorCode.Unknown, s);
+        }
+        throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+    }
 
     [Primitive("LATEST", HelpString = "Push the latest defined word onto the stack")]
     private static Task Prim_LATEST(ForthInterpreter i) { var last = i._lastDefinedWord; if (last is null) throw new ForthException(ForthErrorCode.UndefinedWord, "No latest word"); i.Push(last); return Task.CompletedTask; }

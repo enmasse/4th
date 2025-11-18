@@ -34,4 +34,15 @@ internal static partial class CorePrimitives
 
     [Primitive("DEPTH", HelpString = "Return current stack depth ( -- n )")]
     private static Task Prim_DEPTH(ForthInterpreter i) { i.Push((long)i.Stack.Count); return Task.CompletedTask; }
+
+    [Primitive("2OVER", HelpString = "2OVER ( a b c d -- a b c d a b ) - copy pair two down into top")]
+    private static Task Prim_2OVER(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "2OVER");
+        var a = i.StackNthFromTop(4);
+        var b = i.StackNthFromTop(3);
+        i.Push(a);
+        i.Push(b);
+        return Task.CompletedTask;
+    }
 }

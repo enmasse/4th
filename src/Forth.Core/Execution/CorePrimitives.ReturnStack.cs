@@ -20,4 +20,12 @@ internal static partial class CorePrimitives
 
     [Primitive("RP@", HelpString = "RP@ - push return stack pointer (depth)")]
     private static Task Prim_RPAt(ForthInterpreter i) { i.Push((long)i.RCount); return Task.CompletedTask; }
+
+    [Primitive("R@", HelpString = "R@ ( -- x ) - read top of return stack without removing")]
+    private static Task Prim_RAt(ForthInterpreter i) { if (i.RCount == 0) throw new ForthException(ForthErrorCode.StackUnderflow, "Return stack underflow in R@"); // push copy of return-stack top
+        i.Push(i.RPop());
+        // re-push the value to preserve return stack
+        var top = i.StackTop();
+        i.RPush(top);
+        return Task.CompletedTask; }
 }

@@ -100,4 +100,8 @@ internal static partial class CorePrimitives
 
     [Primitive("ALLOT", HelpString = "ALLOT ( u -- ) - reserve u cells in dictionary")]
     private static Task Prim_ALLOT(ForthInterpreter i) { i.EnsureStack(1, "ALLOT"); var cells = ToLong(i.PopInternal()); if (cells < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size"); for (long k = 0; k < cells; k++) i._mem[i._nextAddr++] = 0; return Task.CompletedTask; }
+
+    // HERE: push the current dictionary allocation pointer (address of next free cell)
+    [Primitive("HERE", HelpString = "HERE ( -- addr ) - push current dictionary allocation pointer")]
+    private static Task Prim_HERE(ForthInterpreter i) { i.Push(i._nextAddr); return Task.CompletedTask; }
 }

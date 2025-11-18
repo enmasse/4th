@@ -3,6 +3,7 @@ using Forth.Core.Execution;
 using System.Collections.Immutable; // added
 using System.Reflection;
 using System.Text;
+using System.Globalization;
 
 namespace Forth.Core.Interpreter;
 
@@ -531,7 +532,14 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
 
-                // Numeric literal
+                // Floating-point literal (interpret-time)
+                if (TryParseDouble(tok, out var dnum))
+                {
+                    Push(dnum);
+                    continue;
+                }
+
+                // Numeric literal (integer)
                 if (TryParseNumber(tok, out var num))
                 {
                     Push(num);
@@ -574,7 +582,18 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
 
-                // Compile-time numeric literal
+                // Compile-time floating/integer numeric literal
+                if (TryParseDouble(tok, out var dlit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(dlit);
+                        return Task.CompletedTask;
+                    });
+
+                    continue;
+                }
+
                 if (TryParseNumber(tok, out var lit))
                 {
                     CurrentList().Add(intr =>
@@ -651,6 +670,16 @@ public class ForthInterpreter : IForthInterpreter
         }
 
         return NumberParser.TryParse(token, GetBase, out value);
+    }
+
+    private bool TryParseDouble(string token, out double value)
+    {
+        // Only treat as double if token contains decimal point or exponent to avoid capturing integers
+        value = 0.0;
+        if (string.IsNullOrEmpty(token)) return false;
+        if (!token.Contains('.') && !token.Contains('e') && !token.Contains('E')) return false;
+        // Accept typical floating formats with invariant culture (decimal point, exponent)
+        return double.TryParse(token, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
     }
 
     internal object StackTop() =>
