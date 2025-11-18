@@ -9,6 +9,7 @@ namespace Forth.Core.Execution
         public bool IsImmediate { get; set; }
         public string? Module { get; set; }
         public bool IsAsync { get; set; }
+        public string? HelpString { get; set; }
 
         public PrimitiveAttribute(string name)
         {

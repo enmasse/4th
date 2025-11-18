@@ -38,7 +38,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("CREATE", IsImmediate = true)]
+    [Primitive("CREATE", IsImmediate = true, HelpString = "CREATE <name> - create a new data-definition word")]
     private static Task Prim_CREATE(ForthInterpreter i)
     {
         var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
@@ -47,8 +47,10 @@ internal static partial class CorePrimitives
         var addr = i._nextAddr;
         i._lastCreatedName = name;
         i._lastCreatedAddr = addr;
-        i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule });
+        var created = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+        i._dict = i._dict.SetItem((i._currentModule, name), created);
         i.RegisterDefinition(name);
+        i._lastDefinedWord = created;
         return Task.CompletedTask;
     }
 
@@ -56,13 +58,13 @@ internal static partial class CorePrimitives
     private static Task Prim_DOES(ForthInterpreter i) { if (string.IsNullOrEmpty(i._lastCreatedName)) throw new ForthException(ForthErrorCode.CompileError, "DOES> without CREATE"); i._doesCollecting = true; i._doesTokens = new List<string>(); return Task.CompletedTask; }
 
     [Primitive("VARIABLE", IsImmediate = true)]
-    private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }); i.RegisterDefinition(name); return Task.CompletedTask; }
+    private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
 
     [Primitive("CONSTANT", IsImmediate = true)]
-    private static Task Prim_CONSTANT(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }); i.RegisterDefinition(name); return Task.CompletedTask; }
+    private static Task Prim_CONSTANT(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; return Task.CompletedTask; }
 
     [Primitive("VALUE", IsImmediate = true)]
-    private static Task Prim_VALUE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VALUE"); if (!i._values.ContainsKey(name)) i._values[name] = 0; i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }); i.RegisterDefinition(name); return Task.CompletedTask; }
+    private static Task Prim_VALUE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VALUE"); if (!i._values.ContainsKey(name)) i._values[name] = 0; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; return Task.CompletedTask; }
 
     [Primitive("TO", IsImmediate = true)]
     private static Task Prim_TO(ForthInterpreter i) { i.EnsureStack(1, "TO"); var name = i.ReadNextTokenOrThrow("Expected name after TO"); var vv = ToLong(i.PopInternal()); i.ValueSet(name, vv); return Task.CompletedTask; }
@@ -72,13 +74,15 @@ internal static partial class CorePrimitives
     {
         var name = i.ReadNextTokenOrThrow("Expected name after DEFER");
         i._deferred[name] = null;
-        i._dict = i._dict.SetItem((i._currentModule, name), new Word(async ii =>
+        var created = new Word(async ii =>
         {
             if (!ii._deferred.TryGetValue(name, out var target) || target is null)
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Deferred word not set: {name}");
             await target.ExecuteAsync(ii);
-        }) { Name = name, Module = i._currentModule });
+        }) { Name = name, Module = i._currentModule };
+        i._dict = i._dict.SetItem((i._currentModule, name), created);
         i.RegisterDefinition(name);
+        i._lastDefinedWord = created;
         return Task.CompletedTask;
     }
 
@@ -162,8 +166,10 @@ internal static partial class CorePrimitives
     {
         var name = i.ReadNextTokenOrThrow("Expected name after MARKER");
         var snap = i.CreateMarkerSnapshot();
-        i._dict = i._dict.SetItem((i._currentModule, name), new Word(ii => { ii.RestoreSnapshot(snap); return Task.CompletedTask; }) { Name = name, Module = i._currentModule });
+        var created = new Word(ii => { ii.RestoreSnapshot(snap); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+        i._dict = i._dict.SetItem((i._currentModule, name), created);
         i.RegisterDefinition(name);
+        i._lastDefinedWord = created;
         return Task.CompletedTask;
     }
 }

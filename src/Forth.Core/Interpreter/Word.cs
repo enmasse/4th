@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace Forth.Core.Interpreter;
 
 internal class Word
@@ -9,6 +12,7 @@ internal class Word
     public string? Name { get; set; }
     public string? Module { get; set; }
     public bool IsHidden { get; set; }
+    public string? HelpString { get; set; }
 
     public Word(Action<ForthInterpreter> sync)
     {

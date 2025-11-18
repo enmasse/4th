@@ -76,11 +76,13 @@ public class CorePrimitivesGenerator : ISourceGenerator
                 if (name is null) continue;
                 var isImmediate = false;
                 var module = (string?)null;
+                var help = (string?)null;
 
                 foreach (var named in attr.NamedArguments)
                 {
                     if (named.Key == "IsImmediate" && named.Value.Value is bool b) isImmediate = b;
                     if (named.Key == "Module" && named.Value.Value is string s) module = s;
+                    if (named.Key == "HelpString" && named.Value.Value is string hs) help = hs;
                 }
 
                 // Method name
@@ -91,7 +93,8 @@ public class CorePrimitivesGenerator : ISourceGenerator
                 sb.AppendLine($"        // Generated for {methodName}");
                 sb.AppendLine("        {");
                 sb.AppendLine($"            Func<ForthInterpreter, System.Threading.Tasks.Task> {delName} = {methodName};");
-                sb.AppendLine($"            var {wName} = new Word({delName}) {{ Name = {ToLiteral(name)}, IsImmediate = {isImmediate.ToString().ToLowerInvariant()} }};");
+                var helpLiteral = help is null ? "null" : ToLiteral(help);
+                sb.AppendLine($"            var {wName} = new Word({delName}) {{ Name = {ToLiteral(name)}, IsImmediate = {isImmediate.ToString().ToLowerInvariant()}, HelpString = {helpLiteral} }};");
                 var moduleLiteral = module is null ? "null" : ToLiteral(module);
                 sb.AppendLine($"            d[({moduleLiteral}, {ToLiteral(name)})] = {wName};");
                 sb.AppendLine("        }");
