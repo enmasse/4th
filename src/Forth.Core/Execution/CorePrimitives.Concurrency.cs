@@ -5,10 +5,10 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("TASK?")]
+    [Primitive("TASK?", HelpString = "TASK? ( task -- flag ) - push 1 if task completed else 0")]
     private static Task Prim_TASKQ(ForthInterpreter i) { i.EnsureStack(1, "TASK?"); var obj = i.PopInternal(); long flag = obj is Task t && t.IsCompleted ? 1L : 0L; i.Push(flag); return Task.CompletedTask; }
 
-    [Primitive("AWAIT", IsAsync = true)]
+    [Primitive("AWAIT", IsAsync = true, HelpString = "AWAIT ( task -- ) - await a Task and push its result if any")]
     private static Task Prim_AWAIT(ForthInterpreter i) => AwaitImpl(i);
 
     private static async Task AwaitImpl(ForthInterpreter i)
@@ -50,7 +50,7 @@ internal static partial class CorePrimitives
         }
     }
 
-    [Primitive("JOIN", IsAsync = true)]
+    [Primitive("JOIN", IsAsync = true, HelpString = "JOIN - synonym for awaiting a spawned task (uses AWAIT)")]
     private static Task Prim_JOIN(ForthInterpreter i) => JoinImpl(i);
 
     private static async Task JoinImpl(ForthInterpreter i)
@@ -62,7 +62,7 @@ internal static partial class CorePrimitives
         await awaitWord.ExecuteAsync(i);
     }
 
-    [Primitive("SPAWN")]
+    [Primitive("SPAWN", HelpString = "SPAWN ( xt -- task ) - run word in background and return Task")]
     private static Task Prim_SPAWN(ForthInterpreter i)
     {
         i.EnsureStack(1, "SPAWN");
@@ -80,7 +80,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("FUTURE")]
+    [Primitive("FUTURE", HelpString = "FUTURE ( xt -- task ) - run word asynchronously and return Task with its result")]
     private static Task Prim_FUTURE(ForthInterpreter i)
     {
         i.EnsureStack(1, "FUTURE");
@@ -100,7 +100,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("TASK")]
+    [Primitive("TASK", HelpString = "TASK ( xt -- task ) - run word asynchronously and return Task with its result")]
     private static Task Prim_TASK(ForthInterpreter i)
     {
         i.EnsureStack(1, "TASK");

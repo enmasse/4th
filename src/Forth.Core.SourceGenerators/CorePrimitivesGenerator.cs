@@ -85,6 +85,9 @@ public class CorePrimitivesGenerator : ISourceGenerator
                     if (named.Key == "HelpString" && named.Value.Value is string hs) help = hs;
                 }
 
+                // Provide default help text if none specified
+                var finalHelp = help ?? (name + " - primitive");
+
                 // Method name
                 var methodName = m.Name;
                 var delName = $"del{idx}";
@@ -93,7 +96,7 @@ public class CorePrimitivesGenerator : ISourceGenerator
                 sb.AppendLine($"        // Generated for {methodName}");
                 sb.AppendLine("        {");
                 sb.AppendLine($"            Func<ForthInterpreter, System.Threading.Tasks.Task> {delName} = {methodName};");
-                var helpLiteral = help is null ? "null" : ToLiteral(help);
+                var helpLiteral = finalHelp is null ? "null" : ToLiteral(finalHelp);
                 sb.AppendLine($"            var {wName} = new Word({delName}) {{ Name = {ToLiteral(name)}, IsImmediate = {isImmediate.ToString().ToLowerInvariant()}, HelpString = {helpLiteral} }};");
                 var moduleLiteral = module is null ? "null" : ToLiteral(module);
                 sb.AppendLine($"            d[({moduleLiteral}, {ToLiteral(name)})] = {wName};");

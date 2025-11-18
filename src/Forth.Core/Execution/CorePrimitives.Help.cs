@@ -5,7 +5,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("HELP", IsImmediate = true)]
+    [Primitive("HELP", IsImmediate = true, HelpString = "HELP <name> - show help text for a word if available")]
     private static Task Prim_HELP(ForthInterpreter i)
     {
         var name = i.ReadNextTokenOrThrow("Expected name after HELP");

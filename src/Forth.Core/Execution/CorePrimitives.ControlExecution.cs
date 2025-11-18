@@ -5,31 +5,31 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("EXIT")]
+    [Primitive("EXIT", HelpString = "Exit from current word")]
     private static Task Prim_EXIT(ForthInterpreter i) { i.ThrowExit(); return Task.CompletedTask; }
 
-    [Primitive("UNLOOP")]
+    [Primitive("UNLOOP", HelpString = "Remove loop from control stack")]
     private static Task Prim_UNLOOP(ForthInterpreter i) { i.Unloop(); return Task.CompletedTask; }
 
-    [Primitive("I")]
+    [Primitive("I", HelpString = "Push current loop index")]
     private static Task Prim_I(ForthInterpreter i) { i.Push(i.CurrentLoopIndex()); return Task.CompletedTask; }
 
-    [Primitive("YIELD", IsAsync = true)]
+    [Primitive("YIELD", IsAsync = true, HelpString = "Yield execution (async)")]
     private static async Task Prim_YIELD(ForthInterpreter i) { await Task.Yield(); }
 
-    [Primitive("BYE")]
+    [Primitive("BYE", HelpString = "Request interpreter exit")]
     private static Task Prim_BYE(ForthInterpreter i) { i.RequestExit(); return Task.CompletedTask; }
 
-    [Primitive("QUIT")]
+    [Primitive("QUIT", HelpString = "Request interpreter quit")]
     private static Task Prim_QUIT(ForthInterpreter i) { i.RequestExit(); return Task.CompletedTask; }
 
-    [Primitive("ABORT")]
+    [Primitive("ABORT", HelpString = "Abort execution with error")]
     private static Task Prim_ABORT(ForthInterpreter i) => throw new ForthException(ForthErrorCode.Unknown, "ABORT");
 
-    [Primitive("LATEST")]
+    [Primitive("LATEST", HelpString = "Push the latest defined word onto the stack")]
     private static Task Prim_LATEST(ForthInterpreter i) { var last = i._lastDefinedWord; if (last is null) throw new ForthException(ForthErrorCode.UndefinedWord, "No latest word"); i.Push(last); return Task.CompletedTask; }
 
-    [Primitive("EXECUTE", IsAsync = true)]
+    [Primitive("EXECUTE", IsAsync = true, HelpString = "Execute a word or execution token on the stack")]
     private static Task Prim_EXECUTE(ForthInterpreter i) => ExecuteImpl(i);
 
     private static async Task ExecuteImpl(ForthInterpreter i)
@@ -53,7 +53,7 @@ internal static partial class CorePrimitives
         throw new ForthException(ForthErrorCode.TypeError, "EXECUTE expects an execution token");
     }
 
-    [Primitive("CATCH", IsAsync = true)]
+    [Primitive("CATCH", IsAsync = true, HelpString = "Execute a word and catch exceptions, returning an error code")]
     private static Task Prim_CATCH(ForthInterpreter i) => CatchImpl(i);
 
     private static async Task CatchImpl(ForthInterpreter i)
@@ -78,6 +78,6 @@ internal static partial class CorePrimitives
         }
     }
 
-    [Primitive("THROW")]
+    [Primitive("THROW", HelpString = "Throw an exception by error code")]
     private static Task Prim_THROW(ForthInterpreter i) { i.EnsureStack(1, "THROW"); var err = ToLong(i.PopInternal()); if (err != 0) throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}"); return Task.CompletedTask; }
 }

@@ -7,22 +7,22 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("@")]
+    [Primitive("@", HelpString = "@ ( addr -- value ) - fetch cell at address")]
     private static Task Prim_At(ForthInterpreter i) { i.EnsureStack(1, "@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); return Task.CompletedTask; }
 
-    [Primitive("!")]
+    [Primitive("!", HelpString = "! ( addr value -- ) - store value at address")]
     private static Task Prim_Bang(ForthInterpreter i) { i.EnsureStack(2, "!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); i.MemSet(addr, val); return Task.CompletedTask; }
 
-    [Primitive("+!")]
+    [Primitive("+!", HelpString = "+! ( addr add -- ) - add to memory cell at address")]
     private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); return Task.CompletedTask; }
 
-    [Primitive("C!")]
+    [Primitive("C!", HelpString = "C! ( addr value -- ) - store low byte at address")]
     private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }
 
-    [Primitive("C@")]
+    [Primitive("C@", HelpString = "C@ ( addr -- byte ) - fetch low byte at address")]
     private static Task Prim_CAt(ForthInterpreter i) { i.EnsureStack(1, "C@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push((long)((byte)v)); return Task.CompletedTask; }
 
-    [Primitive("MOVE")]
+    [Primitive("MOVE", HelpString = "MOVE ( src dst u -- ) - copy u bytes from src to dst")]
     private static Task Prim_MOVE(ForthInterpreter i)
     {
         i.EnsureStack(3, "MOVE");
@@ -48,13 +48,13 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("FILL")]
+    [Primitive("FILL", HelpString = "FILL ( addr u ch -- ) - fill u bytes at addr with ch")]
     private static Task Prim_FILL(ForthInterpreter i) { i.EnsureStack(3, "FILL"); var ch = ToLong(i.PopInternal()); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative FILL length"); var b = (long)((byte)ch); for (long k = 0; k < u; k++) i.MemSet(addr + k, b); return Task.CompletedTask; }
 
-    [Primitive("ERASE")]
+    [Primitive("ERASE", HelpString = "ERASE ( addr u -- ) - set u bytes at addr to zero")]
     private static Task Prim_ERASE(ForthInterpreter i) { i.EnsureStack(2, "ERASE"); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 0); return Task.CompletedTask; }
 
-    [Primitive("DUMP")]
+    [Primitive("DUMP", HelpString = "DUMP ( addr u -- ) - print u bytes from addr in hex")]
     private static Task Prim_DUMP(ForthInterpreter i)
     {
         i.EnsureStack(2, "DUMP");
@@ -73,7 +73,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("COUNT")]
+    [Primitive("COUNT", HelpString = "COUNT ( c-addr -- c-addr u ) - return counted string address and length")]
     private static Task Prim_COUNT(ForthInterpreter i)
     {
         i.EnsureStack(1, "COUNT");
@@ -95,9 +95,9 @@ internal static partial class CorePrimitives
         }
     }
 
-    [Primitive(",")]
+    [Primitive(",", HelpString = ", ( x -- ) - append cell to dictionary and advance here")]
     private static Task Prim_Comma(ForthInterpreter i) { i.EnsureStack(1, ","); var v = ToLong(i.PopInternal()); i._mem[i._nextAddr++] = v; return Task.CompletedTask; }
 
-    [Primitive("ALLOT")]
+    [Primitive("ALLOT", HelpString = "ALLOT ( u -- ) - reserve u cells in dictionary")]
     private static Task Prim_ALLOT(ForthInterpreter i) { i.EnsureStack(1, "ALLOT"); var cells = ToLong(i.PopInternal()); if (cells < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size"); for (long k = 0; k < cells; k++) i._mem[i._nextAddr++] = 0; return Task.CompletedTask; }
 }

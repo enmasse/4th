@@ -7,7 +7,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive(">NUMBER")]
+    [Primitive(">NUMBER", HelpString = ">NUMBER ( c-addr u start -- value remainder consumed ) - parse digits using current BASE")]
     private static Task Prim_GTN(ForthInterpreter i)
     {
         i.EnsureStack(3, ">NUMBER");
@@ -42,15 +42,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("BASE")]
+    [Primitive("BASE", HelpString = "Push address of BASE variable")]
     private static Task Prim_BASE(ForthInterpreter i) { i.Push(i.BaseAddr); return Task.CompletedTask; }
 
-    [Primitive("DECIMAL")]
+    [Primitive("DECIMAL", HelpString = "Set number base to decimal")]
     private static Task Prim_DECIMAL(ForthInterpreter i) { i.MemSet(i.BaseAddr, 10); return Task.CompletedTask; }
 
-    [Primitive("HEX")]
+    [Primitive("HEX", HelpString = "Set number base to hexadecimal")]
     private static Task Prim_HEX(ForthInterpreter i) { i.MemSet(i.BaseAddr, 16); return Task.CompletedTask; }
 
-    [Primitive("STATE")]
+    [Primitive("STATE", HelpString = "Push address of STATE variable")]
     private static Task Prim_STATE(ForthInterpreter i) { i.Push(i.StateAddr); return Task.CompletedTask; }
 }

@@ -5,7 +5,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive(":", IsImmediate = true)]
+    [Primitive(":", IsImmediate = true, HelpString = ": <name> - begin a new definition")]
     private static Task Prim_Colon(ForthInterpreter i)
     {
         var name = i.ReadNextTokenOrThrow("Expected name after ':'");
@@ -13,10 +13,10 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive(";", IsImmediate = true)]
+    [Primitive(";", IsImmediate = true, HelpString = "; - finish a definition")]
     private static Task Prim_Semi(ForthInterpreter i) { i.FinishDefinition(); return Task.CompletedTask; }
 
-    [Primitive("IMMEDIATE", IsImmediate = true)]
+    [Primitive("IMMEDIATE", IsImmediate = true, HelpString = "Mark the last defined word as immediate")]
     private static Task Prim_IMMEDIATE(ForthInterpreter i)
     {
         if (i._lastDefinedWord is null)
@@ -25,7 +25,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("POSTPONE", IsImmediate = true, IsAsync = true)]
+    [Primitive("POSTPONE", IsImmediate = true, IsAsync = true, HelpString = "Postpone execution of a word until compile-time or add its execution to the current definition")]
     private static Task Prim_POSTPONE(ForthInterpreter i) => PostponeImpl(i);
 
     private static async Task PostponeImpl(ForthInterpreter i)
@@ -48,7 +48,7 @@ internal static partial class CorePrimitives
         throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
     }
 
-    [Primitive("'", IsImmediate = true)]
+    [Primitive("'", IsImmediate = true, HelpString = "Push execution token for a word")]
     private static Task Prim_Tick(ForthInterpreter i)
     {
         var name = i.ReadNextTokenOrThrow("Expected word after '");
@@ -61,7 +61,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("LITERAL", IsImmediate = true)]
+    [Primitive("LITERAL", IsImmediate = true, HelpString = "Compile a literal value into the current definition")]
     private static Task Prim_LITERAL(ForthInterpreter i)
     {
         if (!i._isCompiling)
@@ -72,16 +72,16 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("[", IsImmediate = true)]
+    [Primitive("[", IsImmediate = true, HelpString = "Switch to interpret state during compilation")]
     private static Task Prim_LBracket(ForthInterpreter i) { i._isCompiling = false; i._mem[i.StateAddr] = 0; return Task.CompletedTask; }
 
-    [Primitive("]", IsImmediate = true)]
+    [Primitive("]", IsImmediate = true, HelpString = "Switch to compile state")]
     private static Task Prim_RBracket(ForthInterpreter i) { i._isCompiling = true; i._mem[i.StateAddr] = 1; return Task.CompletedTask; }
 
-    [Primitive("IF", IsImmediate = true)]
+    [Primitive("IF", IsImmediate = true, HelpString = "Begin an if-then construct")]
     private static Task Prim_IF(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.IfFrame()); return Task.CompletedTask; }
 
-    [Primitive("ELSE", IsImmediate = true)]
+    [Primitive("ELSE", IsImmediate = true, HelpString = "Begin else-part of an if construct")]
     private static Task Prim_ELSE(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
@@ -93,7 +93,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("THEN", IsImmediate = true)]
+    [Primitive("THEN", IsImmediate = true, HelpString = "End an if construct")]
     private static Task Prim_THEN(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
@@ -115,10 +115,10 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("BEGIN", IsImmediate = true)]
+    [Primitive("BEGIN", IsImmediate = true, HelpString = "Begin a loop construct")]
     private static Task Prim_BEGIN(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.BeginFrame()); return Task.CompletedTask; }
 
-    [Primitive("WHILE", IsImmediate = true)]
+    [Primitive("WHILE", IsImmediate = true, HelpString = "Begin a conditional part of a BEGIN...REPEAT loop")]
     private static Task Prim_WHILE(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BeginFrame bf)
@@ -129,7 +129,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("REPEAT", IsImmediate = true)]
+    [Primitive("REPEAT", IsImmediate = true, HelpString = "End a BEGIN...REPEAT loop")]
     private static Task Prim_REPEAT(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BeginFrame bf)
@@ -156,7 +156,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("UNTIL", IsImmediate = true)]
+    [Primitive("UNTIL", IsImmediate = true, HelpString = "End a BEGIN...UNTIL loop")]
     private static Task Prim_UNTIL(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BeginFrame bf)
@@ -180,10 +180,10 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("DO", IsImmediate = true)]
+    [Primitive("DO", IsImmediate = true, HelpString = "Begin a counted loop ( limit start -- )")]
     private static Task Prim_DO(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.DoFrame()); return Task.CompletedTask; }
 
-    [Primitive("LOOP", IsImmediate = true)]
+    [Primitive("LOOP", IsImmediate = true, HelpString = "End a counted DO...LOOP")]
     private static Task Prim_LOOP(ForthInterpreter i) => LoopImpl(i);
 
     private static Task LoopImpl(ForthInterpreter i)
@@ -219,7 +219,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("LEAVE", IsImmediate = true)]
+    [Primitive("LEAVE", IsImmediate = true, HelpString = "Leave the nearest DO...LOOP")]
     private static Task Prim_LEAVE(ForthInterpreter i) => LeaveImpl(i);
 
     private static Task LeaveImpl(ForthInterpreter i)
@@ -237,7 +237,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("RECURSE", IsImmediate = true)]
+    [Primitive("RECURSE", IsImmediate = true, HelpString = "Compile a call to the current definition (supports recursive definitions)")]
     private static Task Prim_RECURSE(ForthInterpreter i)
     {
         if (!i._isCompiling || string.IsNullOrEmpty(i._currentDefName))

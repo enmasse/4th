@@ -7,10 +7,10 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive(".")]
+    [Primitive(".", HelpString = "Print top of stack as a number ( n -- )")]
     private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
 
-    [Primitive(".S")]
+    [Primitive(".S", HelpString = "Print stack contents in angle brackets")]
     private static Task Prim_DotS(ForthInterpreter i)
     {
         var items = i.Stack;
@@ -37,15 +37,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("CR")]
+    [Primitive("CR", HelpString = "Emit newline")]
     private static Task Prim_CR(ForthInterpreter i) { i.NewLine(); return Task.CompletedTask; }
 
-    [Primitive("EMIT")]
+    [Primitive("EMIT", HelpString = "Emit character with given code ( n -- )")]
     private static Task Prim_EMIT(ForthInterpreter i) { i.EnsureStack(1, "EMIT"); var n = ToLong(i.PopInternal()); char ch = (char)(n & 0xFFFF); i.WriteText(ch.ToString()); return Task.CompletedTask; }
 
-    [Primitive("TYPE")]
+    [Primitive("TYPE", HelpString = "TYPE ( c-addr u -- ) - write a counted string to output")]
     private static Task Prim_TYPE(ForthInterpreter i) { i.EnsureStack(1, "TYPE"); var obj = i.PopInternal(); if (obj is string s) { i.WriteText(s); return Task.CompletedTask; } else throw new ForthException(ForthErrorCode.TypeError, "TYPE expects a string"); }
 
-    [Primitive("WORDS")]
+    [Primitive("WORDS", HelpString = "List all available word names")]
     private static Task Prim_WORDS(ForthInterpreter i) { var names = i.GetAllWordNames(); var sb = new StringBuilder(); bool first = true; foreach (var n in names) { if (!first) sb.Append(' '); first = false; sb.Append(n); } i.WriteText(sb.ToString()); return Task.CompletedTask; }
 }

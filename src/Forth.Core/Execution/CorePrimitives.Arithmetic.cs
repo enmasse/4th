@@ -6,7 +6,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("+")]
+    [Primitive("+", HelpString = "Add two numbers ( a b -- sum )")]
     private static Task Prim_Plus(ForthInterpreter i)
     {
         i.EnsureStack(2, "+");
@@ -16,7 +16,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("-")]
+    [Primitive("-", HelpString = "Subtract top from second ( a b -- difference )")]
     private static Task Prim_Minus(ForthInterpreter i)
     {
         i.EnsureStack(2, "-");
@@ -26,7 +26,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("*")]
+    [Primitive("*", HelpString = "Multiply two numbers ( a b -- product )")]
     private static Task Prim_Star(ForthInterpreter i)
     {
         i.EnsureStack(2, "*");
@@ -36,7 +36,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("/")]
+    [Primitive("/", HelpString = "Divide second by top ( a b -- quotient )")]
     private static Task Prim_Slash(ForthInterpreter i)
     {
         i.EnsureStack(2, "/");
@@ -47,7 +47,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("/MOD")]
+    [Primitive("/MOD", HelpString = "Divide and return remainder and quotient ( a b -- rem quot )")]
     private static Task Prim_SlashMod(ForthInterpreter i)
     {
         i.EnsureStack(2, "/MOD");
@@ -61,7 +61,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("MOD")]
+    [Primitive("MOD", HelpString = "Remainder of division ( a b -- rem )")]
     private static Task Prim_Mod(ForthInterpreter i)
     {
         i.EnsureStack(2, "MOD");
@@ -72,7 +72,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("MIN")]
+    [Primitive("MIN", HelpString = "Return smaller of two numbers ( a b -- min )")]
     private static Task Prim_MIN(ForthInterpreter i)
     {
         i.EnsureStack(2, "MIN");
@@ -82,7 +82,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("MAX")]
+    [Primitive("MAX", HelpString = "Return larger of two numbers ( a b -- max )")]
     private static Task Prim_MAX(ForthInterpreter i)
     {
         i.EnsureStack(2, "MAX");
@@ -92,7 +92,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("NEGATE")]
+    [Primitive("NEGATE", HelpString = "Negate number ( n -- -n )")]
     private static Task Prim_NEGATE(ForthInterpreter i)
     {
         i.EnsureStack(1, "NEGATE");
@@ -101,7 +101,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("*/")]
+    [Primitive("*/", HelpString = "Multiply two numbers then divide by third ( n1 n2 d -- (n1*n2)/d )")]
     private static Task Prim_StarSlash(ForthInterpreter i)
     {
         i.EnsureStack(3, "*/");
