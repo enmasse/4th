@@ -15,7 +15,8 @@ public class MemoryTests
         // VARIABLE x ALLOT or CREATE usage would provide an address; here we show intended asserts
         // When implemented: create a variable, store a value, fetch it
         Assert.True(await forth.EvalAsync("VARIABLE X"));
-        Assert.True(await forth.EvalAsync("X 123 !"));
+        // Use ANS-Forth ordering: value then address then '!'
+        Assert.True(await forth.EvalAsync("123 X !"));
         Assert.True(await forth.EvalAsync("X @"));
         Assert.Equal(new long[] { 123 }, forth.Stack.Select(o => (long)o).ToArray());
     }
