@@ -22,10 +22,10 @@ internal static partial class CorePrimitives
         }
     }
 
-    private static readonly Lazy<ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word>> _words =
+    private static readonly Lazy<ImmutableDictionary<(string? Module, string Name), Word>> _words =
         new(CreateWords);
 
-    public static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> Words =>
+    public static ImmutableDictionary<(string? Module, string Name), Word> Words =>
         _words.Value;
 
     // Helpers used across groups

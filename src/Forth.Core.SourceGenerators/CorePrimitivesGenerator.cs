@@ -61,9 +61,9 @@ public class CorePrimitivesGenerator : ISourceGenerator
         sb.AppendLine("namespace Forth.Core.Execution;");
         sb.AppendLine("internal static partial class CorePrimitives");
         sb.AppendLine("{");
-        sb.AppendLine("    private static ImmutableDictionary<(string? Module, string Name), ForthInterpreter.Word> CreateWords()");
+        sb.AppendLine("    private static ImmutableDictionary<(string? Module, string Name), Word> CreateWords()");
         sb.AppendLine("    {");
-        sb.AppendLine("        var d = new System.Collections.Generic.Dictionary<(string? Module, string Name), ForthInterpreter.Word>(new KeyComparer());");
+        sb.AppendLine("        var d = new System.Collections.Generic.Dictionary<(string? Module, string Name), Word>(new KeyComparer());");
 
         int idx = 0;
         foreach (var m in methods)
@@ -91,7 +91,7 @@ public class CorePrimitivesGenerator : ISourceGenerator
                 sb.AppendLine($"        // Generated for {methodName}");
                 sb.AppendLine("        {");
                 sb.AppendLine($"            Func<ForthInterpreter, System.Threading.Tasks.Task> {delName} = {methodName};");
-                sb.AppendLine($"            var {wName} = new ForthInterpreter.Word({delName}) {{ Name = {ToLiteral(name)}, IsImmediate = {isImmediate.ToString().ToLowerInvariant()} }};");
+                sb.AppendLine($"            var {wName} = new Word({delName}) {{ Name = {ToLiteral(name)}, IsImmediate = {isImmediate.ToString().ToLowerInvariant()} }};");
                 var moduleLiteral = module is null ? "null" : ToLiteral(module);
                 sb.AppendLine($"            d[({moduleLiteral}, {ToLiteral(name)})] = {wName};");
                 sb.AppendLine("        }");

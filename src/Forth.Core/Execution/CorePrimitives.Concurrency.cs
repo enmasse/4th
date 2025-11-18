@@ -67,7 +67,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "SPAWN");
         var obj = i.PopInternal();
-        if (obj is not ForthInterpreter.Word xt) throw new ForthException(ForthErrorCode.TypeError, "SPAWN expects an execution token");
+        if (obj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "SPAWN expects an execution token");
 
         var snapshot = i.CreateMarkerSnapshot();
 
@@ -85,7 +85,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "FUTURE");
         var obj = i.PopInternal();
-        if (obj is not ForthInterpreter.Word xt)
+        if (obj is not Word xt)
             throw new ForthException(ForthErrorCode.TypeError, "FUTURE expects an execution token");
 
         var snapshot = i.CreateMarkerSnapshot();
@@ -105,7 +105,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "TASK");
         var obj = i.PopInternal();
-        if (obj is not ForthInterpreter.Word xt)
+        if (obj is not Word xt)
             throw new ForthException(ForthErrorCode.TypeError, "TASK expects an execution token");
 
         var snapshot = i.CreateMarkerSnapshot();

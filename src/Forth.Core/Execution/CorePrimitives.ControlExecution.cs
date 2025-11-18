@@ -36,13 +36,13 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "EXECUTE");
         var top = i.StackTop();
-        if (top is ForthInterpreter.Word wTop)
+        if (top is Word wTop)
         {
             i.PopInternal();
             await wTop.ExecuteAsync(i).ConfigureAwait(false);
             return;
         }
-        if (i.Stack.Count >= 2 && i.StackNthFromTop(2) is ForthInterpreter.Word wBelow)
+        if (i.Stack.Count >= 2 && i.StackNthFromTop(2) is Word wBelow)
         {
             var data = i.PopInternal();
             i.PopInternal();
@@ -60,7 +60,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "CATCH");
         var obj = i.PopInternal();
-        if (obj is not ForthInterpreter.Word xt) throw new ForthException(ForthErrorCode.TypeError, "CATCH expects an execution token");
+        if (obj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "CATCH expects an execution token");
         try
         {
             await xt.ExecuteAsync(i).ConfigureAwait(false);

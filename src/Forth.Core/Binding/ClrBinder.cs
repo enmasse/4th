@@ -7,7 +7,7 @@ namespace Forth.Core.Binding;
 
 internal static class ClrBinder
 {
-    public static ForthInterpreter.Word CreateBoundWord(string typeName, string methodName, int argCount)
+    public static Word CreateBoundWord(string typeName, string methodName, int argCount)
     {
         var type = ResolveType(typeName) ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"Type not found: {typeName}");
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
@@ -15,7 +15,7 @@ internal static class ClrBinder
             ?? throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.UndefinedWord, $"No such method {methodName} with {argCount} args on {typeName}");
         bool isStatic = target.IsStatic;
         var pars = target.GetParameters();
-        return new ForthInterpreter.Word(interp =>
+        return new Word(interp =>
         {
             int totalPop = argCount + (isStatic ? 0 : 1);
             // Use the instance EnsureStack on the interpreter
