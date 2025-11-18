@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class DoubleCellTests
 {
-    [Fact(Skip = "Template: implement 2DUP 2DROP 2SWAP 2OVER")]
+    [Fact]
     public async Task Double_Cell_Stack_Operations()
     {
         var forth = new ForthInterpreter();

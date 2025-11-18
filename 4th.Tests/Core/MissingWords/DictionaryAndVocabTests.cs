@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class DictionaryAndVocabTests
 {
-    [Fact(Skip = "Template: implement WORDLIST WORDS ONLY ALSO PREVIOUS VOCABULARY RECURSE LATEST MARKER")]
+    [Fact]
     public async Task Dictionary_And_Vocabulary_Management()
     {
         var forth = new ForthInterpreter();

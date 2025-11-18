@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class ExceptionAndFlowTests
 {
-    [Fact(Skip = "Template: implement CATCH THROW ABORT\" QUIT EXIT UNLOOP")]
+    [Fact]
     public async Task Exception_And_Flow_Control()
     {
         var forth = new ForthInterpreter();

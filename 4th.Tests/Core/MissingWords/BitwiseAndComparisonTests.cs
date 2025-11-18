@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class BitwiseAndComparisonTests
 {
-    [Fact(Skip = "Template: implement bitwise AND OR XOR INVERT and comparisons")]
+    [Fact]
     public async Task Bitwise_And_Comparisons()
     {
         var forth = new ForthInterpreter();
