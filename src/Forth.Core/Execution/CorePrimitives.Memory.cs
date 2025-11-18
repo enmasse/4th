@@ -10,13 +10,13 @@ internal static partial class CorePrimitives
     [Primitive("@", HelpString = "@ ( addr -- value ) - fetch cell at address")]
     private static Task Prim_At(ForthInterpreter i) { i.EnsureStack(1, "@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); return Task.CompletedTask; }
 
-    [Primitive("!", HelpString = "! ( addr value -- ) - store value at address")]
+    [Primitive("!", HelpString = "! ( value addr -- ) - store value at address")]
     private static Task Prim_Bang(ForthInterpreter i) { i.EnsureStack(2, "!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); i.MemSet(addr, val); return Task.CompletedTask; }
 
-    [Primitive("+!", HelpString = "+! ( addr add -- ) - add to memory cell at address")]
+    [Primitive("+!", HelpString = "+! ( add addr -- ) - add to memory cell at address")]
     private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); return Task.CompletedTask; }
 
-    [Primitive("C!", HelpString = "C! ( addr value -- ) - store low byte at address")]
+    [Primitive("C!", HelpString = "C! ( value addr -- ) - store low byte at address")]
     private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }
 
     [Primitive("C@", HelpString = "C@ ( addr -- byte ) - fetch low byte at address")]
