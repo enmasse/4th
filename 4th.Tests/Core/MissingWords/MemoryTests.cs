@@ -8,7 +8,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class MemoryTests
 {
-    [Fact(Skip = "Template: implement @ and ! and HERE and ALLOT semantics")]
+    [Fact]
     public async Task Memory_Fetch_Store_And_Here()
     {
         var forth = new ForthInterpreter();

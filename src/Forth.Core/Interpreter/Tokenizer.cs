@@ -45,6 +45,20 @@ public static class Tokenizer
                 if (c == ')') inComment = false;
                 continue;
             }
+
+            // Recognize the idiomatic Forth compound token ['] and emit it as one token
+            if (c == '[' && i + 2 < input.Length && input[i + 1] == '\'' && input[i + 2] == ']')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                list.Add("[']");
+                i += 2; // advance past the three characters
+                continue;
+            }
+
             // Special-case ." as a single token
             if (c == '.' && i + 1 < input.Length && input[i + 1] == '"')
             {
@@ -97,6 +111,19 @@ public static class Tokenizer
                 inString = true;
                 continue;
             }
+
+            // Treat single-character special tokens as standalone tokens so sequences like ['] (when not together) still work
+            if (c == '[' || c == ']' || c == '\'')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                list.Add(c.ToString());
+                continue;
+            }
+
             current.Add(c);
         }
         if (current.Count > 0)

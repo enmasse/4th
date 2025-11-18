@@ -411,6 +411,10 @@ public class ForthInterpreter : IForthInterpreter
     internal int RCount =>
         _rstack.Count;
 
+    // Peek top of return stack without removing it
+    internal object RTop() =>
+        _rstack.Peek();
+
     internal long ValueGet(string name) =>
         _values.TryGetValue(name, out var v) ? v : 0L;
 
@@ -495,6 +499,38 @@ public class ForthInterpreter : IForthInterpreter
     {
         ArgumentNullException.ThrowIfNull(line);
         _tokens = Tokenizer.Tokenize(line);
+
+        // Preprocess idiomatic compound tokens like "['] name" or "[']name" into
+        // the equivalent sequence: "[" "'" name "]" so existing primitives
+        // ([, ', ]) handle the compile-time behaviour without adding new words.
+        if (_tokens is not null && _tokens.Count > 0)
+        {
+            var processed = new List<string>();
+            for (int ti = 0; ti < _tokens.Count; ti++)
+            {
+                var t = _tokens[ti];
+                if (t == "[']")
+                {
+                    // If a following token exists, consume it as the target name.
+                    if (ti + 1 < _tokens.Count)
+                    {
+                        processed.Add("[");
+                        processed.Add("'");
+                        processed.Add(_tokens[ti + 1]);
+                        processed.Add("]");
+                        ti++; // skip the consumed name
+                        continue;
+                    }
+                    // Fallback: expand to [ and ' tokens and continue
+                    processed.Add("[");
+                    processed.Add("'");
+                    continue;
+                }
+                processed.Add(t);
+            }
+            _tokens = processed;
+        }
+
         _tokenIndex = 0;
 
         // IL fast-path removed; interpret tokens normally
