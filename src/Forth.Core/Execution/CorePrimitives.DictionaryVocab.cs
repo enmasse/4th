@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Forth.Core.Binding;
+using System.Linq;
+using System.Collections.Immutable;
 
 namespace Forth.Core.Execution;
 
@@ -170,6 +172,48 @@ internal static partial class CorePrimitives
         i._dict = i._dict.SetItem((i._currentModule, name), created);
         i.RegisterDefinition(name);
         i._lastDefinedWord = created;
+        return Task.CompletedTask;
+    }
+
+    [Primitive("GET-ORDER", HelpString = "GET-ORDER ( -- wid... count ) - push current search order list and count")]
+    private static Task Prim_GETORDER(ForthInterpreter i)
+    {
+        var order = i.GetOrder(); // ImmutableList<string?> with most-recent-first then null
+        // Push each module name as string; represent core as "FORTH"
+        foreach (var name in order)
+        {
+            if (name is null) i.Push("FORTH");
+            else i.Push(name);
+        }
+        i.Push((long)order.Count);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SET-ORDER", IsImmediate = true, HelpString = "SET-ORDER ( wid... count -- ) - set the search order from stack")]
+    private static Task Prim_SETORDER(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "SET-ORDER");
+        var countObj = i.PopInternal();
+        var count = (int)ToLong(countObj);
+        if (count < 0) throw new ForthException(ForthErrorCode.CompileError, "SET-ORDER expects non-negative count");
+        var list = new List<string?>();
+        for (int idx = 0; idx < count; idx++)
+        {
+            var obj = i.PopInternal();
+            if (obj is string s)
+            {
+                s = s.Trim();
+                if (string.Equals(s, "FORTH", StringComparison.OrdinalIgnoreCase)) list.Add(null);
+                else list.Add(s);
+            }
+            else
+            {
+                throw new ForthException(ForthErrorCode.TypeError, "SET-ORDER expects string names or FORTH");
+            }
+        }
+        // The stack had names pushed in order; we popped them LIFO so reverse to get intended order
+        list.Reverse();
+        i.SetOrder(list);
         return Task.CompletedTask;
     }
 }

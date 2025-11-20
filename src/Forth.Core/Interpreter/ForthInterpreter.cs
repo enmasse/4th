@@ -964,4 +964,33 @@ public class ForthInterpreter : IForthInterpreter
             _dict.TryGetValue((last.Module, last.Name), out _lastDefinedWord);
         }
     }
+
+    internal int ReadKey() => _io.ReadKey();
+
+    internal bool KeyAvailable() => _io.KeyAvailable();
+
+    internal string? ReadLineFromIO() => _io.ReadLine();
+
+    // Return a snapshot of the current search order (list of module names, null represents core)
+    internal ImmutableList<string?> GetOrder()
+    {
+        var list = new List<string?>();
+        // Using modules (most recent first) then root
+        for (int i = _usingModules.Count - 1; i >= 0; i--)
+            list.Add(_usingModules[i]);
+        // add core as null (FORTH)
+        list.Add(null);
+        return list.ToImmutableList();
+    }
+
+    internal void SetOrder(IEnumerable<string?> order)
+    {
+        _usingModules.Clear();
+        foreach (var m in order)
+        {
+            if (m is null) break; // stop at FORTH sentinel
+            if (!string.IsNullOrWhiteSpace(m) && !_usingModules.Contains(m))
+                _usingModules.Add(m);
+        }
+    }
 }

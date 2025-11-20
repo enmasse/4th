@@ -48,4 +48,34 @@ internal static partial class CorePrimitives
 
     [Primitive("WORDS", HelpString = "List all available word names")]
     private static Task Prim_WORDS(ForthInterpreter i) { var names = i.GetAllWordNames(); var sb = new StringBuilder(); bool first = true; foreach (var n in names) { if (!first) sb.Append(' '); first = false; sb.Append(n); } i.WriteText(sb.ToString()); return Task.CompletedTask; }
+
+    [Primitive("KEY", HelpString = "KEY ( -- char|-1 ) - read a single key code or -1 for EOF")]
+    private static Task Prim_KEY(ForthInterpreter i)
+    {
+        var kc = i.ReadKey();
+        i.Push((long)kc);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("KEY?", HelpString = "KEY? ( -- flag ) - push -1 if key available else 0")]
+    private static Task Prim_KEYQ(ForthInterpreter i)
+    {
+        var available = i.KeyAvailable();
+        i.Push(available ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ACCEPT", HelpString = "ACCEPT ( c-addr u -- actual ) - read a line into buffer or push string")]
+    private static Task Prim_ACCEPT(ForthInterpreter i)
+    {
+        // Simplified: push the read line as string (ignore c-addr/u semantics)
+        i.EnsureStack(2, "ACCEPT");
+        var max = ToLong(i.PopInternal());
+        var addrObj = i.PopInternal();
+        var line = i.ReadLineFromIO() ?? string.Empty;
+        if (line.Length > max) line = line.Substring(0, (int)max);
+        i.Push(line);
+        i.Push((long)line.Length);
+        return Task.CompletedTask;
+    }
 }
