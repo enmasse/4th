@@ -117,7 +117,7 @@ internal static class ClrBinder
             case short s: interp.Push((long)s); break;
             case byte b: interp.Push((long)b); break;
             case char c: interp.Push((long)c); break;
-            case bool bo: interp.Push(bo ? 1L : 0L); break;
+            case bool bo: interp.Push(bo ? -1L : 0L); break;
             default: interp.Push(value); break;
         }
     }

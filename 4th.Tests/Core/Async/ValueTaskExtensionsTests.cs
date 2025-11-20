@@ -48,6 +48,6 @@ public class ValueTaskExtensionsTests
         Assert.True(await f.EvalAsync("PUSHVT"));
         tcs.SetResult(7);
         Assert.True(await f.EvalAsync("TASK?"));
-        Assert.Equal(1L, (long)f.Stack[^1]);
+        Assert.Equal(-1L, (long)f.Stack[^1]);
     }
 }

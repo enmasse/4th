@@ -25,7 +25,7 @@ internal static partial class CorePrimitives
             }
         }
 
-        long flag = (t != null && t.IsCompleted) ? 1L : 0L;
+        long flag = (t != null && t.IsCompleted) ? -1L : 0L;
         i.Push(flag);
         return Task.CompletedTask;
     }
@@ -82,7 +82,7 @@ internal static partial class CorePrimitives
                         case short sv: i.Push((long)sv); break;
                         case byte bv: i.Push((long)bv); break;
                         case char cv: i.Push((long)cv); break;
-                        case bool bov: i.Push(bov ? 1L : 0L); break;
+                        case bool bov: i.Push(bov ? -1L : 0L); break;
                         default: i.Push(result); break;
                     }
                 }

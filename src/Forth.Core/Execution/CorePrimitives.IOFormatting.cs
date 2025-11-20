@@ -27,7 +27,7 @@ internal static partial class CorePrimitives
                 case short s: sb.Append((long)s); break;
                 case byte b: sb.Append((long)b); break;
                 case char ch: sb.Append((int)ch); break;
-                case bool bo: sb.Append(bo ? 1 : 0); break;
+                case bool bo: sb.Append(bo ? -1 : 0); break;
                 default:
                     sb.Append(o?.ToString() ?? "null");
                     break;

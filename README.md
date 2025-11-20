@@ -1,34 +1,23 @@
-# 4th
+# 4th - ANS-like Forth implementation in .NET
 
-A minimal Forth interpreter in C# (.NET 9), with a simple REPL and xUnit tests.
+This repository contains a .NET 10 implementation of a Forth-like interpreter and runtime focused on ANS-like core word compatibility and extensibility.
 
-## Projects
-- `src/Forth.Core` – Core library (`ForthInterpreter`, `IForthInterpreter`, `IForthIO`, `ForthException`, `Tokenizer`)
-- `4th` – Console REPL (type `BYE` to exit; prints ` ok` on success)
-- `4th.Tests` – xUnit test suite
-- `tools/TestRunner` – Small manual runner (optional)
+Key components:
+- `src/Forth.Core` - core interpreter, primitives, and source generator for primitive registration
+- `4th` - host program and REPL
+- `4th.Tests` - unit tests covering core word semantics and interpreter behavior
+- `tools/ans-diff` - helper that scans `Primitive("name")` attributes and compares against an embedded ANS core wordlist
 
-## Build & Test
-- Build: `dotnet build`
-- Run tests: `dotnet test`
-- Run REPL: `dotnet run --project 4th/4th.csproj`
+Quick start
+1. Build: `dotnet build` (requires .NET 10 SDK)
+2. Run tests: `dotnet test`
+3. Run tool: `dotnet run --project tools/ans-diff/ans-diff.csproj`
 
-## REPL Usage
-Examples:
-- `1 2 + CR .` ? prints `3`
-- `: SQUARE DUP * ;` then `7 SQUARE CR .` ? prints `49`
-- `: FLOOR5 DUP 6 < IF DROP 5 ELSE 1 - THEN ;` then `8 FLOOR5 CR .` ? prints `7`
-- Exit: `BYE` or `QUIT`
+Conformance
+- `tools/ans-diff` can be used to generate a report of which ANS core words are implemented, missing, or extra. Run it and check `tools/ans-diff/report.md`.
 
-## Implemented Words
-- Arithmetic: `+ - * /`
-- Comparison: `< = >`
-- Stack: `DUP DROP SWAP OVER ROT -ROT`
-- Defining: `: name ... ;` `CONSTANT` `VARIABLE` `@ !`
-- Control flow: `IF ELSE THEN` `BEGIN WHILE REPEAT` `BEGIN UNTIL` `EXIT`
-- Literals & misc: `CHAR [CHAR] LITERAL`
-- I/O: `. EMIT CR`
-- Comments: `( ... )` and `\` to end of line
+Contributing
+- Open issues and PRs welcome. Follow repository coding conventions.
 
-## License
-MIT – see `LICENSE`.
+License
+- MIT

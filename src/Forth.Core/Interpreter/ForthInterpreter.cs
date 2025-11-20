@@ -426,7 +426,7 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         short s => s,
         byte b => b,
         char c => c,
-        bool bo => bo ? 1L : 0L,
+        bool bo => bo ? -1L : 0L,
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
     };
 
