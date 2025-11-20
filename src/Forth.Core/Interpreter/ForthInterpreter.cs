@@ -40,14 +40,16 @@ public class ForthInterpreter : IForthInterpreter
         switch (mode)
         {
             case FileOpenMode.Read:
+                // Allow other processes to read/write while we have it open for read
                 fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 break;
             case FileOpenMode.Write:
-                // Create or truncate for write; allow readers to read while writing
-                fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                // Create or truncate for write; use write-through to force persistence to disk and allow readers
+                fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
                 break;
             case FileOpenMode.Append:
-                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+                // Append with write-through to ensure data is flushed through OS caches
+                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
                 break;
             default:
                 fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -113,7 +115,9 @@ public class ForthInterpreter : IForthInterpreter
             MemTryGet(addr + i, out var v);
             buffer[i] = (byte)v;
         }
+        // Ensure write goes to current position (caller controls positioning via REPOSITION-FILE)
         fs.Write(buffer, 0, count);
+        try { fs.Flush(true); } catch { fs.Flush(); }
         return count;
     }
 
