@@ -44,12 +44,15 @@ public class ForthInterpreter : IForthInterpreter
                 fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 break;
             case FileOpenMode.Write:
-                // Create or truncate for write; use write-through to force persistence to disk and allow readers
-                fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
+                // Create or truncate for write; allow readers and writers, use write-through
+                fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
+                // Ensure we start at beginning
+                fs.Seek(0, SeekOrigin.Begin);
                 break;
             case FileOpenMode.Append:
-                // Append with write-through to ensure data is flushed through OS caches
-                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
+                // Append with read/write access and write-through; position at end
+                fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
+                fs.Seek(0, SeekOrigin.End);
                 break;
             default:
                 fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
