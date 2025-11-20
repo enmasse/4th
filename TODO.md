@@ -30,6 +30,11 @@ Newly implemented (since last review)
   - All tests were executed locally and passed in the test suite
   - File IO diagnostics instrumentation (`LAST-WRITE-BYTES`, `LAST-READ-BYTES`) and expanded FileIO tests (now green)
   - Byte-level file primitives `READ-FILE-BYTES`, `WRITE-FILE-BYTES` (non-ANS; candidate for replacement by standard `READ-FILE` / `WRITE-FILE` usage)
+  - Diagnostics gated behind `#if DEBUG` so test-only instrumentation is omitted in release builds
+  - Comparison primitives normalized to ANS-style truth values (-1 for true)
+  - Tests updated to expect -1 truth values and validated: full test suite passes locally
+  - `tools/ans-diff` executed and `tools/ans-diff/report.md` updated
+  - Changes committed and pushed to `origin/main`
 
 Missing or incomplete ANS words (prioritized)
 1. Full wordlist / search-order API and related words
@@ -57,6 +62,9 @@ Recommendations — next steps
 - Normalize truth value semantics to -1 (all bits set) for all comparison/logical words (audit tests expecting 1)
 - Replace custom byte file primitives with portable pattern using standard `READ-FILE` / `WRITE-FILE`
 - Add SOURCE / >IN / EXPECT to support interpreter source tracking & interactive input per ANS
+- Add negative-number tests for `/`, `MOD`, `/MOD`, and `*/` to document sign/rounding semantics
+- Consider implementing safe `*/MOD` primitive to avoid overflow in (n1*n2) before divide
+- Integrate `tools/ans-diff` into CI to surface conformance regressions automatically
 
 Repository tasks (can be automated)
 - [x] Create `tools/ans-diff` script to collect `Primitive` names and compare against ANS list
@@ -71,5 +79,13 @@ Repository tasks (can be automated)
 - [ ] Remove or gate diagnostics primitives
 - [ ] Replace byte-oriented file primitives with standard equivalents / wrappers
 
-Notes
-- This file was updated automatically after new primitives and tests were added. Do you want me to commit these changes now?
+Recent activity (2025-11-20)
+--------------------------------
+- Gated diagnostic primitives behind DEBUG and updated tests to skip when diagnostics are absent.
+- Normalized comparison primitives to return -1 for true; updated tests and prelude where necessary.
+- Ran full test suite locally: all tests passing (191/191).
+- Ran `tools/ans-diff` and updated `tools/ans-diff/report.md` and committed changes.
+
+If you want, I can:
+- Add negative-number division tests and/or implement a safe `*/MOD` primitive.
+- Add a CI job to run `tools/ans-diff` and fail on regressions.

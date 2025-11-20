@@ -219,4 +219,40 @@ internal static partial class CorePrimitives
         i.Push((long)written);
         return Task.CompletedTask;
     }
+
+#if DEBUG
+    [Primitive("LAST-WRITE-BYTES", HelpString = "LAST-WRITE-BYTES ( -- handle pos count addr ) Expose diagnostics for last write")]
+    private static Task Prim_LAST_WRITE_BYTES(ForthInterpreter i)
+    {
+        // Provide handle, position-after, count, and address of a temporary buffer copied into memory
+        var handle = i._lastWriteHandle;
+        var pos = i._lastWritePositionAfter;
+        var buf = i._lastWriteBuffer ?? System.Array.Empty<byte>();
+        // Allocate memory region
+        var addr = i._nextAddr;
+        for (int k = 0; k < buf.Length; k++) i.MemSet(addr + k, buf[k]);
+        i._nextAddr += buf.Length;
+        i.Push((long)handle);
+        i.Push(pos);
+        i.Push((long)buf.Length);
+        i.Push(addr);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("LAST-READ-BYTES", HelpString = "LAST-READ-BYTES ( -- handle pos count addr ) Expose diagnostics for last read")]
+    private static Task Prim_LAST_READ_BYTES(ForthInterpreter i)
+    {
+        var handle = i._lastReadHandle;
+        var pos = i._lastReadPositionAfter;
+        var buf = i._lastReadBuffer ?? System.Array.Empty<byte>();
+        var addr = i._nextAddr;
+        for (int k = 0; k < buf.Length; k++) i.MemSet(addr + k, buf[k]);
+        i._nextAddr += buf.Length;
+        i.Push((long)handle);
+        i.Push(pos);
+        i.Push((long)buf.Length);
+        i.Push(addr);
+        return Task.CompletedTask;
+    }
+#endif
 }

@@ -33,7 +33,7 @@ public class PreludeWordsTests
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("0 NOT"));
         Assert.Single(forth.Stack);
-        Assert.Equal(1L, (long)forth.Stack[0]);
+        Assert.Equal(-1L, (long)forth.Stack[0]);
         
         Assert.True(await forth.EvalAsync("1 NOT"));
         Assert.Equal(2, forth.Stack.Count);

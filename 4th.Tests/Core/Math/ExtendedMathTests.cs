@@ -70,17 +70,17 @@ public class ExtendedMathTests
     {
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("0 0="));
-        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("1 0<>"));
-        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("2 3 <>"));
-        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("2 2 <>"));
         Assert.Equal(0L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("2 3 <="));
-        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("3 2 >="));
-        Assert.Equal(1L, (long)forth.Stack[^1]);
+        Assert.Equal(-1L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("2 5 MIN"));
         Assert.Equal(2L, (long)forth.Stack[^1]);
         Assert.True(await forth.EvalAsync("2 5 MAX"));

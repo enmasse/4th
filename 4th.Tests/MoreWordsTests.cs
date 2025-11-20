@@ -25,11 +25,11 @@ public class MoreWordsTests
     {
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("1 2 <"));
-        Assert.Equal(new long[] { 1 }, Longs(forth));
+        Assert.Equal(new long[] { -1 }, Longs(forth));
         Assert.True(await forth.EvalAsync("2 2 ="));
-        Assert.Equal(new long[] { 1, 1 }, Longs(forth));
+        Assert.Equal(new long[] { -1, -1 }, Longs(forth));
         Assert.True(await forth.EvalAsync("3 2 >"));
-        Assert.Equal(new long[] { 1, 1, 1 }, Longs(forth));
+        Assert.Equal(new long[] { -1, -1, -1 }, Longs(forth));
     }
 
     [Fact]

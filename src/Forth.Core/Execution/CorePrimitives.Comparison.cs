@@ -11,7 +11,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "<");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a < b ? 1L : 0L);
+        i.Push(a < b ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -21,7 +21,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "=");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a == b ? 1L : 0L);
+        i.Push(a == b ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -31,7 +31,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, ">");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a > b ? 1L : 0L);
+        i.Push(a > b ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -40,7 +40,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "0=");
         var a = ToLong(i.PopInternal());
-        i.Push(a == 0 ? 1L : 0L);
+        i.Push(a == 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -49,7 +49,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "0<>");
         var a = ToLong(i.PopInternal());
-        i.Push(a != 0 ? 1L : 0L);
+        i.Push(a != 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -59,7 +59,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "<>");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a != b ? 1L : 0L);
+        i.Push(a != b ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -69,7 +69,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "<=");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a <= b ? 1L : 0L);
+        i.Push(a <= b ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -79,7 +79,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, ">=");
         var b = ToLong(i.PopInternal());
         var a = ToLong(i.PopInternal());
-        i.Push(a >= b ? 1L : 0L);
+        i.Push(a >= b ? -1L : 0L);
         return Task.CompletedTask;
     }
 }
