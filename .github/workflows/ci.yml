@@ -24,7 +24,7 @@ jobs:
         run: dotnet build Forth.sln --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test Forth.sln --no-build --verbosity minimal
+        run: dotnet test Forth.sln --no-build --configuration Release --verbosity minimal
 
       - name: Run ans-diff
         working-directory: tools/ans-diff
