@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
@@ -111,6 +112,31 @@ internal static partial class CorePrimitives
         if (dval == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
         var prod = n1 * n2;
         i.Push(prod / dval);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("*/MOD", HelpString = "Multiply n1*n2 then divide by d returning remainder and quotient ( n1 n2 d -- rem quot )")]
+    private static Task Prim_StarSlashMod(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "*/MOD");
+        var d = ToLong(i.PopInternal());
+        var n2 = ToLong(i.PopInternal());
+        var n1 = ToLong(i.PopInternal());
+        if (d == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+
+        var prod = new BigInteger(n1) * new BigInteger(n2);
+        var bigD = new BigInteger(d);
+        var quotBig = BigInteger.Divide(prod, bigD);
+        var remBig = BigInteger.Remainder(prod, bigD);
+
+        if (quotBig < long.MinValue || quotBig > long.MaxValue || remBig < long.MinValue || remBig > long.MaxValue)
+            throw new ForthException(ForthErrorCode.Unknown, "*/MOD result out of range");
+
+        var quot = (long)quotBig;
+        var rem = (long)remBig;
+        // Push remainder then quotient as per /MOD convention
+        i.Push(rem);
+        i.Push(quot);
         return Task.CompletedTask;
     }
 }
