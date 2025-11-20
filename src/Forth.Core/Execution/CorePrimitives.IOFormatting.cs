@@ -78,4 +78,18 @@ internal static partial class CorePrimitives
         i.Push((long)line.Length);
         return Task.CompletedTask;
     }
+
+    [Primitive("EXPECT", HelpString = "EXPECT ( c-addr u -- actual ) - read a line into buffer (alias for ACCEPT)")]
+    private static Task Prim_EXPECT(ForthInterpreter i)
+    {
+        // Implemented as same behavior as ACCEPT for now
+        i.EnsureStack(2, "EXPECT");
+        var max = ToLong(i.PopInternal());
+        var addrObj = i.PopInternal();
+        var line = i.ReadLineFromIO() ?? string.Empty;
+        if (line.Length > max) line = line.Substring(0, (int)max);
+        i.Push(line);
+        i.Push((long)line.Length);
+        return Task.CompletedTask;
+    }
 }

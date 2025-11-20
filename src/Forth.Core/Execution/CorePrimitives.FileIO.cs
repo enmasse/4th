@@ -61,6 +61,25 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("FILE-SIZE", HelpString = "FILE-SIZE ( filename -- size ) Push file size in bytes or -1 on missing")]
+    private static Task Prim_FILESIZE(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FILE-SIZE");
+        var fnameObj = i.PopInternal();
+        if (fnameObj is not string fname)
+            throw new ForthException(ForthErrorCode.TypeError, "FILE-SIZE expects filename string");
+
+        if (!File.Exists(fname))
+        {
+            i.Push(-1L);
+            return Task.CompletedTask;
+        }
+
+        var fi = new FileInfo(fname);
+        i.Push((long)fi.Length);
+        return Task.CompletedTask;
+    }
+
     [Primitive("INCLUDE", IsImmediate = true, IsAsync = true, HelpString = "INCLUDE <filename> - load and execute a Forth source file")]
     private static async Task Prim_INCLUDE(ForthInterpreter i)
     {
@@ -73,6 +92,27 @@ internal static partial class CorePrimitives
 
         if (!File.Exists(fname))
             throw new ForthException(ForthErrorCode.CompileError, $"INCLUDE: file not found: {fname}");
+
+        var lines = await File.ReadAllLinesAsync(fname).ConfigureAwait(false);
+        foreach (var raw in lines)
+        {
+            var line = raw?.Trim();
+            if (string.IsNullOrEmpty(line)) continue;
+            await i.EvalAsync(line).ConfigureAwait(false);
+        }
+    }
+
+    // Runtime LOAD: takes a filename string on the stack and executes it (non-immediate)
+    [Primitive("LOAD", IsAsync = true, HelpString = "LOAD ( filename -- ) - load and execute a Forth source file at runtime")]
+    private static async Task Prim_LOAD(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "LOAD");
+        var fnameObj = i.PopInternal();
+        if (fnameObj is not string fname)
+            throw new ForthException(ForthErrorCode.TypeError, "LOAD expects filename string on stack");
+
+        if (!File.Exists(fname))
+            throw new ForthException(ForthErrorCode.CompileError, $"LOAD: file not found: {fname}");
 
         var lines = await File.ReadAllLinesAsync(fname).ConfigureAwait(false);
         foreach (var raw in lines)

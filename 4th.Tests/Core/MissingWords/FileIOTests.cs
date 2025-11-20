@@ -121,4 +121,49 @@ public class FileIOTests
             if (File.Exists(path)) File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task Load_Executes_File_Content()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        try
+        {
+            // Write a tiny forth file that prints text and CR
+            File.WriteAllText(path, ".\" LOADED\" CR\n");
+            // Push filename string onto stack and invoke LOAD
+            Assert.True(await forth.EvalAsync($"\"{path}\" LOAD"));
+            // LOAD executes lines which cause Print and NewLine
+            Assert.True(io.Outputs.Count >= 2);
+            Assert.Equal("LOADED", io.Outputs[0]);
+            Assert.Equal("\n", io.Outputs[1]);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task FileSize_PushesLengthOrMinusOne()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        // missing file -> -1
+        if (File.Exists(path)) File.Delete(path);
+        Assert.True(await forth.EvalAsync($"\"{path}\" FILE-SIZE"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(-1L, (long)forth.Stack[0]);
+
+        // create file
+        File.WriteAllText(path, "ABC");
+        forth = new ForthInterpreter(io);
+        Assert.True(await forth.EvalAsync($"\"{path}\" FILE-SIZE"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(3L, (long)forth.Stack[0]);
+
+        if (File.Exists(path)) File.Delete(path);
+    }
 }

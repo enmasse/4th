@@ -81,4 +81,17 @@ public class IOKeyAndAcceptTests
         Assert.Equal("HELLO", (string)forth.Stack[0]);
         Assert.Equal(5L, (long)forth.Stack[1]);
     }
+
+    [Fact]
+    public async Task Expect_ReturnsLineAndLength()
+    {
+        var io = new TestIO(lines: new[] { "WORLD" });
+        var forth = new ForthInterpreter(io);
+        // push dummy addr (0) and max length 10
+        Assert.True(await forth.EvalAsync("0 10 EXPECT"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.IsType<string>(forth.Stack[0]);
+        Assert.Equal("WORLD", (string)forth.Stack[0]);
+        Assert.Equal(5L, (long)forth.Stack[1]);
+    }
 }
