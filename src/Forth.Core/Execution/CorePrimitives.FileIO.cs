@@ -80,6 +80,79 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("OPEN-FILE", HelpString = "OPEN-FILE ( filename [mode] -- ior fileid ) Open file and push ior (0 ok) and file id (0 on failure); mode: 0=read,1=write,2=append")]
+    private static Task Prim_OPENFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "OPEN-FILE");
+        long mode = 0;
+        object maybeModeOrPath = i.PopInternal();
+        try
+        {
+            if (maybeModeOrPath is long)
+            {
+                // mode provided, path below
+                mode = (long)maybeModeOrPath;
+                var pathObj = i.PopInternal();
+                if (pathObj is not string path)
+                {
+                    i.Push(1L);
+                    i.Push(0L);
+                    return Task.CompletedTask;
+                }
+
+                var m = (ForthInterpreter.FileOpenMode)(mode <= 0 ? 0 : (mode == 1 ? 1 : 2));
+                var handle = i.OpenFileHandle(path, m);
+                i.Push(0L);
+                i.Push((long)handle);
+                return Task.CompletedTask;
+            }
+            else
+            {
+                // Single arg (path)
+                if (maybeModeOrPath is not string path)
+                {
+                    i.Push(1L);
+                    i.Push(0L);
+                    return Task.CompletedTask;
+                }
+
+                var handle = i.OpenFileHandle(path, ForthInterpreter.FileOpenMode.Read);
+                i.Push(0L);
+                i.Push((long)handle);
+                return Task.CompletedTask;
+            }
+        }
+        catch
+        {
+            // On any failure, push non-zero ior and fileid 0
+            i.Push(1L);
+            i.Push(0L);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Primitive("CLOSE-FILE", HelpString = "CLOSE-FILE ( fileid -- ior ) Close an open file handle and push ior (0=ok)")]
+    private static Task Prim_CLOSEFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CLOSE-FILE");
+        var hObj = i.PopInternal();
+        var h = (int)ToLong(hObj);
+        var ok = i.TryCloseFileHandle(h);
+        // ANS ior: 0 == success, non-zero is error
+        i.Push(ok ? 0L : 1L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("REPOSITION-FILE", HelpString = "REPOSITION-FILE ( handle offset -- ) Seek to offset in file")]
+    private static Task Prim_REPOSITIONFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "REPOSITION-FILE");
+        var offset = ToLong(i.PopInternal());
+        var h = (int)ToLong(i.PopInternal());
+        i.RepositionFileHandle(h, offset);
+        return Task.CompletedTask;
+    }
+
     [Primitive("INCLUDE", IsImmediate = true, IsAsync = true, HelpString = "INCLUDE <filename> - load and execute a Forth source file")]
     private static async Task Prim_INCLUDE(ForthInterpreter i)
     {
@@ -121,5 +194,29 @@ internal static partial class CorePrimitives
             if (string.IsNullOrEmpty(line)) continue;
             await i.EvalAsync(line).ConfigureAwait(false);
         }
+    }
+
+    [Primitive("READ-FILE-BYTES", HelpString = "READ-FILE-BYTES ( handle addr u -- actual ) Read up to u bytes from handle into memory at addr and push actual bytes read")]
+    private static Task Prim_READ_FILE_BYTES(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "READ-FILE-BYTES");
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var h = (int)ToLong(i.PopInternal());
+        var read = i.ReadFileIntoMemory(h, addr, u);
+        i.Push((long)read);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("WRITE-FILE-BYTES", HelpString = "WRITE-FILE-BYTES ( handle addr u -- written ) Write u bytes from memory at addr to handle and push actual written")]
+    private static Task Prim_WRITE_FILE_BYTES(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "WRITE-FILE-BYTES");
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var h = (int)ToLong(i.PopInternal());
+        var written = i.WriteMemoryToFile(h, addr, u);
+        i.Push((long)written);
+        return Task.CompletedTask;
     }
 }

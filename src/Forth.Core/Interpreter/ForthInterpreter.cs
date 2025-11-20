@@ -4,6 +4,7 @@ using System.Collections.Immutable; // added
 using System.Reflection;
 using System.Text;
 using System.Globalization;
+using System.IO;
 
 namespace Forth.Core.Interpreter;
 
@@ -21,6 +22,100 @@ public class ForthInterpreter : IForthInterpreter
     internal readonly Dictionary<long,long> _mem = new(); // internal
     internal long _nextAddr = 1; // internal
 
+    // File handle table
+    private readonly Dictionary<int, FileStream> _openFiles = new();
+    private int _nextFileHandle = 1;
+
+    public enum FileOpenMode
+    {
+        Read = 0,
+        Write = 1,
+        Append = 2
+    }
+
+    internal int OpenFileHandle(string path, FileOpenMode mode = FileOpenMode.Read)
+    {
+        FileStream fs;
+        // Use FileShare.ReadWrite for read streams to allow external inspection during tests
+        switch (mode)
+        {
+            case FileOpenMode.Read:
+                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                break;
+            case FileOpenMode.Write:
+                // Create or truncate for write; allow readers to read while writing
+                fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                break;
+            case FileOpenMode.Append:
+                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+                break;
+            default:
+                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                break;
+        }
+
+        var h = _nextFileHandle++;
+        _openFiles[h] = fs;
+        return h;
+    }
+
+    internal void CloseFileHandle(int handle)
+    {
+        if (!TryCloseFileHandle(handle))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+    }
+
+    internal bool TryCloseFileHandle(int handle)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            return false;
+        try { fs.Flush(); fs.Dispose(); } catch { }
+        _openFiles.Remove(handle);
+        return true;
+    }
+
+    internal void RepositionFileHandle(int handle, long offset)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+        if (offset < 0 || offset > fs.Length) throw new ForthException(ForthErrorCode.CompileError, "Invalid file offset");
+        fs.Seek(offset, SeekOrigin.Begin);
+    }
+
+    // Read up to 'count' bytes from handle into memory starting at addr. Returns number of bytes read.
+    internal int ReadFileIntoMemory(int handle, long addr, int count)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+        if (!fs.CanRead) throw new ForthException(ForthErrorCode.CompileError, "File not open for reading");
+        if (count <= 0) return 0;
+
+        var buffer = new byte[count];
+        int read = fs.Read(buffer, 0, count);
+        for (int i = 0; i < read; i++)
+        {
+            _mem[addr + i] = buffer[i];
+        }
+        return read;
+    }
+
+    // Write 'count' bytes from memory starting at addr to handle. Returns number of bytes written.
+    internal int WriteMemoryToFile(int handle, long addr, int count)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+        if (!fs.CanWrite) throw new ForthException(ForthErrorCode.CompileError, "File not open for writing");
+        if (count <= 0) return 0;
+
+        var buffer = new byte[count];
+        for (int i = 0; i < count; i++)
+        {
+            MemTryGet(addr + i, out var v);
+            buffer[i] = (byte)v;
+        }
+        fs.Write(buffer, 0, count);
+        return count;
+    }
 
     internal readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase); // internal
     internal readonly List<string> _usingModules = new(); // internal
