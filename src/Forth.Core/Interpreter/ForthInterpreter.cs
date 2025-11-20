@@ -4,7 +4,7 @@ using System.Collections.Immutable; // added
 using System.Reflection;
 using System.Text;
 using System.Globalization;
-using System.IO;
+using System.IO; // ...existing using (may be needed by other parts)
 
 namespace Forth.Core.Interpreter;
 
@@ -12,7 +12,7 @@ namespace Forth.Core.Interpreter;
 /// The core Forth interpreter implementation. Provides evaluation, dictionary management,
 /// and memory/stack primitives used by core primitives and tests.
 /// </summary>
-public class ForthInterpreter : IForthInterpreter
+public partial class ForthInterpreter : IForthInterpreter // made partial
 {
     internal readonly ForthStack _stack = new();
     internal readonly ForthStack _rstack = new();
@@ -25,130 +25,6 @@ public class ForthInterpreter : IForthInterpreter
     internal readonly Stack<CompileFrame> _controlStack = new(); // internal
     internal readonly Dictionary<long,long> _mem = new(); // internal
     internal long _nextAddr = 1; // internal
-
-    // File handle table
-    private readonly Dictionary<int, FileStream> _openFiles = new();
-    private int _nextFileHandle = 1;
-
-    // Diagnostics for file IO (exposed via LAST-WRITE-BYTES / LAST-READ-BYTES)
-    internal int _lastWriteHandle;
-    internal byte[]? _lastWriteBuffer;
-    internal long _lastWritePositionAfter;
-    internal int _lastReadHandle;
-    internal byte[]? _lastReadBuffer;
-    internal long _lastReadPositionAfter;
-
-    /// <summary>
-    /// Modes used by file-open related primitives.
-    /// </summary>
-    public enum FileOpenMode
-    {
-        /// <summary>Open file for read access.</summary>
-        Read = 0,
-        /// <summary>Open file for write (create/truncate) access.</summary>
-        Write = 1,
-        /// <summary>Open file for append access.</summary>
-        Append = 2
-    }
-
-    internal int OpenFileHandle(string path, FileOpenMode mode = FileOpenMode.Read)
-    {
-        FileStream fs;
-        // Use FileShare.ReadWrite for read streams to allow external inspection during tests
-        switch (mode)
-        {
-            case FileOpenMode.Read:
-                // Allow other processes to read/write while we have it open for read
-                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                break;
-            case FileOpenMode.Write:
-                // Create or truncate for write; allow readers and writers, use write-through
-                fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
-                // Ensure we start at beginning
-                fs.Seek(0, SeekOrigin.Begin);
-                break;
-            case FileOpenMode.Append:
-                // Append with read/write access and write-through; position at end
-                fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
-                fs.Seek(0, SeekOrigin.End);
-                break;
-            default:
-                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                break;
-        }
-
-        var h = _nextFileHandle++;
-        _openFiles[h] = fs;
-        return h;
-    }
-
-    internal void CloseFileHandle(int handle)
-    {
-        if (!TryCloseFileHandle(handle))
-            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
-    }
-
-    internal bool TryCloseFileHandle(int handle)
-    {
-        if (!_openFiles.TryGetValue(handle, out var fs))
-            return false;
-        try { fs.Flush(); fs.Dispose(); } catch { }
-        _openFiles.Remove(handle);
-        return true;
-    }
-
-    internal void RepositionFileHandle(int handle, long offset)
-    {
-        if (!_openFiles.TryGetValue(handle, out var fs))
-            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
-        if (offset < 0 || offset > fs.Length) throw new ForthException(ForthErrorCode.CompileError, "Invalid file offset");
-        fs.Seek(offset, SeekOrigin.Begin);
-    }
-
-    // Read up to 'count' bytes from handle into memory starting at addr. Returns number of bytes read.
-    internal int ReadFileIntoMemory(int handle, long addr, int count)
-    {
-        if (!_openFiles.TryGetValue(handle, out var fs))
-            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
-        if (!fs.CanRead) throw new ForthException(ForthErrorCode.CompileError, "File not open for reading");
-        if (count <= 0) return 0;
-
-        var buffer = new byte[count];
-        int read = fs.Read(buffer, 0, count);
-        for (int i = 0; i < read; i++)
-        {
-            _mem[addr + i] = buffer[i];
-        }
-        // Diagnostics: record last read
-        _lastReadHandle = handle;
-        _lastReadBuffer = buffer.Take(read).ToArray();
-        _lastReadPositionAfter = fs.Position;
-        return read;
-    }
-
-    // Write 'count' bytes from memory starting at addr to handle. Returns number of bytes written.
-    internal int WriteMemoryToFile(int handle, long addr, int count)
-    {
-        if (!_openFiles.TryGetValue(handle, out var fs))
-            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
-        if (!fs.CanWrite) throw new ForthException(ForthErrorCode.CompileError, "File not open for writing");
-        if (count <= 0) return 0;
-
-        var buffer = new byte[count];
-        for (int i = 0; i < count; i++)
-        {
-            MemTryGet(addr + i, out var v);
-            buffer[i] = (byte)v;
-        }
-        // Ensure write goes to current position (caller controls positioning via REPOSITION-FILE)
-        fs.Write(buffer, 0, count);
-        try { fs.Flush(true); } catch { fs.Flush(); }
-        // Diagnostics: record last write
-        _lastWriteHandle = handle;
-        _lastWriteBuffer = buffer;
-        _lastWritePositionAfter = fs.Position;
-        return count;
-    }
 
     internal readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase); // internal
     internal readonly List<string> _usingModules = new(); // internal
@@ -409,11 +285,7 @@ public class ForthInterpreter : IForthInterpreter
             {
                 var d = _definitions[j];
                 var key = (d.Module, d.Name);
-                if (!_dict.ContainsKey(key))
-                {
-                    // nothing in global dict; continue
-                }
-                else
+                if (_dict.ContainsKey(key))
                 {
                     _dict = _dict.Remove(key);
                 }
@@ -665,7 +537,6 @@ public class ForthInterpreter : IForthInterpreter
 
         _tokenIndex = 0;
 
-        // IL fast-path removed; interpret tokens normally
         while (TryReadNextToken(out var tok))
         {
             if (tok.Length == 0)
@@ -675,14 +546,12 @@ public class ForthInterpreter : IForthInterpreter
 
             if (!_isCompiling)
             {
-                // Collect tokens for DOES> body when in create-does> sequence
                 if (_doesCollecting)
                 {
                     _doesTokens!.Add(tok);
                     continue;
                 }
 
-                // ABORT with optional quoted message is kept as interpret-time sugar
                 if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
@@ -693,28 +562,24 @@ public class ForthInterpreter : IForthInterpreter
                     throw new ForthException(ForthErrorCode.Unknown, "ABORT");
                 }
 
-                // Bare quoted literal token => push string
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     Push(tok[1..^1]);
                     continue;
                 }
 
-                // Floating-point literal (interpret-time)
                 if (TryParseDouble(tok, out var dnum))
                 {
                     Push(dnum);
                     continue;
                 }
 
-                // Numeric literal (integer)
                 if (TryParseNumber(tok, out var num))
                 {
                     Push(num);
                     continue;
                 }
 
-                // Delegate to dictionary for all other words (including compiler/defining words)
                 if (TryResolveWord(tok, out var word) && word is not null)
                 {
                     await word.ExecuteAsync(this);
@@ -725,20 +590,17 @@ public class ForthInterpreter : IForthInterpreter
             }
             else
             {
-                // While compiling, record tokens for decompilation (exclude ';')
                 if (tok != ";")
                 {
                     _currentDefTokens?.Add(tok);
                 }
 
-                // End of definition marker
                 if (tok == ";")
                 {
                     FinishDefinition();
                     continue;
                 }
 
-                // Compile-time quoted literal token
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     CurrentList().Add(intr =>
@@ -750,7 +612,6 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
 
-                // Compile-time floating/integer numeric literal
                 if (TryParseDouble(tok, out var dlit))
                 {
                     CurrentList().Add(intr =>
@@ -773,8 +634,6 @@ public class ForthInterpreter : IForthInterpreter
                     continue;
                 }
 
-                // Resolve words; immediate words execute now (may manipulate control stack/token stream),
-                // non-immediate words are compiled by appending their execution
                 if (TryResolveWord(tok, out var cw) && cw is not null)
                 {
                     if (cw.IsImmediate)
@@ -842,11 +701,9 @@ public class ForthInterpreter : IForthInterpreter
 
     private bool TryParseDouble(string token, out double value)
     {
-        // Only treat as double if token contains decimal point or exponent to avoid capturing integers
         value = 0.0;
         if (string.IsNullOrEmpty(token)) return false;
         if (!token.Contains('.') && !token.Contains('e') && !token.Contains('E')) return false;
-        // Accept typical floating formats with invariant culture (decimal point, exponent)
         return double.TryParse(token, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
     }
 
@@ -898,219 +755,16 @@ public class ForthInterpreter : IForthInterpreter
     public int LoadAssemblyWords(Assembly asm) =>
         AssemblyWordLoader.RegisterFromAssembly(this, asm);
 
-    private sealed class ExitWordException : Exception { }
-
-    internal abstract class CompileFrame
-    {
-        public abstract List<Func<ForthInterpreter, Task>> GetCurrentList();
-    }
-
-    internal sealed class IfFrame : CompileFrame
-    {
-        public List<Func<ForthInterpreter, Task>> ThenPart { get; } = new();
-        public List<Func<ForthInterpreter, Task>>? ElsePart { get; set; }
-        public bool InElse { get; set; }
-
-        public override List<Func<ForthInterpreter, Task>> GetCurrentList() =>
-            InElse ? (ElsePart ??= new()) : ThenPart;
-    }
-
-    internal sealed class BeginFrame : CompileFrame
-    {
-        public List<Func<ForthInterpreter, Task>> PrePart { get; } = new();
-        public List<Func<ForthInterpreter, Task>> MidPart { get; } = new();
-        public bool InWhile { get; set; }
-
-        public override List<Func<ForthInterpreter, Task>> GetCurrentList() =>
-            InWhile ? MidPart : PrePart;
-    }
-
-    internal sealed class DoFrame : CompileFrame
-    {
-        public List<Func<ForthInterpreter, Task>> Body { get; } = new();
-        public override List<Func<ForthInterpreter, Task>> GetCurrentList() =>
-            Body;
-    }
-
-    internal sealed class LoopLeaveException : Exception { }
-
-    // ----- MARKER snapshots (for dictionary/time-travel) -----
-    internal sealed class MarkerSnapshot
-    {
-        public ImmutableDictionary<(string? Module, string Name), Word> Dict { get; }
-        public ImmutableList<string> UsingModules { get; }
-        public ImmutableDictionary<string, long> Values { get; }
-        public ImmutableDictionary<long, long> Memory { get; }
-        public ImmutableDictionary<string, Word?> Deferred { get; }
-        public ImmutableDictionary<string, string> Decompile { get; }
-        public ImmutableArray<(string Name, string? Module)> Definitions { get; }
-        public long NextAddr { get; }
-
-        public MarkerSnapshot(
-            ImmutableDictionary<(string? Module, string Name), Word> dict,
-            ImmutableList<string> usingModules,
-            ImmutableDictionary<string, long> values,
-            ImmutableDictionary<long, long> memory,
-            ImmutableDictionary<string, Word?> deferred,
-            ImmutableDictionary<string, string> decompile,
-            ImmutableArray<(string Name, string? Module)> definitions,
-            long nextAddr)
-        {
-            Dict = dict;
-            UsingModules = usingModules;
-            Values = values;
-            Memory = memory;
-            Deferred = deferred;
-            Decompile = decompile;
-            Definitions = definitions;
-            NextAddr = nextAddr;
-        }
-    }
-
-    internal MarkerSnapshot CreateMarkerSnapshot()
-    {
-        var dict = _dict.ToImmutableDictionary();
-        var usingMods = _usingModules.ToImmutableList();
-        var values = _values.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        var memory = _mem.ToImmutableDictionary();
-        var deferred = _deferred.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        var decompile = _decompile.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
-        var defs = _definitions.Select(d => (d.Name, d.Module)).ToImmutableArray();
-        return new MarkerSnapshot(dict, usingMods, values, memory, deferred, decompile, defs, _nextAddr);
-    }
-
-    /// <summary>
-    /// Create a new interpreter with captured snapshot from parent (used by SPAWN)
-    /// </summary>
-    internal ForthInterpreter(MarkerSnapshot snapshot, IForthIO? io = null)
-    {
-        _io = io ?? new ConsoleForthIO();
-        _stateAddr = _nextAddr++;
-        _mem[_stateAddr] = 0;
-
-        // Get BASE value from snapshot
-        long baseValue = 10;
-        if (snapshot.Memory.TryGetValue(snapshot.Memory.Keys.FirstOrDefault(k => k == 2), out var snapBase))
-        {
-            baseValue = snapBase;
-        }
-
-        _baseAddr = _nextAddr++;
-        _mem[_baseAddr] = baseValue;
-
-        // Restore dictionary
-        _dict = snapshot.Dict;
-
-        _loadPrelude = Task.CompletedTask; // no prelude load for child snapshot
-
-        // Restore modules list
-        _usingModules.AddRange(snapshot.UsingModules);
-
-        // Restore values
-        foreach (var kvp in snapshot.Values)
-        {
-            _values[kvp.Key] = kvp.Value;
-        }
-
-        // Restore memory (adjust addresses for child interpreter)
-        var maxSnapAddr = snapshot.NextAddr;
-        if (maxSnapAddr >= _nextAddr)
-        {
-            _nextAddr = maxSnapAddr + 1;
-        }
-
-        foreach (var kvp in snapshot.Memory)
-        {
-            // Skip special addresses that were already initialized
-            if (kvp.Key != _stateAddr && kvp.Key != _baseAddr)
-            {
-                _mem[kvp.Key] = kvp.Value;
-            }
-        }
-
-        // Restore deferred
-        foreach (var kvp in snapshot.Deferred)
-        {
-            _deferred[kvp.Key] = kvp.Value;
-        }
-
-        // Restore decompile
-        foreach (var kvp in snapshot.Decompile)
-        {
-            _decompile[kvp.Key] = kvp.Value;
-        }
-
-        // Restore definitions list
-        foreach (var (name, module) in snapshot.Definitions)
-        {
-            _definitions.Add(new DefinitionRecord(name, module));
-        }
-    }
-
-    internal void RestoreSnapshot(MarkerSnapshot snap)
-    {
-        // Clear compile state
-        _isCompiling = false;
-        _currentDefName = null;
-        _currentInstructions = null;
-        _currentDefTokens = null;
-        _controlStack.Clear();
-        _doesCollecting = false;
-        _doesTokens = null;
-        _lastCreatedName = null;
-        _lastCreatedAddr = 0;
-        _tokens = null;
-        _tokenIndex = 0;
-
-        // Replace dictionary
-        _dict = snap.Dict;
-
-        _usingModules.Clear();
-        _usingModules.AddRange(snap.UsingModules);
-
-        _values.Clear();
-        foreach (var kv in snap.Values) _values[kv.Key] = kv.Value;
-
-        _deferred.Clear();
-        foreach (var kv in snap.Deferred) _deferred[kv.Key] = kv.Value;
-
-        _decompile.Clear();
-        foreach (var kv in snap.Decompile) _decompile[kv.Key] = kv.Value;
-
-        // Memory and addresses
-        _mem.Clear();
-        foreach (var kv in snap.Memory) _mem[kv.Key] = kv.Value;
-        // Ensure STATE goes to interpret mode
-        _mem[_stateAddr] = 0;
-        _nextAddr = snap.NextAddr;
-
-        // Definition order
-        _definitions.Clear();
-        foreach (var (name, module) in snap.Definitions)
-            _definitions.Add(new DefinitionRecord(name, module));
-        // Update last defined
-        _lastDefinedWord = null;
-        if (_definitions.Count > 0)
-        {
-            var last = _definitions[^1];
-            _dict.TryGetValue((last.Module, last.Name), out _lastDefinedWord);
-        }
-    }
-
+    // Re-added IO/query methods used by primitives after refactor
     internal int ReadKey() => _io.ReadKey();
-
     internal bool KeyAvailable() => _io.KeyAvailable();
-
     internal string? ReadLineFromIO() => _io.ReadLine();
 
-    // Return a snapshot of the current search order (list of module names, null represents core)
     internal ImmutableList<string?> GetOrder()
     {
         var list = new List<string?>();
-        // Using modules (most recent first) then root
         for (int i = _usingModules.Count - 1; i >= 0; i--)
             list.Add(_usingModules[i]);
-        // add core as null (FORTH)
         list.Add(null);
         return list.ToImmutableList();
     }
@@ -1120,9 +774,11 @@ public class ForthInterpreter : IForthInterpreter
         _usingModules.Clear();
         foreach (var m in order)
         {
-            if (m is null) break; // stop at FORTH sentinel
+            if (m is null) break;
             if (!string.IsNullOrWhiteSpace(m) && !_usingModules.Contains(m))
                 _usingModules.Add(m);
         }
     }
+
+    private sealed class ExitWordException : Exception { }
 }
