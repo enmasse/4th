@@ -39,6 +39,17 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     internal long BaseAddr =>
         _baseAddr;
 
+    private readonly long _sourceAddr;
+    private readonly long _inAddr;
+    internal long SourceAddr => _sourceAddr;
+    internal long InAddr => _inAddr;
+
+    // Current source tracking (line and index within it)
+    private string? _currentSource;
+    private int _currentIn;
+    internal string? CurrentSource => _currentSource;
+    internal int CurrentIn => _currentIn;
+
     private StringBuilder? _picBuf;
     internal readonly Dictionary<string, Word?> _deferred = new(StringComparer.OrdinalIgnoreCase); // internal
     internal readonly Dictionary<string, string> _decompile = new(StringComparer.OrdinalIgnoreCase); // internal
@@ -197,6 +208,15 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
 
         _baseAddr = _nextAddr++;
         _mem[_baseAddr] = 10;
+
+        // Allocate memory cells for SOURCE and >IN variables
+        _sourceAddr = _nextAddr++;
+        _mem[_sourceAddr] = 0; // not storing string; reserved
+        _inAddr = _nextAddr++;
+        _mem[_inAddr] = 0; // >IN initial value
+
+        _currentSource = null;
+        _currentIn = 0;
 
         // No per-module lazy dictionaries anymore; use tuple-keyed _dict directly
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
@@ -532,6 +552,11 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     private async Task<bool> EvalInternalAsync(string line)
     {
         ArgumentNullException.ThrowIfNull(line);
+        // Track current source and reset input index for this evaluation
+        _currentSource = line;
+        _currentIn = 0;
+        // reset memory >IN cell
+        _mem[_inAddr] = 0;
         _tokens = Tokenizer.Tokenize(line);
 
         // Preprocess idiomatic compound tokens like "['] name" or "[']name" into

@@ -92,4 +92,40 @@ internal static partial class CorePrimitives
         i.Push((long)line.Length);
         return Task.CompletedTask;
     }
+
+    [Primitive("SOURCE", HelpString = "SOURCE ( -- c-addr u ) - push current input line as string and length")]
+    private static Task Prim_SOURCE(ForthInterpreter i)
+    {
+        var src = i.CurrentSource ?? string.Empty;
+        i.Push(src);
+        i.Push((long)src.Length);
+        return Task.CompletedTask;
+    }
+
+    [Primitive(">IN", HelpString = ">IN ( -- addr ) - push address of >IN variable")]
+    private static Task Prim_GTIN(ForthInterpreter i)
+    {
+        i.Push(i.InAddr);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("READ-LINE", HelpString = "READ-LINE ( c-addr u -- actual ) - read a line from input into memory or push string/length for simplified model")]
+    private static Task Prim_READLINE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "READ-LINE");
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+
+        var line = i.ReadLineFromIO() ?? string.Empty;
+        if (line.Length > u) line = line.Substring(0, u);
+
+        // Write characters to memory as bytes (low byte of each char)
+        for (int k = 0; k < line.Length; k++)
+        {
+            i.MemSet(addr + k, (long)((byte)line[k]));
+        }
+
+        i.Push((long)line.Length);
+        return Task.CompletedTask;
+    }
 }
