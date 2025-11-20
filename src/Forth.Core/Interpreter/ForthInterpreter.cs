@@ -303,18 +303,38 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         throw new ForthException(ForthErrorCode.UndefinedWord, $"FORGET target not found: {token}");
     }
 
+    /// <summary>
+    /// Gets a read-only snapshot of the data stack contents (top at end of list).
+    /// </summary>
     public IReadOnlyList<object> Stack =>
         _stack.AsReadOnly();
 
+    /// <summary>
+    /// Pushes a raw object onto the data stack.
+    /// </summary>
+    /// <param name="value">Value to push.</param>
     public void Push(object value) =>
         _stack.Push(value);
 
+    /// <summary>
+    /// Pops and returns the top item on the data stack.
+    /// </summary>
+    /// <returns>The popped value.</returns>
     public object Pop() =>
         _stack.Pop();
 
+    /// <summary>
+    /// Peeks at the top item on the data stack without removing it.
+    /// </summary>
+    /// <returns>The top stack value.</returns>
     public object Peek() =>
         _stack.Peek();
 
+    /// <summary>
+    /// Adds a new synchronous word to the dictionary.
+    /// </summary>
+    /// <param name="name">Word name (case-insensitive).</param>
+    /// <param name="body">Delegate executed when the word runs.</param>
     public void AddWord(string name, Action<IForthInterpreter> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -324,6 +344,11 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         RegisterDefinition(name);
     }
 
+    /// <summary>
+    /// Adds a new asynchronous word to the dictionary.
+    /// </summary>
+    /// <param name="name">Word name (case-insensitive).</param>
+    /// <param name="body">Async delegate executed when the word runs.</param>
     public void AddWordAsync(string name, Func<IForthInterpreter, Task> body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -493,6 +518,11 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         return names;
     }
 
+    /// <summary>
+    /// Evaluates a single line of Forth source text, loading prelude first if not yet loaded.
+    /// </summary>
+    /// <param name="line">Source line to evaluate.</param>
+    /// <returns>True if interpreter continues running; false if exit requested.</returns>
     public async Task<bool> EvalAsync(string line)
     {
         await _loadPrelude;
@@ -752,6 +782,11 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         }
     }
 
+    /// <summary>
+    /// Registers all words marked by <see cref="PrimitiveAttribute"/> in a given assembly.
+    /// </summary>
+    /// <param name="asm">Assembly to scan.</param>
+    /// <returns>Number of words registered.</returns>
     public int LoadAssemblyWords(Assembly asm) =>
         AssemblyWordLoader.RegisterFromAssembly(this, asm);
 

@@ -8,16 +8,30 @@ namespace Forth.Core.Interpreter;
 // Partial: snapshot (MARKER) support
 public partial class ForthInterpreter
 {
+    /// <summary>
+    /// Immutable snapshot of interpreter state captured by the MARKER word used for rollbacks.
+    /// </summary>
     internal sealed class MarkerSnapshot
     {
+        /// <summary>Dictionary of defined words keyed by (Module, Name).</summary>
         public ImmutableDictionary<(string? Module, string Name), Word> Dict { get; }
+        /// <summary>List of modules currently in use (search order).</summary>
         public ImmutableList<string> UsingModules { get; }
+        /// <summary>Map of VALUE and VARIABLE symbolic names to their memory addresses.</summary>
         public ImmutableDictionary<string, long> Values { get; }
+        /// <summary>Copy of linear memory cells that were allocated up to snapshot.</summary>
         public ImmutableDictionary<long, long> Memory { get; }
+        /// <summary>Table of deferred words awaiting resolution.</summary>
         public ImmutableDictionary<string, Word?> Deferred { get; }
+        /// <summary>Decompile source for words (if captured).</summary>
         public ImmutableDictionary<string, string> Decompile { get; }
+        /// <summary>Ordered list of definitions (name/module) for restoration of last defined word.</summary>
         public ImmutableArray<(string Name, string? Module)> Definitions { get; }
+        /// <summary>Next free memory address at time of snapshot.</summary>
         public long NextAddr { get; }
+        /// <summary>
+        /// Constructs a snapshot with all interpreter state components.
+        /// </summary>
         public MarkerSnapshot(
             ImmutableDictionary<(string? Module, string Name), Word> dict,
             ImmutableList<string> usingModules,
@@ -32,6 +46,10 @@ public partial class ForthInterpreter
         }
     }
 
+    /// <summary>
+    /// Captures a new <see cref="MarkerSnapshot"/> of current interpreter state for later restoration.
+    /// </summary>
+    /// <returns>Snapshot object.</returns>
     internal MarkerSnapshot CreateMarkerSnapshot()
     {
         var dict = _dict.ToImmutableDictionary();
@@ -44,6 +62,11 @@ public partial class ForthInterpreter
         return new MarkerSnapshot(dict, usingMods, values, memory, deferred, decompile, defs, _nextAddr);
     }
 
+    /// <summary>
+    /// Creates a new interpreter instance from an existing snapshot, preserving captured state.
+    /// </summary>
+    /// <param name="snapshot">Snapshot to restore from.</param>
+    /// <param name="io">Optional IO implementation override.</param>
     internal ForthInterpreter(MarkerSnapshot snapshot, IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
@@ -68,6 +91,11 @@ public partial class ForthInterpreter
             _definitions.Add(new(name, module));
     }
 
+    /// <summary>
+    /// Restores interpreter state to that stored in <paramref name="snap"/>, replacing current definitions and memory.
+    /// Compilation state and transient structures are cleared.
+    /// </summary>
+    /// <param name="snap">Snapshot to restore.</param>
     internal void RestoreSnapshot(MarkerSnapshot snap)
     {
         _isCompiling = false;

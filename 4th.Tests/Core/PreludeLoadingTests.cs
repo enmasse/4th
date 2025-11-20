@@ -29,7 +29,8 @@ public class PreludeLoadingTests
         var asm = typeof(ForthInterpreter).Assembly;
         using var stream = asm.GetManifestResourceStream("Forth.Core.prelude.4th");
         Assert.NotNull(stream);
-        using var reader = new System.IO.StreamReader(stream);
+        // stream asserted non-null above; suppress nullable warning explicitly
+        using var reader = new System.IO.StreamReader(stream!);
         var content = await reader.ReadToEndAsync();
         Assert.Contains("TRUE", content);
         Assert.Contains("FALSE", content);

@@ -8,7 +8,9 @@ namespace Forth.Core.Interpreter;
 // Partial: file IO and related diagnostics
 public partial class ForthInterpreter
 {
-    // File handle table and diagnostics (moved from main file)
+    /// <summary>
+    /// Table of currently open file handles mapped to their <see cref="FileStream"/> plus related write/read diagnostics state.
+    /// </summary>
     private readonly Dictionary<int, FileStream> _openFiles = new();
     private int _nextFileHandle = 1;
     internal int _lastWriteHandle;
@@ -18,13 +20,26 @@ public partial class ForthInterpreter
     internal byte[]? _lastReadBuffer;
     internal long _lastReadPositionAfter;
 
+    /// <summary>
+    /// Modes that a file may be opened with from Forth code.
+    /// </summary>
     public enum FileOpenMode
     {
+        /// <summary>Open an existing file for reading.</summary>
         Read = 0,
+        /// <summary>Create/overwrite a file for writing (position reset to beginning).</summary>
         Write = 1,
+        /// <summary>Open or create a file and seek to end for append writes.</summary>
         Append = 2
     }
 
+    /// <summary>
+    /// Opens a file at the specified path using the provided mode and returns a numeric handle used by Forth words.
+    /// </summary>
+    /// <param name="path">File system path.</param>
+    /// <param name="mode">Open mode (defaults to <see cref="FileOpenMode.Read"/>).</param>
+    /// <returns>Allocated file handle.</returns>
+    /// <exception cref="IOException">Propagated if the underlying file cannot be opened.</exception>
     internal int OpenFileHandle(string path, FileOpenMode mode = FileOpenMode.Read)
     {
         FileStream fs;
@@ -50,12 +65,21 @@ public partial class ForthInterpreter
         return h;
     }
 
+    /// <summary>
+    /// Closes a file handle or throws a Forth exception if the handle is invalid.
+    /// </summary>
+    /// <param name="handle">File handle to close.</param>
     internal void CloseFileHandle(int handle)
     {
         if (!TryCloseFileHandle(handle))
             throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
     }
 
+    /// <summary>
+    /// Attempts to close a file handle without throwing.
+    /// </summary>
+    /// <param name="handle">File handle.</param>
+    /// <returns><c>true</c> if the handle was found and closed; otherwise <c>false</c>.</returns>
     internal bool TryCloseFileHandle(int handle)
     {
         if (!_openFiles.TryGetValue(handle, out var fs))
@@ -65,6 +89,12 @@ public partial class ForthInterpreter
         return true;
     }
 
+    /// <summary>
+    /// Repositions an open file stream to an absolute offset.
+    /// </summary>
+    /// <param name="handle">File handle.</param>
+    /// <param name="offset">Absolute byte offset within the file.</param>
+    /// <exception cref="ForthException">Thrown if handle invalid or offset out of range.</exception>
     internal void RepositionFileHandle(int handle, long offset)
     {
         if (!_openFiles.TryGetValue(handle, out var fs))
@@ -74,6 +104,15 @@ public partial class ForthInterpreter
         fs.Seek(offset, SeekOrigin.Begin);
     }
 
+    /// <summary>
+    /// Reads up to <paramref name="count"/> bytes from the file into interpreter linear memory starting at <paramref name="addr"/>.
+    /// Diagnostics for last read are stored for tooling.
+    /// </summary>
+    /// <param name="handle">File handle referenced.</param>
+    /// <param name="addr">Target memory address.</param>
+    /// <param name="count">Maximum number of bytes to read.</param>
+    /// <returns>Number of bytes actually read.</returns>
+    /// <exception cref="ForthException">Thrown for invalid handle or non-readable file.</exception>
     internal int ReadFileIntoMemory(int handle, long addr, int count)
     {
         if (!_openFiles.TryGetValue(handle, out var fs))
@@ -90,6 +129,15 @@ public partial class ForthInterpreter
         return read;
     }
 
+    /// <summary>
+    /// Writes <paramref name="count"/> bytes from interpreter memory starting at <paramref name="addr"/> into a file.
+    /// Diagnostics for last write are captured.
+    /// </summary>
+    /// <param name="handle">File handle.</param>
+    /// <param name="addr">Source memory address.</param>
+    /// <param name="count">Number of bytes to write.</param>
+    /// <returns>Number of bytes written (same as <paramref name="count"/> when successful).</returns>
+    /// <exception cref="ForthException">Thrown for invalid handle or non-writable file.</exception>
     internal int WriteMemoryToFile(int handle, long addr, int count)
     {
         if (!_openFiles.TryGetValue(handle, out var fs))

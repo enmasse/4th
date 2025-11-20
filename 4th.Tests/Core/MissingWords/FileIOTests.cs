@@ -460,7 +460,7 @@ public class FileIOTests
             var dict = fi!.GetValue(forth) as System.Collections.IDictionary;
             Assert.NotNull(dict);
             // Handles stored as int keys
-            var fsObj = dict[(int)h];
+            var fsObj = dict![(int)h];
             Assert.NotNull(fsObj);
             var fs = fsObj as FileStream;
             Assert.NotNull(fs);
