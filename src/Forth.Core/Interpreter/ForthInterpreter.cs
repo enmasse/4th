@@ -26,6 +26,14 @@ public class ForthInterpreter : IForthInterpreter
     private readonly Dictionary<int, FileStream> _openFiles = new();
     private int _nextFileHandle = 1;
 
+    // Diagnostics for file IO (exposed via LAST-WRITE-BYTES / LAST-READ-BYTES)
+    internal int _lastWriteHandle;
+    internal byte[]? _lastWriteBuffer;
+    internal long _lastWritePositionAfter;
+    internal int _lastReadHandle;
+    internal byte[]? _lastReadBuffer;
+    internal long _lastReadPositionAfter;
+
     public enum FileOpenMode
     {
         Read = 0,
@@ -101,6 +109,10 @@ public class ForthInterpreter : IForthInterpreter
         {
             _mem[addr + i] = buffer[i];
         }
+        // Diagnostics: record last read
+        _lastReadHandle = handle;
+        _lastReadBuffer = buffer.Take(read).ToArray();
+        _lastReadPositionAfter = fs.Position;
         return read;
     }
 
@@ -121,6 +133,10 @@ public class ForthInterpreter : IForthInterpreter
         // Ensure write goes to current position (caller controls positioning via REPOSITION-FILE)
         fs.Write(buffer, 0, count);
         try { fs.Flush(true); } catch { fs.Flush(); }
+        // Diagnostics: record last write
+        _lastWriteHandle = handle;
+        _lastWriteBuffer = buffer;
+        _lastWritePositionAfter = fs.Position;
         return count;
     }
 
