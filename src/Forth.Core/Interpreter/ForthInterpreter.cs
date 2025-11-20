@@ -8,6 +8,10 @@ using System.IO;
 
 namespace Forth.Core.Interpreter;
 
+/// <summary>
+/// The core Forth interpreter implementation. Provides evaluation, dictionary management,
+/// and memory/stack primitives used by core primitives and tests.
+/// </summary>
 public class ForthInterpreter : IForthInterpreter
 {
     internal readonly ForthStack _stack = new();
@@ -34,10 +38,16 @@ public class ForthInterpreter : IForthInterpreter
     internal byte[]? _lastReadBuffer;
     internal long _lastReadPositionAfter;
 
+    /// <summary>
+    /// Modes used by file-open related primitives.
+    /// </summary>
     public enum FileOpenMode
     {
+        /// <summary>Open file for read access.</summary>
         Read = 0,
+        /// <summary>Open file for write (create/truncate) access.</summary>
         Write = 1,
+        /// <summary>Open file for append access.</summary>
         Append = 2
     }
 
@@ -298,6 +308,10 @@ public class ForthInterpreter : IForthInterpreter
         _currentDefTokens = null;
     }
 
+    /// <summary>
+    /// Create a new interpreter instance.
+    /// </summary>
+    /// <param name="io">Optional IO implementation to use for input/output. If null, a console IO is used.</param>
     public ForthInterpreter(IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();

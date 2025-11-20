@@ -5,6 +5,8 @@
     <LangVersion>13.0</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Enable extended analyzer rules for source generator projects -->
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
   <ItemGroup>
