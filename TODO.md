@@ -13,6 +13,7 @@ Status — implemented / obvious support (non-exhaustive)
 - Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `COUNT`, `MOVE`, `FILL`, `ERASE`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
 - File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `FILE-EXISTS`, `INCLUDE`
+  (Extended / partial): `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE` (basic semantics present; need ANS ior/stack shape audit)
 - Async / concurrency: `SPAWN`, `FUTURE`, `TASK`, `JOIN`, `AWAIT`, `TASK?` (ValueTask is handled via reflection today)
 - Exceptions / control: `CATCH`, `THROW`, `ABORT`, `EXIT`, `BYE`, `QUIT`
 - Numeric base & parsing: `BASE`, `HEX`, `DECIMAL`, `>NUMBER`, `STATE`
@@ -27,6 +28,8 @@ Newly implemented (since last review)
   - `4th.Tests/Core/MissingWords/IOKeyAndAcceptTests.cs`
   - `4th.Tests/Core/MissingWords/VocabOrderTests.cs`
   - All tests were executed locally and passed in the test suite
+  - File IO diagnostics instrumentation (`LAST-WRITE-BYTES`, `LAST-READ-BYTES`) and expanded FileIO tests (now green)
+  - Byte-level file primitives `READ-FILE-BYTES`, `WRITE-FILE-BYTES` (non-ANS; candidate for replacement by standard `READ-FILE` / `WRITE-FILE` usage)
 
 Missing or incomplete ANS words (prioritized)
 1. Full wordlist / search-order API and related words
@@ -34,7 +37,8 @@ Missing or incomplete ANS words (prioritized)
 2. Interactive input / source position
    - `EXPECT`, `SOURCE`, `>IN` (proper handling of interpreter input position is missing)
 3. Completed file API (streams & metadata)
-   - `OPEN-FILE`, `CLOSE-FILE`, `READ-LINE`, `FILE-SIZE`, `REPOSITION-FILE`
+   - Standard signatures & ior ordering: confirm `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
+   - Implement missing `READ-LINE` (ANS) and unify `READ-FILE-BYTES` / `WRITE-FILE-BYTES` into standard words or drop
 4. Block system (if the goal includes block I/O)
    - `BLOCK`, `LOAD`, `SAVE`, `BLK` etc.
 5. Robustness / semantic fixes
@@ -49,13 +53,23 @@ Recommendations — next steps
 - Implement file stream API and block words if the target is full ANS compatibility
 - Fix `AWAIT`/`TASK?` robustness (refactor task detection)
 - Integrate `tools/ans-diff` into CI and generate machine-readable reports (JSON)
+- Gate or remove diagnostic primitives (`LAST-WRITE-BYTES`, `LAST-READ-BYTES`) before release (keep behind a DEBUG or TEST module)
+- Normalize truth value semantics to -1 (all bits set) for all comparison/logical words (audit tests expecting 1)
+- Replace custom byte file primitives with portable pattern using standard `READ-FILE` / `WRITE-FILE`
+- Add SOURCE / >IN / EXPECT to support interpreter source tracking & interactive input per ANS
 
 Repository tasks (can be automated)
 - [x] Create `tools/ans-diff` script to collect `Primitive` names and compare against ANS list
 - [x] Implement high-priority words (`GET-ORDER`, `SET-ORDER`, `KEY`, `KEY?`, `ACCEPT`)
 - [ ] Improve `AWAIT`/`TASK?` robustness
-- [ ] Implement file stream words (`OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`)
+- [x] Implement baseline file stream words (`OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`) — refine ANS compliance
 - [ ] Add / run an ANS conformity test suite in CI
+- [ ] Implement `READ-LINE`
+- [ ] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` sentinel exposure
+- [ ] Implement `SOURCE`, `>IN`, `EXPECT`
+- [ ] Normalize truth values (true = -1)
+- [ ] Remove or gate diagnostics primitives
+- [ ] Replace byte-oriented file primitives with standard equivalents / wrappers
 
 Notes
 - This file was updated automatically after new primitives and tests were added. Do you want me to commit these changes now?
