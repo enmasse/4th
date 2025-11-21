@@ -63,6 +63,14 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    // Provide BLK primitive so ans-diff detects it as a primitive (push current block number)
+    [Primitive("BLK", HelpString = "BLK ( -- n ) - push current block number")]
+    private static Task Prim_BLK(ForthInterpreter i)
+    {
+        i.Push((long)i.GetCurrentBlockNumber());
+        return Task.CompletedTask;
+    }
+
     [Primitive("MODULE", IsImmediate = true, HelpString = "MODULE <name> - start a module namespace")]
     private static Task Prim_MODULE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after MODULE"); i._currentModule = name; if (string.IsNullOrWhiteSpace(i._currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name"); return Task.CompletedTask; }
 

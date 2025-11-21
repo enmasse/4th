@@ -139,4 +139,83 @@ internal static partial class CorePrimitives
         i.Push(quot);
         return Task.CompletedTask;
     }
+
+    // Double-cell addition: D+ (d1_lo d1_hi d2_lo d2_hi -- sum_lo sum_hi)
+    [Primitive("D+", HelpString = "D+ ( d1 d2 -- d3 ) - add two double-cell numbers (low then high)")]
+    private static Task Prim_DPlus(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "D+");
+        var d2_hi = ToLong(i.PopInternal());
+        var d2_lo = ToLong(i.PopInternal());
+        var d1_hi = ToLong(i.PopInternal());
+        var d1_lo = ToLong(i.PopInternal());
+
+        unchecked
+        {
+            ulong u1 = (ulong)d1_lo;
+            ulong u2 = (ulong)d2_lo;
+            ulong low = u1 + u2;
+            // carry if overflow
+            ulong carry = (low < u1) ? 1UL : 0UL;
+
+            ulong uh1 = (ulong)d1_hi;
+            ulong uh2 = (ulong)d2_hi;
+            ulong high = uh1 + uh2 + carry;
+
+            i.Push((long)low);
+            i.Push((long)high);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // Double-cell subtraction: D- (d1 d2 -- d3) where d3 = d1 - d2
+    [Primitive("D-", HelpString = "D- ( d1 d2 -- d3 ) - subtract two double-cell numbers (low then high)")]
+    private static Task Prim_DMinus(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "D-");
+        var d2_hi = ToLong(i.PopInternal());
+        var d2_lo = ToLong(i.PopInternal());
+        var d1_hi = ToLong(i.PopInternal());
+        var d1_lo = ToLong(i.PopInternal());
+
+        unchecked
+        {
+            ulong u1 = (ulong)d1_lo;
+            ulong u2 = (ulong)d2_lo;
+            ulong low = u1 - u2;
+            // borrow if underflow
+            ulong borrow = (u1 < u2) ? 1UL : 0UL;
+
+            ulong uh1 = (ulong)d1_hi;
+            ulong uh2 = (ulong)d2_hi;
+            ulong high = uh1 - uh2 - borrow;
+
+            i.Push((long)low);
+            i.Push((long)high);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // M* ( n1 n2 -- d ) multiply two single-cell numbers producing double-cell product
+    [Primitive("M*", HelpString = "M* ( n1 n2 -- d ) - multiply two cells producing a double-cell result (low then high)")]
+    private static Task Prim_MStar(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "M*");
+        var n2 = ToLong(i.PopInternal());
+        var n1 = ToLong(i.PopInternal());
+
+        var prod = new BigInteger(n1) * new BigInteger(n2);
+        var mask = (BigInteger.One << 64) - 1;
+        var lowBig = prod & mask;
+        var highBig = prod >> 64; // arithmetic shift preserves sign for high cell
+
+        long low = (long)(ulong)lowBig;
+        long high = (long)highBig;
+
+        i.Push(low);
+        i.Push(high);
+        return Task.CompletedTask;
+    }
 }

@@ -46,7 +46,7 @@ Missing or incomplete ANS words (prioritized)
 6. AWAIT / TASK? robustness
    - Now improved: added GetAwaiter-pattern support and tests. Consider further performance hardening (delegate caching) if needed.
 7. Additional double-cell and advanced math words
-   - `D+`, `D-`, `M*` not found; `*/MOD` exists
+   - `D+`, `D-`, `M*` implemented; `*/MOD` exists
 
 Recommendations — next steps (actionable)
 - Decide on truth-value normalization policy and update primitives/tests consistently (normalize to `-1` recommended for ANS compatibility).
@@ -66,20 +66,23 @@ Repository tasks (current)
 - [x] Implement `READ-LINE`, `SOURCE`, `>IN`
 - [x] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` with Wordlist objects
 - [x] Improve `AWAIT`/`TASK?` robustness (ValueTask / awaitable handling)
-- [ ] Add ANS conformity run to CI (ans-diff) and fail on unexpected regressions
-- [ ] Add/verify `D+`, `D-`, `M*` if double-cell arithmetic is required
+- [x] Add `D+`, `D-`, `M*` primitives and tests
+- [x] Add `BLK` primitive and support for ' pushing undefined names (assist WORDLIST usage)
+- [x] Update `tools/ans-diff` to write report file and fail on missing words (non-zero exit)
+- [x] Update CI workflow to run `tools/ans-diff`, capture report, and upload artifact
 
-Recent activity (2025-11-21)
+- [ ] Add LRU eviction for block address/accessor cache to limit address-space growth
+- [ ] Consider tightening ACCEPT/EXPECT/READ-LINE semantics to match full c-addr/u behavior
+
+Recent activity (2025-11-21 -> 2025-11-25)
 --------------------------------
-- `tools/ans-diff` executed and `tools/ans-diff/report.md` refreshed.
-- Implemented per-block directory backing for block storage (`OPEN-BLOCK-DIR`) with atomic per-block replace using temp files + `File.Replace`.
-- Added MemoryMappedFile-backed single-file mode with FileStream fallback; cached per-block accessors used for zero-copy semantics when possible.
-- Block primitives (`BLOCK`, `SAVE`, `BLK`) wired to the new backing implementation and unit tests added (`BlockSystemPerBlockTests`).
-- `OPEN-BLOCK-FILE` and `OPEN-BLOCK-DIR` primitives accept either a pushed string token or a following token.
-- Tests updated and extended; full test suite passes locally (206/206).
-- Other changes: accessor caching, accessor flush/dispose logic on close, atomic full-block writes for single-file mode, and Save would always write a full BlockSize to avoid partial-write inconsistencies.
+- Added double-cell arithmetic primitives `D+`, `D-`, and `M*` with unit tests (`DoubleCellArithmeticTests`).
+- Added `BLK` primitive and adjusted `Prim_Tick` to push raw name strings when unresolved to support `WORDLIST ' <name> DEFINITIONS` patterns in tests.
+- Updated `tools/ans-diff` to write `tools/ans-diff/report.md` directly and return non-zero when ANS words are missing; fixed invocation to avoid terminal hangs in CI.
+- Updated `.github/workflows/ci.yml` to run `tools/ans-diff` and upload the `report.md` artifact (guarded by `if: always()`).
+- All unit tests pass locally (212/212) after changes.
 
 If you want, I can:
 - Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add tests for lifecycle operations.
 - Implement LRU eviction for block addresses/accessors to limit address-space growth.
-- Add a CI workflow step to run the ans-diff tool and fail on regressions.
+- Add a CI workflow step to fail the build when `tools/ans-diff` reports missing words (currently it is run and the report is uploaded; it already returns non-zero on missing words).

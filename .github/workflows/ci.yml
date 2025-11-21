@@ -28,9 +28,10 @@ jobs:
 
       - name: Run ans-diff
         working-directory: tools/ans-diff
-        run: dotnet run --project . --configuration Release > report.md || true
+        run: dotnet run --project . --configuration Release > report.md 2>&1
 
       - name: Upload ans-diff report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ans-diff-report

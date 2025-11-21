@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Text;
 
 class Program
 {
@@ -26,12 +27,14 @@ class Program
         "D+", "D-", "M*", "*/MOD"
     };
 
-    static void Main(string[] args)
+    static int Main(string[] args)
     {
         var repoRoot = Directory.GetCurrentDirectory();
         // If executed from tools/ans-diff dir, assume repo root is two levels up
         if (Path.GetFileName(repoRoot).Equals("ans-diff", StringComparison.OrdinalIgnoreCase))
             repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
+
+        var sb = new StringBuilder();
 
         var csFiles = Directory.EnumerateFiles(repoRoot, "*.cs", SearchOption.AllDirectories)
             .Where(p => !p.Contains(Path.Combine("tools", "ans-diff")))
@@ -48,22 +51,45 @@ class Program
             }
         }
 
-        Console.WriteLine($"Found {primNames.Count} primitives in code:\n");
-        foreach (var p in primNames) Console.WriteLine(p);
+        sb.AppendLine($"Found {primNames.Count} primitives in code:\n");
+        foreach (var p in primNames) sb.AppendLine(p);
 
-        Console.WriteLine();
+        sb.AppendLine();
         var ansSet = new HashSet<string>(AnsCore, StringComparer.OrdinalIgnoreCase);
         var found = primNames.Where(p => ansSet.Contains(p)).OrderBy(s => s).ToArray();
         var missing = AnsCore.Where(a => !primNames.Contains(a, StringComparer.OrdinalIgnoreCase)).OrderBy(s => s).ToArray();
         var extras = primNames.Where(p => !ansSet.Contains(p)).OrderBy(s => s).ToArray();
 
-        Console.WriteLine($"\nANS core words present ({found.Length}):");
-        foreach (var fnd in found) Console.WriteLine(fnd);
+        sb.AppendLine($"\nANS core words present ({found.Length}):");
+        foreach (var fnd in found) sb.AppendLine(fnd);
 
-        Console.WriteLine($"\nANS core words missing ({missing.Length}):");
-        foreach (var m in missing) Console.WriteLine(m);
+        sb.AppendLine($"\nANS core words missing ({missing.Length}):");
+        foreach (var m in missing) sb.AppendLine(m);
 
-        Console.WriteLine($"\nOther primitives in code not in ANS list ({extras.Length}):");
-        foreach (var e in extras) Console.WriteLine(e);
+        sb.AppendLine($"\nOther primitives in code not in ANS list ({extras.Length}):");
+        foreach (var e in extras) sb.AppendLine(e);
+
+        // Write report to tools/ans-diff/report.md so callers don't need to redirect stdout
+        try
+        {
+            var reportDir = Path.Combine(repoRoot, "tools", "ans-diff");
+            Directory.CreateDirectory(reportDir);
+            var reportPath = Path.Combine(reportDir, "report.md");
+            File.WriteAllText(reportPath, sb.ToString());
+            Console.WriteLine($"Wrote report to: {reportPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to write report: {ex.Message}");
+        }
+
+        // Exit with non-zero when missing ANS core words to allow CI to fail on regressions
+        if (missing.Length > 0)
+        {
+            Console.WriteLine($"\nFailing due to {missing.Length} missing ANS core words.");
+            return 2;
+        }
+
+        return 0;
     }
 }

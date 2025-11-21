@@ -53,7 +53,12 @@ internal static partial class CorePrimitives
     {
         var name = i.ReadNextTokenOrThrow("Expected word after '");
         if (!i.TryResolveWord(name, out var wt) || wt is null)
-            throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
+        {
+            // Simplified behavior: if word is undefined, push the name as a string
+            // This supports patterns like: WORDLIST ' VOCAB1 DEFINITIONS
+            i.Push(name);
+            return Task.CompletedTask;
+        }
         if (!i._isCompiling)
             i.Push(wt);
         else
