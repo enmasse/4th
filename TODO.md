@@ -32,30 +32,7 @@ Notes from code inspection
 - `READ-FILE-BYTES` / `WRITE-FILE-BYTES` provide low-level memory IO used by tests; they may be candidates for replacement with strictly ANS semantics.
 - Pictured numeric / prelude words (e.g., `TRUE`, `FALSE`, `*/MOD` definition in `prelude.4th`) are present and tested.
 
-Missing or incomplete ANS words (prioritized)
-1. Wordlist / vocabulary control
-   - `WORDLIST`, `DEFINITIONS` and full `FORTH` sentinel exposure (implemented)
-2. Interactive source tracking
-   - (now implemented) `SOURCE` and `>IN` are available; `READ-LINE` implemented as a simplified primitive
-3. Block system (optional)
-   - `BLOCK`, `SAVE`, `BLK` implemented with a per-block file backend and MMF/filestream fallback; `LOAD` (runtime loader) is present. See notes below.
-4. Read-line primitive
-   - `READ-LINE` implemented; `ACCEPT`/`EXPECT` still use simplified behavior and may be refined to match full c-addr/u semantics
-5. Truth value normalization
-   - Some primitives (e.g., `KEY?`, `FILE-EXISTS`) return `-1` for true; ensure all bindings and modules follow the normalized convention (true = -1).
-6. AWAIT / TASK? robustness
-   - Now improved: added GetAwaiter-pattern support and tests. Consider further performance hardening (delegate caching) if needed.
-7. Additional double-cell and advanced math words
-   - `D+`, `D-`, `M*` implemented; `*/MOD` exists
-
-Recommendations — next steps (actionable)
-- Decide on truth-value normalization policy and update primitives/tests consistently (normalize to `-1` recommended for ANS compatibility).
-- Iterate on block-system behavior if stricter ANS semantics are required (e.g., stable c-addr vs. zero-copy pointer exposure, eviction policy).
-- Consider performance hardening for awaitable handling: cache MethodInfos or compiled delegates for `GetAwaiter`/`OnCompleted`/`GetResult`.
-- Consider replacing low-level `READ-FILE-BYTES` / `WRITE-FILE-BYTES` tests with higher-level `READ-FILE` / `WRITE-FILE` usage if ANS compliance is the goal.
-- Add a CI job to run `tools/ans-diff` and fail on regressions; export JSON output for machine checks.
-
-Repository tasks (current)
+Progress / Repository tasks (current)
 - [x] Create `tools/ans-diff` script to collect `Primitive` names and compare against ANS list
 - [x] Implement high-priority words: `GET-ORDER`, `SET-ORDER`, `KEY`, `KEY?`, `ACCEPT`, `EXPECT`
 - [x] Implement baseline file stream words: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
@@ -71,8 +48,15 @@ Repository tasks (current)
 - [x] Update `tools/ans-diff` to write report file and fail on missing words (non-zero exit)
 - [x] Update CI workflow to run `tools/ans-diff`, capture report, and upload artifact
 
-- [ ] Add LRU eviction for block address/accessor cache to limit address-space growth
+- [x] Split `ForthInterpreter` block system into a partial file (`ForthInterpreter.Blocks.cs`) to reduce file size and isolate block logic
+- [x] Implement LRU eviction for block address/accessor cache to limit address-space growth
+- [x] Add unit tests for LRU eviction and per-block backing behavior (`4th.Tests/Core/MissingWords/BlockLRUTests.cs`)
+
+- [ ] Add LRU cache size configuration (constructor param or interpreter setting)
 - [ ] Consider tightening ACCEPT/EXPECT/READ-LINE semantics to match full c-addr/u behavior
+- [ ] Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add lifecycle tests
+- [ ] Consider replacing low-level `READ-FILE-BYTES` / `WRITE-FILE-BYTES` tests with higher-level `READ-FILE` / `WRITE-FILE` usage if ANS compliance is the goal
+- [ ] Add a CI job to fail the build when `tools/ans-diff` reports missing words (currently it is run and the report is uploaded; it already returns non-zero on missing words).
 
 Recent activity (2025-11-21 -> 2025-11-25)
 --------------------------------
@@ -80,9 +64,11 @@ Recent activity (2025-11-21 -> 2025-11-25)
 - Added `BLK` primitive and adjusted `Prim_Tick` to push raw name strings when unresolved to support `WORDLIST ' <name> DEFINITIONS` patterns in tests.
 - Updated `tools/ans-diff` to write `tools/ans-diff/report.md` directly and return non-zero when ANS words are missing; fixed invocation to avoid terminal hangs in CI.
 - Updated `.github/workflows/ci.yml` to run `tools/ans-diff` and upload the `report.md` artifact (guarded by `if: always()`).
-- All unit tests pass locally (212/212) after changes.
+- Split interpreter block logic into a focused partial: `src/Forth.Core/Interpreter/ForthInterpreter.Blocks.cs` to isolate block and backing logic.
+- Implemented LRU eviction for block address/accessor cache and added corresponding unit tests (`4th.Tests/Core/MissingWords/BlockLRUTests.cs`).
+- All unit tests pass locally (214/214) after changes.
 
 If you want, I can:
 - Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add tests for lifecycle operations.
-- Implement LRU eviction for block addresses/accessors to limit address-space growth.
-- Add a CI workflow step to fail the build when `tools/ans-diff` reports missing words (currently it is run and the report is uploaded; it already returns non-zero on missing words).
+- Implement LRU eviction configuration and add deterministic tests for small cache sizes.
+- Tighten ACCEPT/EXPECT/READ-LINE semantics to match full c-addr/u behavior.
