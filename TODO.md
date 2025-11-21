@@ -33,7 +33,7 @@ Notes from code inspection
 
 Missing or incomplete ANS words (prioritized)
 1. Wordlist / vocabulary control
-   - `WORDLIST`, `DEFINITIONS` and full `FORTH` sentinel exposure (not present)
+   - `WORDLIST`, `DEFINITIONS` and full `FORTH` sentinel exposure (implemented)
 2. Interactive source tracking
    - (now implemented) `SOURCE` and `>IN` are available; `READ-LINE` implemented as a simplified ANS-compatible primitive
 3. Block system (optional)
@@ -49,7 +49,6 @@ Missing or incomplete ANS words (prioritized)
 
 Recommendations — next steps (actionable)
 - Decide on truth-value normalization policy and update primitives/tests consistently (normalize to `-1` recommended for ANS compatibility).
-- Implement `WORDLIST` / `DEFINITIONS` / `FORTH` exposure to match ANS vocabulary model or document intentional divergence.
 - Implement block-system primitives or a compatibility shim if block device semantics are required.
 - Consider performance hardening for awaitable handling: cache MethodInfos or compiled delegates for `GetAwaiter`/`OnCompleted`/`GetResult`.
 - Consider replacing low-level `READ-FILE-BYTES` / `WRITE-FILE-BYTES` tests with higher-level `READ-FILE` / `WRITE-FILE` usage if ANS compliance is the goal.
@@ -64,9 +63,8 @@ Repository tasks (current)
 - [ ] Implement block system words: `BLOCK`, `LOAD`, `SAVE`, `BLK`
 - [x] Decide and normalize truth values across primitives (true = -1)
 - [x] Implement `READ-LINE`, `SOURCE`, `>IN`
+- [x] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` (now uses Wordlist objects)
 - [x] Improve `AWAIT`/`TASK?` robustness (ValueTask / awaitable handling)
-- [ ] Implement `WORDLIST`, `DEFINITIONS`, `FORTH`
-- [ ] Implement `SOURCE`, `>IN` (already implemented; consider full c-addr model)
 - [ ] Add ANS conformity run to CI (ans-diff) and fail on unexpected regressions
 - [ ] Add/verify `D+`, `D-`, `M*` if double-cell arithmetic is required
 
@@ -77,10 +75,10 @@ Recent activity (2025-11-20)
 - File I/O primitives and byte-level tests implemented and covered by unit tests.
 - Implemented `SOURCE`, `>IN`, and `READ-LINE` primitives (simplified model) and added tests covering behavior.
 - Hardened awaitable support: added `AwaitableHelper`, extended `AWAIT`/`TASK?` to handle `GetAwaiter()`-pattern awaitables, and added tests `CustomAwaitableTests` and `AwaitableRobustnessTests`.
-- Full test suite passes locally (202/202).
+- Implemented `WORDLIST`/`DEFINITIONS`/`FORTH` with proper `Wordlist` objects and tests.
+- Full test suite passes locally (203/203).
 
 If you want, I can:
-- Implement `WORDLIST` / `DEFINITIONS` / `FORTH` exposure.
 - Implement a block-system (BLOCK/BLK/SAVE) with tests.
 - Further optimize awaitable handling (delegate caching, reduce reflection overhead).
 - Add CI workflow to run `tools/ans-diff` and upload `report.md`.

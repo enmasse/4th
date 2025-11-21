@@ -10,6 +10,59 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
+    // Minimal Wordlist representation for DEFINITIONS/WORDLIST behavior
+    private sealed class Wordlist
+    {
+        public string Name { get; }
+        public Wordlist(string name) => Name = name;
+        public override string ToString() => Name;
+    }
+
+    private static int _vocabCounter = 0;
+
+    [Primitive("WORDLIST", HelpString = "WORDLIST ( -- wid ) - create a new wordlist id and push it")]
+    private static Task Prim_WORDLIST(ForthInterpreter i)
+    {
+        var id = $"VOCAB{System.Threading.Interlocked.Increment(ref _vocabCounter)}";
+        var wl = new Wordlist(id);
+        // Push the Wordlist instance
+        i.Push(wl);
+        // Also create a named word that pushes this instance when executed so ' VOCABn resolves
+        var created = new Word(ii => { ii.Push(wl); return Task.CompletedTask; }) { Name = id, Module = i._currentModule };
+        i._dict = i._dict.SetItem((i._currentModule, id), created);
+        i.RegisterDefinition(id);
+        i._lastDefinedWord = created;
+        return Task.CompletedTask;
+    }
+
+    [Primitive("DEFINITIONS", IsImmediate = true, HelpString = "DEFINITIONS ( wid -- ) - set current compilation wordlist")]
+    private static Task Prim_DEFINITIONS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "DEFINITIONS");
+        var obj = i.PopInternal();
+        string? s = null;
+        if (obj is string ss) s = ss.Trim();
+        else if (obj is Word w && !string.IsNullOrEmpty(w.Name)) s = w.Name.Trim();
+        else if (obj is Wordlist wl) s = wl.Name;
+
+        if (s is not null)
+        {
+            if (string.Equals(s, "FORTH", StringComparison.OrdinalIgnoreCase))
+                i._currentModule = null;
+            else
+                i._currentModule = s;
+            return Task.CompletedTask;
+        }
+        throw new ForthException(ForthErrorCode.TypeError, "DEFINITIONS expects a wordlist id (string, Word, or Wordlist)");
+    }
+
+    [Primitive("FORTH", HelpString = "FORTH ( -- wid ) - push the FORTH sentinel for core dictionary")]
+    private static Task Prim_FORTH(ForthInterpreter i)
+    {
+        i.Push("FORTH");
+        return Task.CompletedTask;
+    }
+
     [Primitive("MODULE", IsImmediate = true, HelpString = "MODULE <name> - start a module namespace")]
     private static Task Prim_MODULE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after MODULE"); i._currentModule = name; if (string.IsNullOrWhiteSpace(i._currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name"); return Task.CompletedTask; }
 
