@@ -70,6 +70,7 @@ public partial class ForthInterpreter
     internal ForthInterpreter(MarkerSnapshot snapshot, IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
+        // Allocate system variables in same order as main ctor
         _stateAddr = _nextAddr++;
         _mem[_stateAddr] = 0;
         long baseValue = 10;
@@ -77,6 +78,12 @@ public partial class ForthInterpreter
             baseValue = snapBase;
         _baseAddr = _nextAddr++;
         _mem[_baseAddr] = baseValue;
+        // allocate SOURCE and >IN cells to keep address layout consistent
+        _sourceAddr = _nextAddr++;
+        _mem[_sourceAddr] = 0;
+        _inAddr = _nextAddr++;
+        _mem[_inAddr] = 0;
+
         _dict = snapshot.Dict;
         _loadPrelude = Task.CompletedTask;
         _usingModules.AddRange(snapshot.UsingModules);

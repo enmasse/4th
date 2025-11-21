@@ -92,4 +92,19 @@ public class MemoryAndStringTests
         Assert.Equal("HELLO", io.Outputs[0]);
         Assert.Empty(forth.Stack); // TYPE should consume the string
     }
+
+    /// <summary>
+    /// Intention: Confirm CREATE, ALLOT, !, and @ work for defining and using variables.
+    /// Expected: Sequence builds a variable in memory, stores 123, and retrieves it correctly.
+    /// </summary>
+    [Fact]
+    public async Task CreateAllot_CellStoreFetch()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("CREATE BUF 16 ALLOT"));
+        Assert.True(await forth.EvalAsync("123 BUF !"));
+        Assert.True(await forth.EvalAsync("BUF @"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(123L, (long)forth.Stack[0]);
+    }
 }

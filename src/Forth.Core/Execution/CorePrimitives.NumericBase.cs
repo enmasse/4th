@@ -7,16 +7,54 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive(">NUMBER", HelpString = ">NUMBER ( c-addr u start -- value remainder consumed ) - parse digits using current BASE")]
+    [Primitive(">NUMBER", HelpString = ">NUMBER ( string start consumed | counted-addr start consumed | addr u start consumed -- value remainder consumed ) parse digits using BASE")]
     private static Task Prim_GTN(ForthInterpreter i)
     {
-        i.EnsureStack(3, ">NUMBER");
-        var consumed = (int)ToLong(i.PopInternal());
-        var start = (int)ToLong(i.PopInternal());
-        var obj = i.PopInternal();
-        if (obj is not string s)
-            throw new ForthException(ForthErrorCode.TypeError, ">NUMBER expects a string and two integers");
-        int idx = Math.Clamp(start, 0, s.Length);
+        if (i.Stack.Count < 3)
+            throw new ForthException(ForthErrorCode.StackUnderflow, ">NUMBER requires at least three parameters");
+
+        string s;
+        int start;
+        int consumed;
+
+        // Detect addr u start consumed form: need 4 numeric values
+        bool formAddrU = i.Stack.Count >= 4 && IsNum(i.Stack[^1]) && IsNum(i.Stack[^2]) && IsNum(i.Stack[^3]) && IsNum(i.Stack[^4]);
+        if (formAddrU)
+        {
+            consumed = (int)ToLong(i.PopInternal());
+            start = (int)ToLong(i.PopInternal());
+            long u = ToLong(i.PopInternal());
+            long addr = ToLong(i.PopInternal());
+            var sb = new System.Text.StringBuilder();
+            for (long k = 0; k < u; k++) { i.MemTryGet(addr + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
+            s = sb.ToString();
+        }
+        else
+        {
+            // Common forms: string start consumed OR counted-addr start consumed
+            consumed = (int)ToLong(i.PopInternal());
+            start = (int)ToLong(i.PopInternal());
+            var obj = i.PopInternal();
+            if (obj is string sObj)
+            {
+                s = sObj;
+            }
+            else if (IsNum(obj))
+            {
+                long addr = ToLong(obj);
+                i.MemTryGet(addr, out var lenCell);
+                long u = ToLong(lenCell);
+                var sb = new System.Text.StringBuilder();
+                for (long k = 0; k < u; k++) { i.MemTryGet(addr + 1 + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
+                s = sb.ToString();
+            }
+            else
+            {
+                throw new ForthException(ForthErrorCode.TypeError, ">NUMBER expects string, counted address or addr u start consumed");
+            }
+        }
+
+        int idx = System.Math.Clamp(start, 0, s.Length);
         while (idx < s.Length && char.IsWhiteSpace(s[idx])) idx++;
         i.MemTryGet(i.BaseAddr, out var baseVal);
         int b = baseVal <= 0 ? 10 : (int)baseVal;
@@ -41,6 +79,8 @@ internal static partial class CorePrimitives
         i.Push((long)(consumed + digits));
         return Task.CompletedTask;
     }
+
+    private static bool IsNum(object o) => o is long || o is int || o is short || o is byte;
 
     [Primitive("BASE", HelpString = "Push address of BASE variable")]
     private static Task Prim_BASE(ForthInterpreter i) { i.Push(i.BaseAddr); return Task.CompletedTask; }

@@ -26,7 +26,7 @@ jobs:
       - name: Run tests
         run: dotnet test Forth.sln --no-build --configuration Release --verbosity minimal
 
-      - name: Run ans-diff (produce report and fail on missing)
+      - name: Run ans-diff
         working-directory: tools/ans-diff
         shell: bash
         run: |

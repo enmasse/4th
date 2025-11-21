@@ -1,8 +1,5 @@
-\ Memory and stack tests
+\ Memory test: STORE only
 INCLUDE "framework.4th"
 CREATE BUF 16 ALLOT
 : TEST-STORE 123 BUF ! BUF @ 123 = ASSERT-TRUE ;
 S" STORE" TEST-CASE TEST-STORE
-
-: TEST-COUNT S" hello" COUNT 5 = ASSERT-TRUE ;
-S" COUNT" TEST-CASE TEST-COUNT

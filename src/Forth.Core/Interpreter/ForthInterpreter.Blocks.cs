@@ -54,6 +54,8 @@ namespace Forth.Core.Interpreter
         // Map block number -> reserved c-addr in interpreter memory
         internal readonly Dictionary<int, long> _blockAddrMap = new();
         internal readonly HashSet<int> _dirtyBlocks = new();
+        // Cached per-block accessors for MMF zero-copy access
+        internal readonly Dictionary<int, MemoryMappedViewAccessor> _mmfAccessors = new();
 
         // Per-block file mode
         internal string? _blockFileDir;
@@ -120,6 +122,19 @@ namespace Forth.Core.Interpreter
                 _usePerBlockFiles = false;
                 return;
             }
+ 
+            // Flush and dispose cached accessors
+            try
+            {
+                foreach (var acc in _mmfAccessors.Values) { try { acc?.Flush(); } catch { } }
+            }
+            catch { }
+            try
+            {
+                foreach (var acc in _mmfAccessors.Values) { try { acc?.Dispose(); } catch { } }
+            }
+            catch { }
+            _mmfAccessors.Clear();
 
             try
             {
@@ -157,6 +172,12 @@ namespace Forth.Core.Interpreter
 
             try
             {
+                foreach (var acc in _mmfAccessors.Values) { try { acc?.Flush(); } catch { } }
+            }
+            catch { }
+
+            try
+            {
                 if (_blockFileStream is not null)
                 {
                     lock (_blockFileStream)
@@ -168,6 +189,29 @@ namespace Forth.Core.Interpreter
             catch { }
         }
 
+        // Helper to obtain or create and cache an MMF accessor, disposing any previous accessor if replaced.
+        private MemoryMappedViewAccessor CreateOrGetAccessor(int n, MemoryMappedFileAccess access)
+        {
+            if (_mmfAccessors.TryGetValue(n, out var existing) && existing is not null)
+            {
+                return existing;
+            }
+
+            var mmfLocal = _mmf;
+            if (mmfLocal is null)
+            {
+                throw new ForthException(ForthErrorCode.CompileError, "MMF not available");
+            }
+
+            var acc = mmfLocal.CreateViewAccessor((long)n * BlockSize, BlockSize, access);
+            if (_mmfAccessors.TryGetValue(n, out var prev) && prev is not null)
+            {
+                try { prev.Dispose(); } catch { }
+            }
+            _mmfAccessors[n] = acc;
+            return acc;
+        }
+ 
         internal void EnsureBlockExistsOnDisk(int n)
         {
             if (_usePerBlockFiles)
@@ -321,9 +365,9 @@ namespace Forth.Core.Interpreter
         internal int BlockMappingCount => _blockAddrMap.Count;
 
         /// <summary>
-        /// Number of cached MMF accessors (no caching in this build).
+        /// Number of cached MMF accessors.
         /// </summary>
-        internal int MmfAccessorCount => 0;
+        internal int MmfAccessorCount => _mmfAccessors.Count;
 
         /// <summary>
         /// Current block file path if single-file mode is active, otherwise null.

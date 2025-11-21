@@ -10,13 +10,13 @@ internal static partial class CorePrimitives
     [Primitive("@", HelpString = "@ ( addr -- value ) - fetch cell at address")]
     private static Task Prim_At(ForthInterpreter i) { i.EnsureStack(1, "@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); return Task.CompletedTask; }
 
-    [Primitive("!", HelpString = "! ( value addr -- ) - store value at address")]
-    private static Task Prim_Bang(ForthInterpreter i) { i.EnsureStack(2, "!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); i.MemSet(addr, val); return Task.CompletedTask; }
+    [Primitive("!", HelpString = "! ( x addr -- ) - store x at address")]
+    private static Task Prim_Bang(ForthInterpreter i) { i.EnsureStack(2, "!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); i.MemSet(addr, val); i._lastStoreAddr = addr; i._lastStoreValue = val; return Task.CompletedTask; }
 
-    [Primitive("+!", HelpString = "+! ( add addr -- ) - add to memory cell at address")]
+    [Primitive("+!", HelpString = "+! ( x addr -- ) - add x to cell at addr")]
     private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); return Task.CompletedTask; }
 
-    [Primitive("C!", HelpString = "C! ( value addr -- ) - store low byte at address")]
+    [Primitive("C!", HelpString = "C! ( x addr -- ) - store low byte of x at addr")]
     private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }
 
     [Primitive("C@", HelpString = "C@ ( addr -- byte ) - fetch low byte at address")]
@@ -104,4 +104,33 @@ internal static partial class CorePrimitives
     // HERE: push the current dictionary allocation pointer (address of next free cell)
     [Primitive("HERE", HelpString = "HERE ( -- addr ) - push current dictionary allocation pointer")]
     private static Task Prim_HERE(ForthInterpreter i) { i.Push(i._nextAddr); return Task.CompletedTask; }
+
+    [Primitive("SOURCE", HelpString = "SOURCE ( -- addr u ) - return address and length of current input buffer")]
+    private static Task Prim_SOURCE(ForthInterpreter i)
+    {
+        var src = i.CurrentSource ?? string.Empty;
+        var addr = i._nextAddr;
+        for (int k = 0; k < src.Length; k++) i.MemSet(addr + k, src[k]);
+        i._nextAddr += src.Length;
+        i.Push(addr);
+        i.Push((long)src.Length);
+        return Task.CompletedTask;
+    }
+
+    [Primitive(">IN", HelpString = ">IN ( -- addr ) - address of >IN index cell")]
+    private static Task Prim_IN(ForthInterpreter i)
+    {
+        i.Push(i.InAddr);
+        return Task.CompletedTask;
+    }
+
+#if DEBUG
+        [Primitive("LAST-STORE", HelpString = "LAST-STORE ( -- addr val ) - diagnostics: last ! store")]
+        private static Task Prim_LAST_STORE(ForthInterpreter i)
+        {
+            i.Push(i._lastStoreAddr);
+            i.Push(i._lastStoreValue);
+            return Task.CompletedTask;
+        }
+#endif
 }

@@ -27,4 +27,10 @@
   <ItemGroup>
     <PackageReference Include="IDisposableAnalyzers" Version="4.0.8" PrivateAssets="all" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\4th.Tests.Generators\4th.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="..\tests\forth\*.4th" />
+  </ItemGroup>
 </Project>

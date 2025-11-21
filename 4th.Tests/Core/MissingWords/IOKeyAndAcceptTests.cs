@@ -70,28 +70,31 @@ public class IOKeyAndAcceptTests
     }
 
     [Fact]
-    public async Task Accept_ReturnsLineAndLength()
+    public async Task Accept_ReturnsLineLengthAndWritesBuffer()
     {
         var io = new TestIO(lines: new[] { "HELLO" });
         var forth = new ForthInterpreter(io);
-        // push dummy addr (0) and max length 10
-        Assert.True(await forth.EvalAsync("0 10 ACCEPT"));
+        Assert.True(await forth.EvalAsync("CREATE B 16 ALLOT"));
+        Assert.True(await forth.EvalAsync("B 10 ACCEPT"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(5L, (long)forth.Stack[0]);
+        // Verify memory first char
+        Assert.True(await forth.EvalAsync("B C@"));
         Assert.Equal(2, forth.Stack.Count);
-        Assert.IsType<string>(forth.Stack[0]);
-        Assert.Equal("HELLO", (string)forth.Stack[0]);
-        Assert.Equal(5L, (long)forth.Stack[1]);
+        Assert.Equal((long)'H', (long)forth.Stack[1]);
     }
 
     [Fact]
-    public async Task Expect_ReturnsLineAndLength()
+    public async Task Expect_ReturnsLineLengthAndWritesBuffer()
     {
         var io = new TestIO(lines: new[] { "WORLD" });
         var forth = new ForthInterpreter(io);
-        // push dummy addr (0) and max length 10
-        Assert.True(await forth.EvalAsync("0 10 EXPECT"));
+        Assert.True(await forth.EvalAsync("CREATE B 16 ALLOT"));
+        Assert.True(await forth.EvalAsync("B 10 EXPECT"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(5L, (long)forth.Stack[0]);
+        Assert.True(await forth.EvalAsync("B 1 + C@"));
         Assert.Equal(2, forth.Stack.Count);
-        Assert.IsType<string>(forth.Stack[0]);
-        Assert.Equal("WORLD", (string)forth.Stack[0]);
-        Assert.Equal(5L, (long)forth.Stack[1]);
+        Assert.Equal((long)'O', (long)forth.Stack[1]);
     }
 }

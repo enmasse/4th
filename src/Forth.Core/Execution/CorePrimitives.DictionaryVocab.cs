@@ -158,17 +158,26 @@ internal static partial class CorePrimitives
     [Primitive("CHAR", IsImmediate = true, HelpString = "CHAR <c> - push character code for character literal")]
     private static Task Prim_CHAR(ForthInterpreter i) { var s = i.ReadNextTokenOrThrow("Expected char after CHAR"); if (!i._isCompiling) i.Push(s.Length > 0 ? (long)s[0] : 0L); else i.CurrentList().Add(ii => { ii.Push(s.Length > 0 ? (long)s[0] : 0L); return Task.CompletedTask; }); return Task.CompletedTask; }
 
-    [Primitive("S\"", IsImmediate = true, HelpString = "S\" <text> - push counted string literal (c-addr u)")]
+    [Primitive("S\"", IsImmediate = true, HelpString = "S\" <text> - ANS counted string literal ( -- c-addr ) where c-addr points to length cell")]
     private static Task Prim_SQUOTE(ForthInterpreter i)
     {
         var next = i.ReadNextTokenOrThrow("Expected text after S\"");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
+        // Allocate length cell followed by characters
+        var addr = i._nextAddr; // length cell
+        i._mem[addr] = str.Length; // store length
+        for (int idx = 0; idx < str.Length; idx++)
+            i._mem[addr + 1 + idx] = (long)str[idx];
+        i._nextAddr = addr + 1 + str.Length;
         if (!i._isCompiling)
-            i.Push(str);
+            i.Push(addr); // counted string address
         else
-            i.CurrentList().Add(ii => { ii.Push(str); return Task.CompletedTask; });
+        {
+            var capturedAddr = addr;
+            i.CurrentList().Add(ii => { ii.Push(capturedAddr); return Task.CompletedTask; });
+        }
         return Task.CompletedTask;
     }
 

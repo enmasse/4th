@@ -66,6 +66,10 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     internal List<string>? _tokens; // internal current token stream
     internal int _tokenIndex;       // internal current token index
 
+    // Diagnostics for cell stores (debug)
+    internal long _lastStoreAddr;
+    internal long _lastStoreValue;
+
     // definition order tracking for classic FORGET
     private readonly List<DefinitionRecord> _definitions = new();
     private int _baselineCount; // protect core/compiler words

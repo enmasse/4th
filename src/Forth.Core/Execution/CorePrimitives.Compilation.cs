@@ -108,7 +108,7 @@ internal static partial class CorePrimitives
         var elsePart = ifr.ElsePart;
         i.CurrentList().Add(async ii =>
         {
-            i.EnsureStack(1, "IF");
+            ii.EnsureStack(1, "IF");
             var flag = ii.PopInternal();
             if (ToBool(flag))
                 foreach (var a in thenPart)
@@ -150,7 +150,7 @@ internal static partial class CorePrimitives
             {
                 foreach (var a in pre)
                     await a(ii);
-                i.EnsureStack(1, "WHILE");
+                ii.EnsureStack(1, "WHILE");
                 var flag = ii.PopInternal();
                 if (!ToBool(flag))
                     break;
@@ -176,7 +176,7 @@ internal static partial class CorePrimitives
             {
                 foreach (var a in body)
                     await a(ii);
-                i.EnsureStack(1, "UNTIL");
+                ii.EnsureStack(1, "UNTIL");
                 var flag = ii.PopInternal();
                 if (ToBool(flag))
                     break;
@@ -199,7 +199,7 @@ internal static partial class CorePrimitives
         var body = df.Body;
         i.CurrentList().Add(async ii =>
         {
-            i.EnsureStack(2, "DO");
+            ii.EnsureStack(2, "DO");
             var start = ToLong(ii.PopInternal());
             var limit = ToLong(ii.PopInternal());
             long step = start <= limit ? 1L : -1L;

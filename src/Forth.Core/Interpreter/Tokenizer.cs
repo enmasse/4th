@@ -3,19 +3,8 @@ using System.Collections.Generic;
 
 namespace Forth.Core.Interpreter;
 
-/// <summary>
-/// Tokenizes a single line of Forth source into whitespace-delimited tokens, supporting
-/// inline comments with "( ... )" and line comments starting with backslash ("\\").
-/// Also supports quoted string tokens using double quotes ("...").
-/// </summary>
 public static class Tokenizer
 {
-    /// <summary>
-    /// Split input into tokens. Semicolons are returned as standalone tokens to simplify
-    /// end-of-definition handling.
-    /// </summary>
-    /// <param name="input">A single line of Forth source (no trailing newline required).</param>
-    /// <returns>List of token strings in order (may be empty).</returns>
     public static List<string> Tokenize(string input)
     {
         var list = new List<string>();
@@ -46,7 +35,31 @@ public static class Tokenizer
                 continue;
             }
 
-            // Recognize the idiomatic Forth compound token ['] and emit it as one token
+            // Handle S" ..." string literal: emit S" then a quoted token with content up to next '"'
+            if (c == 'S' && i + 1 < input.Length && input[i + 1] == '"')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                list.Add("S\"");
+                i += 2; // move past S"
+                // Skip at most one leading space (but preserve newlines or tabs) per Forth convention
+                if (i < input.Length && input[i] == ' ') i++;
+                var lit = new List<char>();
+                while (i < input.Length && input[i] != '"')
+                {
+                    lit.Add(input[i]);
+                    i++;
+                }
+                if (i >= input.Length)
+                    throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, "S\" missing closing quote");
+                var token = '"' + new string(lit.ToArray()) + '"';
+                list.Add(token);
+                continue;
+            }
+
             if (c == '[' && i + 2 < input.Length && input[i + 1] == '\'' && input[i + 2] == ']')
             {
                 if (current.Count > 0)
@@ -55,11 +68,10 @@ public static class Tokenizer
                     current.Clear();
                 }
                 list.Add("[']");
-                i += 2; // advance past the three characters
+                i += 2;
                 continue;
             }
 
-            // Special-case ." as a single token
             if (c == '.' && i + 1 < input.Length && input[i + 1] == '"')
             {
                 if (current.Count > 0)
@@ -68,8 +80,7 @@ public static class Tokenizer
                     current.Clear();
                 }
                 list.Add(".\"");
-                i++; // skip the opening '"'
-                // enter string mode but skip any whitespace immediately after the quote
+                i++; // skip opening '"'
                 while (i + 1 < input.Length && char.IsWhiteSpace(input[i + 1])) i++;
                 inString = true;
                 current.Add('"');
@@ -112,7 +123,6 @@ public static class Tokenizer
                 continue;
             }
 
-            // Treat single-character special tokens as standalone tokens so sequences like ['] (when not together) still work
             if (c == '[' || c == ']' || c == '\'')
             {
                 if (current.Count > 0)
