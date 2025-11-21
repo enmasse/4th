@@ -26,9 +26,17 @@ jobs:
       - name: Run tests
         run: dotnet test Forth.sln --no-build --configuration Release --verbosity minimal
 
-      - name: Run ans-diff
+      - name: Run ans-diff (produce report and fail on missing)
         working-directory: tools/ans-diff
-        run: dotnet run --project . --configuration Release > report.md 2>&1
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet run --project . --configuration Release 2>&1 | tee report.md
+          rc=${PIPESTATUS[0]}
+          if [ $rc -ne 0 ]; then
+            echo "ans-diff reported missing ANS words; failing CI"
+            exit $rc
+          fi
 
       - name: Upload ans-diff report
         if: always()
