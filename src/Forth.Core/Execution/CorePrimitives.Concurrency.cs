@@ -12,25 +12,34 @@ internal static partial class CorePrimitives
         i.EnsureStack(1, "TASK?");
         var obj = i.PopInternal();
         Task? t = null;
+
         if (obj is Task tt) t = tt;
         else if (obj is ValueTask vt) t = vt.AsTask();
-        else
+        else if (AwaitableHelper.IsAwaitable(obj))
         {
+            // If it's a pattern-based awaitable that can report completion quickly, use helper
+            if (AwaitableHelper.IsCompletedAwaitable(obj))
+            {
+                i.Push(-1L);
+                return Task.CompletedTask;
+            }
+
+            // Try ValueTask<T>.AsTask() via reflection when available
             var ot = obj?.GetType();
             if (ot is not null && ot.IsGenericType && ot.GetGenericTypeDefinition() == typeof(ValueTask<>))
             {
                 var asTask = ot.GetMethod("AsTask", BindingFlags.Public | BindingFlags.Instance);
-                if (asTask != null)
-                    t = asTask.Invoke(obj, null) as Task;
-            }
-            else
-            {
-                // pattern-based awaitable: treat as awaitable if has GetAwaiter
-                if (obj is not null && obj.GetType().GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance) is not null)
+                if (asTask is not null)
                 {
-                    var completed = AwaitableHelper.IsCompletedAwaitable(obj);
-                    i.Push(completed ? -1L : 0L);
-                    return Task.CompletedTask;
+                    try
+                    {
+                        var invoked = asTask.Invoke(obj, null) as Task;
+                        if (invoked is not null) t = invoked;
+                    }
+                    catch
+                    {
+                        // ignore reflection failures and treat as not completed
+                    }
                 }
             }
         }
@@ -149,7 +158,8 @@ internal static partial class CorePrimitives
         }
 
         // Pattern-based awaitable: has GetAwaiter()
-        if (obj.GetType().GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance) is not null)
+        var getAwaiterMethod = obj?.GetType().GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance);
+        if (getAwaiterMethod is not null)
         {
             var (isFaulted, result) = await AwaitableHelper.AwaitAndUnwrap(obj).ConfigureAwait(false);
             if (isFaulted)

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Forth.Core.Interpreter
 {
-    public partial class ForthInterpreter
-    {
+     public partial class ForthInterpreter
+     {
         // Block device simulation
         internal readonly Dictionary<int, string> _blocks = new();
         internal int _currentBlock = 0;
@@ -46,7 +46,9 @@ namespace Forth.Core.Interpreter
 
         // Block-file backing (optional persistent storage)
         internal string? _blockFilePath;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("IDisposableAnalyzers", "IDISP008:Don't assign member with injected and created disposables", Justification = "FileStream/MemoryMappedFile ownership is managed explicitly by OpenBlockFile/CloseBlockFile.")]
         internal FileStream? _blockFileStream;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("IDisposableAnalyzers", "IDISP008:Don't assign member with injected and created disposables", Justification = "FileStream/MemoryMappedFile ownership is managed explicitly by OpenBlockFile/CloseBlockFile.")]
         internal MemoryMappedFile? _mmf;
         internal bool _useMmf = false;
         // Map block number -> reserved c-addr in interpreter memory
@@ -63,6 +65,9 @@ namespace Forth.Core.Interpreter
         /// </summary>
         internal void OpenBlockFile(string path, bool perBlock = false)
         {
+            // Dispose previous backing if present to avoid leaking resources
+            CloseBlockFile();
+
             // If perBlock is requested and path is a directory or ends with path separator, use directory mode
             _usePerBlockFiles = perBlock || Directory.Exists(path) || path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar);
             if (_usePerBlockFiles)
@@ -71,28 +76,40 @@ namespace Forth.Core.Interpreter
                 Directory.CreateDirectory(_blockFileDir);
                 // disable mmf/single file mode
                 _blockFilePath = null;
+                // ensure any previous disposables were cleaned to satisfy analyzers
+                try { _blockFileStream?.Dispose(); } catch { }
                 _blockFileStream = null;
+                try { _mmf?.Dispose(); } catch { }
                 _mmf = null;
                 _useMmf = false;
                 return;
             }
-
+ 
             // Existing behavior for single-file backing
             _blockFilePath = Path.GetFullPath(path);
             var dir = Path.GetDirectoryName(_blockFilePath) ?? ".";
             Directory.CreateDirectory(dir);
-            _blockFileStream = new FileStream(_blockFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+            // Try to create MMF from path first (preferred). If not available, fall back to FileStream.
             try
             {
-                _mmf = MemoryMappedFile.CreateFromFile(_blockFileStream, null, 0, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: true);
+                // Dispose any previous before creating new
+                try { _mmf?.Dispose(); } catch { }
+                try { _blockFileStream?.Dispose(); } catch { }
+
+                _mmf = MemoryMappedFile.CreateFromFile(_blockFilePath, FileMode.OpenOrCreate, null, 0, MemoryMappedFileAccess.ReadWrite);
                 _useMmf = true;
+                _blockFileStream = null;
             }
             catch
             {
+                // Fall back to stream-only mode
+                try { _mmf?.Dispose(); } catch { }
                 _mmf = null;
                 _useMmf = false;
+                try { _blockFileStream?.Dispose(); } catch { }
+                _blockFileStream = new FileStream(_blockFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             }
-        }
+         }
 
         internal void CloseBlockFile()
         {
@@ -103,19 +120,6 @@ namespace Forth.Core.Interpreter
                 _usePerBlockFiles = false;
                 return;
             }
-
-            // Flush and dispose mmf then close filestream (existing behavior)
-            try
-            {
-                foreach (var acc in _mmfAccessors.Values) acc?.Flush();
-            }
-            catch { }
-            try
-            {
-                foreach (var acc in _mmfAccessors.Values) acc?.Dispose();
-            }
-            catch { }
-            _mmfAccessors.Clear();
 
             try
             {
@@ -131,13 +135,37 @@ namespace Forth.Core.Interpreter
                 if (_blockFileStream is not null)
                 {
                     _blockFileStream.Flush(true);
-                    _blockFileStream.Close();
+                    _blockFileStream.Dispose();
                     _blockFileStream = null;
                 }
             }
             catch { }
             _useMmf = false;
             _blockFilePath = null;
+        }
+
+        /// <summary>
+        /// Flush cached accessors and underlying file stream without closing the block file.
+        /// </summary>
+        internal void FlushBlockFile()
+        {
+            if (_usePerBlockFiles)
+            {
+                // Per-block files are written per-save; nothing to flush at single point.
+                return;
+            }
+
+            try
+            {
+                if (_blockFileStream is not null)
+                {
+                    lock (_blockFileStream)
+                    {
+                        _blockFileStream.Flush(true);
+                    }
+                }
+            }
+            catch { }
         }
 
         internal void EnsureBlockExistsOnDisk(int n)
@@ -229,6 +257,8 @@ namespace Forth.Core.Interpreter
             }
         }
 
+        internal void SaveBlockToBacking_Suppressor(int n, long addr, int u) => SaveBlockToBacking(n, addr, u);
+
         internal void SaveBlockToBacking(int n, long addr, int u)
         {
             if (_usePerBlockFiles)
@@ -263,15 +293,15 @@ namespace Forth.Core.Interpreter
             var bufferFull = new byte[BlockSize];
             for (int k = 0; k < BlockSize; k++) { MemTryGet(addr + k, out var v); bufferFull[k] = (byte)(v & 0xFF); }
 
-            if (_useMmf && _mmf is not null)
+            if (_useMmf)
             {
-                if (!_mmfAccessors.TryGetValue(n, out var acc) || acc is null)
+                var mmfLocal = _mmf;
+                if (mmfLocal is not null)
                 {
-                    acc = _mmf.CreateViewAccessor((long)n * BlockSize, BlockSize, MemoryMappedFileAccess.ReadWrite);
-                    _mmfAccessors[n] = acc;
+                    using var acc = mmfLocal.CreateViewAccessor((long)n * BlockSize, BlockSize, MemoryMappedFileAccess.ReadWrite);
+                    acc.WriteArray(0, bufferFull, 0, BlockSize);
+                    acc.Flush();
                 }
-                acc.WriteArray(0, bufferFull, 0, BlockSize);
-                acc.Flush();
             }
             else
             {
@@ -285,11 +315,28 @@ namespace Forth.Core.Interpreter
             _dirtyBlocks.Remove(n);
         }
 
-        // Cached per-block accessors for MMF zero-copy access
-        internal readonly Dictionary<int, MemoryMappedViewAccessor> _mmfAccessors = new();
+        /// <summary>
+        /// Number of currently mapped block address mappings.
+        /// </summary>
+        internal int BlockMappingCount => _blockAddrMap.Count;
+
+        /// <summary>
+        /// Number of cached MMF accessors (no caching in this build).
+        /// </summary>
+        internal int MmfAccessorCount => 0;
+
+        /// <summary>
+        /// Current block file path if single-file mode is active, otherwise null.
+        /// </summary>
+        internal string? BlockFilePath => _blockFilePath;
+
+        /// <summary>
+        /// Current block file directory if per-block mode is active, otherwise null.
+        /// </summary>
+        internal string? BlockFileDir => _blockFileDir;
 
         // LRU tracking for cached block-address / accessor entries to limit growth
-        private const int MaxCachedBlocks = 64; // configurable cap for cached blocks
+        // private const int MaxCachedBlocks = 64; // configurable cap for cached blocks
         private readonly LinkedList<int> _blockLru = new(); // most-recent-first
         private readonly Dictionary<int, LinkedListNode<int>> _blockLruNodes = new();
 
@@ -311,26 +358,27 @@ namespace Forth.Core.Interpreter
             block = -1; offset = -1; return false;
         }
 
+        internal void MemSet_Suppressor(long addr, long v) => MemSet(addr, v);
+
         internal void MemSet(long addr,long v)
-        {
+         {
             // If using MMF and address belongs to a mapped block, write through accessor (zero-copy semantics)
             if (_useMmf && TryGetBlockForAddr(addr, out var blk, out var off))
             {
                 try
                 {
-                    if (!_mmfAccessors.TryGetValue(blk, out var acc) || acc is null)
+                    var mmfLocal = _mmf;
+                    if (mmfLocal is not null)
                     {
-                        // Create and cache accessor for this block
-                        acc = _mmf!.CreateViewAccessor((long)blk * BlockSize, BlockSize, MemoryMappedFileAccess.ReadWrite);
-                        _mmfAccessors[blk] = acc;
+                        using var acc = mmfLocal.CreateViewAccessor((long)blk * BlockSize, BlockSize, MemoryMappedFileAccess.ReadWrite);
+                        acc.Write(off, (byte)(v & 0xFF));
+                        // mark dirty for explicit flush if needed
+                        _dirtyBlocks.Add(blk);
+                        // track usage
+                        MarkBlockUsed(blk);
+                        EnforceBlockCacheLimit();
+                        return;
                     }
-                    acc.Write(off, (byte)(v & 0xFF));
-                    // mark dirty for explicit flush if needed
-                    _dirtyBlocks.Add(blk);
-                    // track usage
-                    MarkBlockUsed(blk);
-                    EnforceBlockCacheLimit();
-                    return;
                 }
                 catch
                 {
@@ -342,23 +390,25 @@ namespace Forth.Core.Interpreter
             _mem[addr] = v;
         }
 
+        internal void MemTryGet_Suppressor(long addr, out long v) { MemTryGet(addr, out v); }
+
         internal void MemTryGet(long addr, out long v)
-        {
+         {
             // If using MMF and address belongs to a mapped block, read from accessor
             if (_useMmf && TryGetBlockForAddr(addr, out var blk, out var off))
             {
                 try
                 {
-                    if (!_mmfAccessors.TryGetValue(blk, out var acc) || acc is null)
+                    var mmfLocal = _mmf;
+                    if (mmfLocal is not null)
                     {
-                        acc = _mmf!.CreateViewAccessor((long)blk * BlockSize, BlockSize, MemoryMappedFileAccess.Read);
-                        _mmfAccessors[blk] = acc;
+                        using var acc = mmfLocal.CreateViewAccessor((long)blk * BlockSize, BlockSize, MemoryMappedFileAccess.Read);
+                         v = (long)acc.ReadByte(off);
+                         // track usage
+                         MarkBlockUsed(blk);
+                         EnforceBlockCacheLimit();
+                         return;
                     }
-                    v = (long)acc.ReadByte(off);
-                    // track usage
-                    MarkBlockUsed(blk);
-                    EnforceBlockCacheLimit();
-                    return;
                 }
                 catch
                 {
@@ -404,7 +454,7 @@ namespace Forth.Core.Interpreter
 
         private void EnforceBlockCacheLimit()
         {
-            while (_blockLru.Count > MaxCachedBlocks)
+            while (_blockLru.Count > _maxCachedBlocks)
             {
                 var last = _blockLru.Last!;
                 var evict = last.Value;
@@ -431,14 +481,6 @@ namespace Forth.Core.Interpreter
                 SaveBlockToBacking(n, addr, BlockSize);
             }
             catch { }
-
-            // Dispose and remove any MMF accessor
-            if (_mmfAccessors.TryGetValue(n, out var acc) && acc is not null)
-            {
-                try { acc.Flush(); } catch { }
-                try { acc.Dispose(); } catch { }
-                _mmfAccessors.Remove(n);
-            }
 
             // Clear dirty marker
             _dirtyBlocks.Remove(n);

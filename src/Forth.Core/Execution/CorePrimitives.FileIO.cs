@@ -336,4 +336,18 @@ internal static partial class CorePrimitives
         i.OpenBlockFile(path, perBlock: true);
         return Task.CompletedTask;
     }
+
+    [Primitive("FLUSH-BLOCK-FILE", HelpString = "FLUSH-BLOCK-FILE - flush cached MMF accessors and file stream to disk")]
+    private static Task Prim_FLUSHBLOCKFILE(ForthInterpreter i)
+    {
+        i.FlushBlockFile();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CLOSE-BLOCK-FILE", HelpString = "CLOSE-BLOCK-FILE - close any open block-file backing store and dispose accessors")]
+    private static Task Prim_CLOSEBLOCKFILE(ForthInterpreter i)
+    {
+        i.CloseBlockFile();
+        return Task.CompletedTask;
+    }
 }

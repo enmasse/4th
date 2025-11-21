@@ -71,6 +71,9 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     private int _baselineCount; // protect core/compiler words
     private readonly Task _loadPrelude;
 
+    // LRU cache size configuration (new)
+    private readonly int _maxCachedBlocks;
+
     private readonly struct DefinitionRecord
     {
         public readonly string Name;
@@ -84,6 +87,12 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
 
     internal void RegisterDefinition(string name) =>
         _definitions.Add(new DefinitionRecord(name, _currentModule));
+
+    // Expose configured LRU block cache size for tests and callers
+    /// <summary>
+    /// The configured maximum number of cached block mappings/accessors in the interpreter's LRU.
+    /// </summary>
+    public int BlockCacheSize => _maxCachedBlocks;
 
     internal bool TryReadNextToken(out string token)
     {
@@ -200,7 +209,8 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     /// Create a new interpreter instance.
     /// </summary>
     /// <param name="io">Optional IO implementation to use for input/output. If null, a console IO is used.</param>
-    public ForthInterpreter(IForthIO? io = null)
+    /// <param name="blockCacheSize">Optional LRU block cache size (defaults to existing MaxCachedBlocks constant if not provided).</param>
+    public ForthInterpreter(IForthIO? io = null, int? blockCacheSize = null)
     {
         _io = io ?? new ConsoleForthIO();
 
@@ -222,6 +232,9 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
         // No per-module lazy dictionaries anymore; use tuple-keyed _dict directly
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions
+
+        // Configure LRU cache size
+        _maxCachedBlocks = blockCacheSize ?? 64;
 
         // Ensure basic block helper words are present in the dictionary (workaround for generator edge cases)
         if (!_dict.ContainsKey((null, "BLK")))

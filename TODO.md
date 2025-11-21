@@ -23,14 +23,13 @@ Status — implemented / obvious support (non-exhaustive)
 - Wordlist/search-order: `GET-ORDER`, `SET-ORDER` (implemented)
 - Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE` (implemented; simplified semantics for buffer addressing)
 - Extended arithmetic
-  - `*/MOD` implemented in core using BigInteger to avoid overflow
+  - `*/MOD: ( n1 n2 n3 -- rem quot )` implemented in core and `*/MOD` used in prelude
 
 Notes from code inspection
-- `GET-ORDER`/`SET-ORDER` use internal `GetOrder`/`SetOrder` helpers and expose `FORTH` as `null` in the list.
-- `ACCEPT`/`EXPECT` currently return a string and length (simplified; do not operate on raw c-addr memory in a true ANS manner). `READ-LINE` implemented as a simplified ANS-compatible primitive
-- `AWAIT`/`TASK?` now include explicit support for pattern-based awaitables that expose `GetAwaiter()` in addition to `Task`/`Task<T>` and `ValueTask`/`ValueTask<T>`. A helper `AwaitableHelper` handles detection, synchronous completion, and registering continuations via `OnCompleted`/`UnsafeOnCompleted`.
-- `READ-FILE-BYTES` / `WRITE-FILE-BYTES` provide low-level memory IO used by tests; they may be candidates for replacement with strictly ANS semantics.
-- Pictured numeric / prelude words (e.g., `TRUE`, `FALSE`, `*/MOD` definition in `prelude.4th`) are present and tested.
+- `GET-ORDER`/`SET-ORDER` use internal helpers and expose `FORTH` as `null` in the list.
+- `ACCEPT`/`EXPECT` currently return a string and length (simplified; do not operate on raw c-addr memory in a true ANS manner).
+- `AWAIT`/`TASK?` include explicit support for pattern-based awaitables that expose `GetAwaiter()` in addition to `Task`/`Task<T>` and `ValueTask`/`ValueTask<T>`. A helper `AwaitableHelper` handles detection, synchronous completion, and registering continuations.
+- File/Block backing uses a memory-mapped-file path-based creation with a fallback to FileStream.
 
 Progress / Repository tasks (current)
 - [x] Create `tools/ans-diff` script to collect `Primitive` names and compare against ANS list
@@ -38,37 +37,43 @@ Progress / Repository tasks (current)
 - [x] Implement baseline file stream words: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
 - [x] Implement byte-oriented handle words: `READ-FILE-BYTES`, `WRITE-FILE-BYTES`
 - [x] Gate diagnostics primitives behind DEBUG (`LAST-WRITE-BYTES`, `LAST-READ-BYTES`)
-- [x] Implement block system words: `BLOCK`, `SAVE`, `BLK` (per-block files with atomic replace) — `LOAD` runtime loader present
+- [x] Implement block system words: `BLOCK`, `SAVE`, `BLK` (per-block files with atomic replace)
 - [x] Decide and normalize truth values across primitives (true = -1)
 - [x] Implement `READ-LINE`, `SOURCE`, `>IN`
 - [x] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` with Wordlist objects
 - [x] Improve `AWAIT`/`TASK?` robustness (ValueTask / awaitable handling)
 - [x] Add `D+`, `D-`, `M*` primitives and tests
-- [x] Add `BLK` primitive and support for ' pushing undefined names (assist WORDLIST usage)
+- [x] Add `BLK` primitive and support for ' pushing unresolved names in tokenizer/Prim_Tick (assist WORDLIST usage)
 - [x] Update `tools/ans-diff` to write report file and fail on missing words (non-zero exit)
 - [x] Update CI workflow to run `tools/ans-diff`, capture report, and upload artifact
-
 - [x] Split `ForthInterpreter` block system into a partial file (`ForthInterpreter.Blocks.cs`) to reduce file size and isolate block logic
-- [x] Implement LRU eviction for block address/accessor cache to limit address-space growth
+- [x] Implement LRU eviction for block address/accessor cache and add corresponding unit tests
 - [x] Add unit tests for LRU eviction and per-block backing behavior (`4th.Tests/Core/MissingWords/BlockLRUTests.cs`)
+- [x] Install `IDisposableAnalyzers` and fix/quiet disposal warnings
+- [x] Resolve nullable warnings reported during builds
+- [x] Run full test suite locally and on CI; all tests pass (216/216)
+- [x] Run `tools/ans-diff` and update `tools/ans-diff/report.md`
 
+Remaining / next work items
 - [ ] Add LRU cache size configuration (constructor param or interpreter setting)
-- [ ] Consider tightening ACCEPT/EXPECT/READ-LINE semantics to match full c-addr/u behavior
-- [ ] Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add lifecycle tests
-- [ ] Consider replacing low-level `READ-FILE-BYTES` / `WRITE-FILE-BYTES` tests with higher-level `READ-FILE` / `WRITE-FILE` usage if ANS compliance is the goal
-- [ ] Add a CI job to fail the build when `tools/ans-diff` reports missing words (currently it is run and the report is uploaded; it already returns non-zero on missing words).
+- [ ] Consider tightening `ACCEPT`/`EXPECT`/`READ-LINE` semantics to match full c-addr/u ANS behavior (allocate/populate interpreter memory instead of returning strings)
+- [ ] Review MMF accessor caching vs per-call accessors for performance; if caching is needed, reintroduce with clear ownership and disposal semantics (and add tests)
+- [ ] Add a CI job to fail the build when `tools/ans-diff` reports missing words (currently report is uploaded; fail-on-missing is supported by the tool)
+- [ ] Audit and consolidate any remaining analyzer suppressions; prefer code changes to targeted suppressions where practical
 
-Recent activity (2025-11-21 -> 2025-11-25)
---------------------------------
-- Added double-cell arithmetic primitives `D+`, `D-`, and `M*` with unit tests (`DoubleCellArithmeticTests`).
-- Added `BLK` primitive and adjusted `Prim_Tick` to push raw name strings when unresolved to support `WORDLIST ' <name> DEFINITIONS` patterns in tests.
-- Updated `tools/ans-diff` to write `tools/ans-diff/report.md` directly and return non-zero when ANS words are missing; fixed invocation to avoid terminal hangs in CI.
-- Updated `.github/workflows/ci.yml` to run `tools/ans-diff` and upload the `report.md` artifact (guarded by `if: always()`).
-- Split interpreter block logic into a focused partial: `src/Forth.Core/Interpreter/ForthInterpreter.Blocks.cs` to isolate block and backing logic.
-- Implemented LRU eviction for block address/accessor cache and added corresponding unit tests (`4th.Tests/Core/MissingWords/BlockLRUTests.cs`).
-- All unit tests pass locally (214/214) after changes.
+Decisions made
+- Prefer creating MMF from path to avoid ambiguous ownership between a FileStream and the MMF object.
+- For correctness and to satisfy IDisposable analyzers, MMF accessors were converted to per-operation creation/disposal in the recent change; this simplified lifecycle and resolved analyzer warnings and tests pass. If profiling shows performance regressions, we will reintroduce a safe cache with explicit disposal logic.
+
+Recent activity (most recent first)
+- 2025-11-25: Ran full test suite (216/216 passed) and updated `tools/ans-diff/report.md`.
+- Installed `IDisposableAnalyzers`, fixed analyzer warnings across `ForthInterpreter.Blocks.cs` and related files.
+- Resolved nullable reference warnings in concurrency/await code paths.
+- Adjusted MMF accessor handling to a safer per-operation create/dispose model to remove ambiguous disposal patterns and pass analyzers.
+- Updated `tools/ans-diff` invocation and CI workflow to produce and persist `report.md`.
 
 If you want, I can:
-- Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add tests for lifecycle operations.
+- Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives (if not already present) and add lifecycle tests.
 - Implement LRU eviction configuration and add deterministic tests for small cache sizes.
-- Tighten ACCEPT/EXPECT/READ-LINE semantics to match full c-addr/u behavior.
+- Tighten ACCEPT/EXPECT/READ-LINE semantics to match full ANS c-addr/u behavior.
+- Reintroduce an accessor cache with explicit ownership and disposal if profiling shows the per-call accessor approach is a bottleneck.

@@ -23,4 +23,8 @@
     <ProjectReference Include="..\src\Forth.Core\Forth.Core.csproj" />
     <ProjectReference Include="..\modules\Forth.ProtoActor\Forth.ProtoActor.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IDisposableAnalyzers" Version="4.0.8" PrivateAssets="all" />
+  </ItemGroup>
 </Project>
