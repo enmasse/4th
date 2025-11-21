@@ -6,7 +6,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("TASK?", HelpString = "TASK? ( task -- flag ) - push 1 if Task/ValueTask is completed else 0")]
+    [Primitive("TASK?", HelpString = "TASK? ( task -- flag ) - push -1 if Task/ValueTask is completed else 0")]
     private static Task Prim_TASKQ(ForthInterpreter i)
     {
         i.EnsureStack(1, "TASK?");
@@ -23,6 +23,16 @@ internal static partial class CorePrimitives
                 if (asTask != null)
                     t = asTask.Invoke(obj, null) as Task;
             }
+            else
+            {
+                // pattern-based awaitable: treat as awaitable if has GetAwaiter
+                if (obj is not null && obj.GetType().GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance) is not null)
+                {
+                    var completed = AwaitableHelper.IsCompletedAwaitable(obj);
+                    i.Push(completed ? -1L : 0L);
+                    return Task.CompletedTask;
+                }
+            }
         }
 
         long flag = (t != null && t.IsCompleted) ? -1L : 0L;
@@ -37,57 +47,133 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "AWAIT");
         var obj = i.PopInternal();
-        Task? task = null;
+        if (obj is null)
+            throw new ForthException(ForthErrorCode.TypeError, "AWAIT expects a Task or awaitable");
 
-        if (obj is Task t)
+        // Fast paths for Task and ValueTask
+        if (obj is Task task)
         {
-            task = t;
-        }
-        else if (obj is ValueTask vt)
-        {
-            task = vt.AsTask();
-        }
-        else
-        {
-            var ot = obj?.GetType();
-            if (ot is not null && ot.IsGenericType && ot.GetGenericTypeDefinition() == typeof(ValueTask<>))
+            try
             {
-                var asTask = ot.GetMethod("AsTask", BindingFlags.Public | BindingFlags.Instance);
-                if (asTask != null)
-                    task = asTask.Invoke(obj, null) as Task;
+                await task.ConfigureAwait(false);
             }
-        }
-
-        if (task is null)
-            throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task or ValueTask");
-
-        await task.ConfigureAwait(false);
-
-        var taskType = task.GetType();
-        if (taskType.IsGenericType)
-        {
-            var resultProperty = taskType.GetProperty("Result");
-            if (resultProperty != null && resultProperty.CanRead)
+            catch (Exception ex)
             {
-                var result = resultProperty.GetValue(task);
-                if (result != null)
+                throw new ForthException(ForthErrorCode.Unknown, ex.Message);
+            }
+
+            var taskType = task.GetType();
+            if (taskType.IsGenericType)
+            {
+                var resultProperty = taskType.GetProperty("Result");
+                if (resultProperty != null && resultProperty.CanRead)
                 {
-                    var resultType = result.GetType();
-                    if (resultType.Name == "VoidTaskResult")
-                        return;
-                    switch (result)
+                    var result = resultProperty.GetValue(task);
+                    if (result != null)
                     {
-                        case int iv: i.Push((long)iv); break;
-                        case long lv: i.Push(lv); break;
-                        case short sv: i.Push((long)sv); break;
-                        case byte bv: i.Push((long)bv); break;
-                        case char cv: i.Push((long)cv); break;
-                        case bool bov: i.Push(bov ? -1L : 0L); break;
-                        default: i.Push(result); break;
+                        if (result.GetType().Name == "VoidTaskResult")
+                            return;
+                        switch (result)
+                        {
+                            case int iv: i.Push((long)iv); break;
+                            case long lv: i.Push(lv); break;
+                            case short sv: i.Push((long)sv); break;
+                            case byte bv: i.Push((long)bv); break;
+                            case char cv: i.Push((long)cv); break;
+                            case bool bov: i.Push(bov ? -1L : 0L); break;
+                            default: i.Push(result); break;
+                        }
                     }
                 }
             }
+            return;
         }
+
+        if (obj is ValueTask vtask)
+        {
+            try
+            {
+                await vtask.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new ForthException(ForthErrorCode.Unknown, ex.Message);
+            }
+            return;
+        }
+
+        // ValueTask<T> pattern via AsTask
+        var ot = obj?.GetType();
+        if (ot is not null && ot.IsGenericType && ot.GetGenericTypeDefinition() == typeof(ValueTask<>))
+        {
+            var asTask = ot.GetMethod("AsTask", BindingFlags.Public | BindingFlags.Instance);
+            if (asTask != null)
+            {
+                var taskObj = asTask.Invoke(obj, null) as Task;
+                if (taskObj != null)
+                {
+                    try
+                    {
+                        await taskObj.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ForthException(ForthErrorCode.Unknown, ex.Message);
+                    }
+
+                    var tt = taskObj.GetType();
+                    if (tt.IsGenericType)
+                    {
+                        var prop = tt.GetProperty("Result", BindingFlags.Public | BindingFlags.Instance);
+                        if (prop != null)
+                        {
+                            var res = prop.GetValue(taskObj);
+                            if (res != null)
+                            {
+                                switch (res)
+                                {
+                                    case int iv: i.Push((long)iv); break;
+                                    case long lv: i.Push(lv); break;
+                                    case short sv: i.Push((long)sv); break;
+                                    case byte bv: i.Push((long)bv); break;
+                                    case char cv: i.Push((long)cv); break;
+                                    case bool bov: i.Push(bov ? -1L : 0L); break;
+                                    default: i.Push(res); break;
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Pattern-based awaitable: has GetAwaiter()
+        if (obj.GetType().GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance) is not null)
+        {
+            var (isFaulted, result) = await AwaitableHelper.AwaitAndUnwrap(obj).ConfigureAwait(false);
+            if (isFaulted)
+            {
+                if (result is Exception ex) throw new ForthException(ForthErrorCode.Unknown, ex.Message);
+                throw new ForthException(ForthErrorCode.Unknown, "Awaitable faulted");
+            }
+
+            if (result is null) return;
+
+            switch (result)
+            {
+                case int iv: i.Push((long)iv); break;
+                case long lv: i.Push(lv); break;
+                case short sv: i.Push((long)sv); break;
+                case byte bv: i.Push((long)bv); break;
+                case char cv: i.Push((long)cv); break;
+                case bool bo: i.Push(bo ? -1L : 0L); break;
+                default: i.Push(result); break;
+            }
+            return;
+        }
+
+        throw new ForthException(ForthErrorCode.CompileError, "AWAIT expects a Task or ValueTask");
     }
 
     [Primitive("JOIN", IsAsync = true, HelpString = "JOIN - synonym for awaiting a spawned task (uses AWAIT)")]
