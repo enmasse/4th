@@ -255,4 +255,85 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 #endif
+
+    [Primitive("BLOCK", HelpString = "BLOCK ( n -- c-addr u ) - load block n into memory and push c-addr and count")]
+    private static Task Prim_BLOCK(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "BLOCK");
+        var n = (int)ToLong(i.PopInternal());
+        // Ensure on-disk file has space if configured
+        i.EnsureBlockExistsOnDisk(n);
+        var addr = i.GetOrAllocateBlockAddr(n);
+        i.LoadBlockFromBacking(n, addr);
+        i.SetCurrentBlockNumber(n);
+        i.Push((long)addr);
+        i.Push((long)ForthInterpreter.BlockSize);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SAVE", HelpString = "SAVE ( c-addr u n -- ) - save u bytes from c-addr into block n")]
+    private static Task Prim_SAVE(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "SAVE");
+        var n = (int)ToLong(i.PopInternal());
+        var u = (int)ToLong(i.PopInternal());
+        var addrObj = i.PopInternal();
+        if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "SAVE expects non-negative u");
+        if (u > ForthInterpreter.BlockSize) u = ForthInterpreter.BlockSize;
+
+        long addr;
+        if (addrObj is string s)
+        {
+            var content = s.Length > u ? s.Substring(0, u) : s.PadRight(u, ' ');
+            i.SetBlockBuffer(n, content);
+            return Task.CompletedTask;
+        }
+
+        if (addrObj is long a)
+        {
+            addr = a;
+            i.SaveBlockToBacking(n, addr, u);
+            return Task.CompletedTask;
+        }
+
+        throw new ForthException(ForthErrorCode.TypeError, "SAVE expects c-addr (address) or string");
+    }
+
+    [Primitive("OPEN-BLOCK-FILE", HelpString = "OPEN-BLOCK-FILE <path> - open or create a block-file backing store")]
+    private static Task Prim_OPENBLOCKFILE(ForthInterpreter i)
+    {
+        string path;
+        // Accept path as a pushed string on the stack (S"..."), or as following token
+        if (i.Stack.Count > 0 && i.Stack[^1] is string s)
+        {
+            // consume stack value
+            var _ = i.PopInternal();
+            path = s;
+        }
+        else
+        {
+            path = i.ReadNextTokenOrThrow("Expected path after OPEN-BLOCK-FILE");
+        }
+
+        i.OpenBlockFile(path);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("OPEN-BLOCK-DIR", HelpString = "OPEN-BLOCK-DIR <path> - open or create a directory of per-block files for block storage")]
+    private static Task Prim_OPENBLOCKDIR(ForthInterpreter i)
+    {
+        string path;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string s)
+        {
+            var _ = i.PopInternal();
+            path = s;
+        }
+        else
+        {
+            path = i.ReadNextTokenOrThrow("Expected path after OPEN-BLOCK-DIR");
+        }
+
+        i.OpenBlockFile(path, perBlock: true);
+        return Task.CompletedTask;
+    }
 }

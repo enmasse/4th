@@ -28,8 +28,8 @@ internal static partial class CorePrimitives
         // Push the Wordlist instance
         i.Push(wl);
         // Also create a named word that pushes this instance when executed so ' VOCABn resolves
-        var created = new Word(ii => { ii.Push(wl); return Task.CompletedTask; }) { Name = id, Module = i._currentModule };
-        i._dict = i._dict.SetItem((i._currentModule, id), created);
+        var created = new Word(ii => { ii.Push(wl); return Task.CompletedTask; }) { Name = id, Module = null };
+        i._dict = i._dict.SetItem((null, id), created);
         i.RegisterDefinition(id);
         i._lastDefinedWord = created;
         return Task.CompletedTask;

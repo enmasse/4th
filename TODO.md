@@ -22,11 +22,12 @@ Status — implemented / obvious support (non-exhaustive)
 - Introspection: `SEE` (module-qualified and basic decompile text present)
 - Wordlist/search-order: `GET-ORDER`, `SET-ORDER` (implemented)
 - Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE` (implemented; simplified semantics for buffer addressing)
-- Extended arithmetic: `*/MOD` implemented in core using BigInteger to avoid overflow
+- Extended arithmetic
+  - `*/MOD` implemented in core using BigInteger to avoid overflow
 
 Notes from code inspection
 - `GET-ORDER`/`SET-ORDER` use internal `GetOrder`/`SetOrder` helpers and expose `FORTH` as `null` in the list.
-- `ACCEPT`/`EXPECT` currently return a string and length (simplified; do not operate on raw c-addr memory in a true ANS manner). `READ-LINE` now writes bytes into interpreter memory when given a c-addr and u; further refinement may be required for full c-addr semantics.
+- `ACCEPT`/`EXPECT` currently return a string and length (simplified; do not operate on raw c-addr memory in a true ANS manner). `READ-LINE` implemented as a simplified ANS-compatible primitive
 - `AWAIT`/`TASK?` now include explicit support for pattern-based awaitables that expose `GetAwaiter()` in addition to `Task`/`Task<T>` and `ValueTask`/`ValueTask<T>`. A helper `AwaitableHelper` handles detection, synchronous completion, and registering continuations via `OnCompleted`/`UnsafeOnCompleted`.
 - `READ-FILE-BYTES` / `WRITE-FILE-BYTES` provide low-level memory IO used by tests; they may be candidates for replacement with strictly ANS semantics.
 - Pictured numeric / prelude words (e.g., `TRUE`, `FALSE`, `*/MOD` definition in `prelude.4th`) are present and tested.
@@ -35,9 +36,9 @@ Missing or incomplete ANS words (prioritized)
 1. Wordlist / vocabulary control
    - `WORDLIST`, `DEFINITIONS` and full `FORTH` sentinel exposure (implemented)
 2. Interactive source tracking
-   - (now implemented) `SOURCE` and `>IN` are available; `READ-LINE` implemented as a simplified ANS-compatible primitive
+   - (now implemented) `SOURCE` and `>IN` are available; `READ-LINE` implemented as a simplified primitive
 3. Block system (optional)
-   - `BLOCK`, `LOAD`/`SAVE`, `BLK` semantics (partial `LOAD` is present as runtime loader, block device semantics are not implemented)
+   - `BLOCK`, `SAVE`, `BLK` implemented with a per-block file backend and MMF/filestream fallback; `LOAD` (runtime loader) is present. See notes below.
 4. Read-line primitive
    - `READ-LINE` implemented; `ACCEPT`/`EXPECT` still use simplified behavior and may be refined to match full c-addr/u semantics
 5. Truth value normalization
@@ -49,7 +50,7 @@ Missing or incomplete ANS words (prioritized)
 
 Recommendations — next steps (actionable)
 - Decide on truth-value normalization policy and update primitives/tests consistently (normalize to `-1` recommended for ANS compatibility).
-- Implement block-system primitives or a compatibility shim if block device semantics are required.
+- Iterate on block-system behavior if stricter ANS semantics are required (e.g., stable c-addr vs. zero-copy pointer exposure, eviction policy).
 - Consider performance hardening for awaitable handling: cache MethodInfos or compiled delegates for `GetAwaiter`/`OnCompleted`/`GetResult`.
 - Consider replacing low-level `READ-FILE-BYTES` / `WRITE-FILE-BYTES` tests with higher-level `READ-FILE` / `WRITE-FILE` usage if ANS compliance is the goal.
 - Add a CI job to run `tools/ans-diff` and fail on regressions; export JSON output for machine checks.
@@ -60,25 +61,25 @@ Repository tasks (current)
 - [x] Implement baseline file stream words: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
 - [x] Implement byte-oriented handle words: `READ-FILE-BYTES`, `WRITE-FILE-BYTES`
 - [x] Gate diagnostics primitives behind DEBUG (`LAST-WRITE-BYTES`, `LAST-READ-BYTES`)
-- [ ] Implement block system words: `BLOCK`, `LOAD`, `SAVE`, `BLK`
+- [x] Implement block system words: `BLOCK`, `SAVE`, `BLK` (per-block files with atomic replace) — `LOAD` runtime loader present
 - [x] Decide and normalize truth values across primitives (true = -1)
 - [x] Implement `READ-LINE`, `SOURCE`, `>IN`
-- [x] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` (now uses Wordlist objects)
+- [x] Implement `WORDLIST`, `DEFINITIONS`, `FORTH` with Wordlist objects
 - [x] Improve `AWAIT`/`TASK?` robustness (ValueTask / awaitable handling)
 - [ ] Add ANS conformity run to CI (ans-diff) and fail on unexpected regressions
 - [ ] Add/verify `D+`, `D-`, `M*` if double-cell arithmetic is required
 
-Recent activity (2025-11-20)
+Recent activity (2025-11-21)
 --------------------------------
 - `tools/ans-diff` executed and `tools/ans-diff/report.md` refreshed.
-- Core and prelude tests exercised locally; many missing-word tests implemented and passing in the local run.
-- File I/O primitives and byte-level tests implemented and covered by unit tests.
-- Implemented `SOURCE`, `>IN`, and `READ-LINE` primitives (simplified model) and added tests covering behavior.
-- Hardened awaitable support: added `AwaitableHelper`, extended `AWAIT`/`TASK?` to handle `GetAwaiter()`-pattern awaitables, and added tests `CustomAwaitableTests` and `AwaitableRobustnessTests`.
-- Implemented `WORDLIST`/`DEFINITIONS`/`FORTH` with proper `Wordlist` objects and tests.
-- Full test suite passes locally (203/203).
+- Implemented per-block directory backing for block storage (`OPEN-BLOCK-DIR`) with atomic per-block replace using temp files + `File.Replace`.
+- Added MemoryMappedFile-backed single-file mode with FileStream fallback; cached per-block accessors used for zero-copy semantics when possible.
+- Block primitives (`BLOCK`, `SAVE`, `BLK`) wired to the new backing implementation and unit tests added (`BlockSystemPerBlockTests`).
+- `OPEN-BLOCK-FILE` and `OPEN-BLOCK-DIR` primitives accept either a pushed string token or a following token.
+- Tests updated and extended; full test suite passes locally (206/206).
+- Other changes: accessor caching, accessor flush/dispose logic on close, atomic full-block writes for single-file mode, and Save would always write a full BlockSize to avoid partial-write inconsistencies.
 
 If you want, I can:
-- Implement a block-system (BLOCK/BLK/SAVE) with tests.
-- Further optimize awaitable handling (delegate caching, reduce reflection overhead).
-- Add CI workflow to run `tools/ans-diff` and upload `report.md`.
+- Expose `CLOSE-BLOCK-FILE` / `FLUSH-BLOCK-FILE` primitives and add tests for lifecycle operations.
+- Implement LRU eviction for block addresses/accessors to limit address-space growth.
+- Add a CI workflow step to run the ans-diff tool and fail on regressions.
