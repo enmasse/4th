@@ -86,10 +86,84 @@ internal static partial class CorePrimitives
     [Primitive("IF", IsImmediate = true, HelpString = "Begin an if-then construct")]
     private static Task Prim_IF(ForthInterpreter i)
     {
-        if (!i._isCompiling)
-            throw new ForthException(ForthErrorCode.CompileError, "IF outside compilation");
-        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.IfFrame());
-        return Task.CompletedTask;
+        if (i._isCompiling)
+        {
+            i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.IfFrame());
+            return Task.CompletedTask;
+        }
+
+        // Interpret-time: pop flag and evaluate or skip appropriate branch
+        i.EnsureStack(1, "IF");
+        var flag = i.PopInternal();
+        bool cond = ToBool(flag);
+        if (i._tokens is null) return Task.CompletedTask;
+
+        // Find ELSE (or -1) and THEN indices for this IF at current tokenIndex
+        (int elseIdx, int thenIdx) = FindMatchingElseThen(i, i._tokenIndex);
+
+        if (cond)
+        {
+            // Execute tokens between current index and ELSE (or THEN if no ELSE)
+            int end = elseIdx >= 0 ? elseIdx : thenIdx;
+            if (end > i._tokenIndex)
+            {
+                var seg = string.Join(' ', i._tokens.GetRange(i._tokenIndex, end - i._tokenIndex));
+                // Advance token index past this branch before executing to avoid reentrancy issues
+                i._tokenIndex = (elseIdx >= 0) ? (elseIdx + 1) : (thenIdx + 1);
+                // Execute the segment synchronously via EvalAsync
+                var _ = i.EvalAsync(seg);
+                return Task.CompletedTask;
+            }
+            // Nothing to run; skip past ELSE/THEN
+            i._tokenIndex = (elseIdx >= 0) ? (elseIdx + 1) : (thenIdx + 1);
+            return Task.CompletedTask;
+        }
+        else
+        {
+            if (elseIdx >= 0)
+            {
+                // Execute else branch between elseIdx+1 and thenIdx
+                int start = elseIdx + 1;
+                int len = thenIdx - start;
+                if (len > 0)
+                {
+                    var seg = string.Join(' ', i._tokens.GetRange(start, len));
+                    i._tokenIndex = thenIdx + 1; // advance past THEN
+                    var _ = i.EvalAsync(seg);
+                    return Task.CompletedTask;
+                }
+                // Nothing to execute in else; skip past THEN
+                i._tokenIndex = thenIdx + 1;
+                return Task.CompletedTask;
+            }
+            // No ELSE: skip then-part entirely
+            i._tokenIndex = thenIdx + 1;
+            return Task.CompletedTask;
+        }
+    }
+
+    private static (int elseIndex, int thenIndex) FindMatchingElseThen(ForthInterpreter i, int startIndex)
+    {
+        int depth = 0;
+        int elseIdx = -1;
+        for (int idx = startIndex; idx < i._tokens!.Count; idx++)
+        {
+            var t = i._tokens[idx];
+            if (t.Equals("IF", System.StringComparison.OrdinalIgnoreCase)) { depth++; continue; }
+            if (t.Equals("THEN", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (depth == 0)
+                {
+                    return (elseIdx, idx);
+                }
+                depth--; continue;
+            }
+            if (elseIdx < 0 && t.Equals("ELSE", System.StringComparison.OrdinalIgnoreCase) && depth == 0)
+            {
+                elseIdx = idx;
+            }
+        }
+        throw new ForthException(ForthErrorCode.CompileError, "Unmatched IF structure");
     }
 
     [Primitive("ELSE", IsImmediate = true, HelpString = "Begin else-part of an if construct")]

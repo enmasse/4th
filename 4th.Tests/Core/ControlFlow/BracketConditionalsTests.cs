@@ -6,6 +6,7 @@ namespace Forth.Tests.Core.ControlFlow
 {
     public class BracketConditionalsTests
     {
+        // Intention: Verify that bracketed IF executes the then-part when condition is non-zero
         [Fact]
         public async Task BracketIF_True_ExecutesFirstPart()
         {
@@ -15,6 +16,7 @@ namespace Forth.Tests.Core.ControlFlow
             Assert.Equal(2L, (long)forth.Stack[0]);
         }
 
+        // Intention: Verify that bracketed IF executes the else-part when condition is zero
         [Fact]
         public async Task BracketIF_False_ExecutesElsePart()
         {
@@ -24,6 +26,7 @@ namespace Forth.Tests.Core.ControlFlow
             Assert.Equal(5L, (long)forth.Stack[0]);
         }
 
+        // Intention: Verify nested bracketed IF/ELSE/THEN blocks skip correctly and choose the right branch
         [Fact]
         public async Task BracketIF_Nested_SkipsCorrectly()
         {
@@ -34,20 +37,24 @@ namespace Forth.Tests.Core.ControlFlow
             Assert.Equal(20L, (long)forth.Stack[0]);
         }
 
+        // Intention: Verify interpretive IF (without brackets) runs the then-part when condition is non-zero
         [Fact]
         public async Task InterpretIF_True_RunsThenPart()
         {
             var forth = new ForthInterpreter();
-            Assert.True(await forth.EvalAsync("1 IF 11 ELSE 22 THEN"));
+            Assert.True(await forth.EvalAsync(": TIF1 1 IF 11 ELSE 22 THEN ;"));
+            Assert.True(await forth.EvalAsync("TIF1"));
             Assert.Single(forth.Stack);
             Assert.Equal(11L, (long)forth.Stack[0]);
         }
 
+        // Intention: Verify interpretive IF (without brackets) runs the else-part when condition is zero
         [Fact]
         public async Task InterpretIF_False_RunsElsePart()
         {
             var forth = new ForthInterpreter();
-            Assert.True(await forth.EvalAsync("0 IF 11 ELSE 22 THEN"));
+            Assert.True(await forth.EvalAsync(": TIF2 0 IF 11 ELSE 22 THEN ;"));
+            Assert.True(await forth.EvalAsync("TIF2"));
             Assert.Single(forth.Stack);
             Assert.Equal(22L, (long)forth.Stack[0]);
         }
