@@ -316,23 +316,39 @@ internal static partial class CorePrimitives
         for (int idx = i._tokenIndex; idx < i._tokens.Count; idx++)
         {
             var t = i._tokens[idx];
-            if (t == "[IF]") { depth++; continue; }
-            if (t == "[THEN]")
+            // Normalize possible separated bracket tokens into a single composite representation when present: "[" "IF" "]"
+            string comp = t.ToUpperInvariant();
+            bool consumedComposite = false;
+            if (t == "[" && idx + 2 < i._tokens.Count && i._tokens[idx + 2] == "]")
+            {
+                comp = ("[" + i._tokens[idx + 1].ToUpperInvariant() + "]");
+                consumedComposite = true;
+            }
+
+            if (comp == "[IF]") { depth++; if (consumedComposite) { idx += 2; } continue; }
+            if (comp == "[THEN]")
             {
                 if (depth == 0)
                 {
                     // Found terminating [THEN]
-                    i._tokenIndex = idx + 1; // consume
+                    // If we consumed a composite, idx already advanced to the closing bracket index; set token index to next
+                    i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume
                     return;
                 }
                 depth--;
+                if (consumedComposite) { idx += 2; }
                 continue;
             }
-            if (skipElse && t == "[ELSE]" && depth == 0)
+            if (skipElse && comp == "[ELSE]" && depth == 0)
             {
                 // Stop before ELSE so ELSE body executes
-                i._tokenIndex = idx + 1; // consume [ELSE]
+                i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume [ELSE]
                 return;
+            }
+            if (consumedComposite)
+            {
+                // If we synthesized a composite token but didn't match any of the above cases, advance past closing bracket
+                idx += 2;
             }
         }
         // If we reach here, no matching terminator
