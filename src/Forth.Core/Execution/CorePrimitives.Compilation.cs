@@ -99,9 +99,7 @@ internal static partial class CorePrimitives
             throw new ForthException(ForthErrorCode.CompileError, "ELSE outside compilation");
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
             throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF");
-        if (ifr.ElsePart is not null)
-            throw new ForthException(ForthErrorCode.CompileError, "Multiple ELSE");
-        ifr.ElsePart = new();
+        ifr.ElsePart ??= new();
         ifr.InElse = true;
         return Task.CompletedTask;
     }
@@ -153,9 +151,9 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("REPEAT", IsImmediate = true, HelpString = "End a BEGIN...REPEAT loop")]
-    private static Task Prim_REPEAT(ForthInterpreter i) => LoopImpl(i);
+    private static Task Prim_REPEAT(ForthInterpreter i) => RepeatImpl(i);
 
-    private static Task LoopImpl(ForthInterpreter i)
+    private static Task RepeatImpl(ForthInterpreter i)
     {
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BeginFrame bf)
             throw new ForthException(ForthErrorCode.CompileError, "REPEAT without BEGIN");
