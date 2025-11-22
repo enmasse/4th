@@ -23,43 +23,24 @@ internal static partial class CorePrimitives
     [Primitive("TYPE", HelpString = "TYPE ( c-addr u | counted-addr | string -- ) - write string data to output")]
     private static Task Prim_TYPE(ForthInterpreter i)
     {
-        // Recognize (addr u) or (string u) only when second item is address or string
         if (i.Stack.Count >= 2 && IsNumeric(i.Stack[^1]) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
         {
             var u = ToLong(i.PopInternal());
             var addrOrStr = i.PopInternal();
             if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "TYPE negative length");
             if (addrOrStr is string sstr)
-            {
-                var sliceLen = (int)u <= sstr.Length ? (int)u : sstr.Length;
-                i.WriteText(sliceLen == sstr.Length ? sstr : sstr.Substring(0, sliceLen));
-                return Task.CompletedTask;
-            }
+            { var sliceLen = (int)u <= sstr.Length ? (int)u : sstr.Length; i.WriteText(sliceLen == sstr.Length ? sstr : sstr.Substring(0, sliceLen)); return Task.CompletedTask; }
             if (IsNumeric(addrOrStr))
-            {
-                var a = ToLong(addrOrStr);
-                var sb = new StringBuilder();
-                for (long k = 0; k < u; k++) { i.MemTryGet(a + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
-                i.WriteText(sb.ToString());
-                return Task.CompletedTask;
-            }
+            { var a = ToLong(addrOrStr); var sb = new StringBuilder(); for (long k = 0; k < u; k++) { i.MemTryGet(a + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); } i.WriteText(sb.ToString()); return Task.CompletedTask; }
             throw new ForthException(ForthErrorCode.TypeError, "TYPE address/string expected before length");
         }
-        // counted string address (len at first cell)
         if (i.Stack.Count >= 1 && i.Stack[^1] is long addrLong)
         {
             i.MemTryGet(addrLong, out var lenCell);
             long len = ToLong(lenCell);
             if (len > 0)
-            {
-                var sb = new StringBuilder();
-                for (long k = 0; k < len; k++) { i.MemTryGet(addrLong + 1 + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
-                i.PopInternal();
-                i.WriteText(sb.ToString());
-                return Task.CompletedTask;
-            }
+            { var sb = new StringBuilder(); for (long k = 0; k < len; k++) { i.MemTryGet(addrLong + 1 + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); } i.PopInternal(); i.WriteText(sb.ToString()); return Task.CompletedTask; }
         }
-        // Plain string
         i.EnsureStack(1, "TYPE");
         var obj = i.PopInternal();
         if (obj is string s) { i.WriteText(s); return Task.CompletedTask; }
@@ -77,12 +58,37 @@ internal static partial class CorePrimitives
     [Primitive("KEY?", HelpString = "KEY? ( -- flag ) - push -1 if key available else 0")]
     private static Task Prim_KEYQ(ForthInterpreter i) { var available = i.KeyAvailable(); i.Push(available ? -1L : 0L); return Task.CompletedTask; }
 
-    [Primitive("READ-LINE", HelpString = "READ-LINE ( c-addr u -- actual ) - read a line into buffer")]
-    private static Task Prim_READLINE(ForthInterpreter i) { i.EnsureStack(2, "READ-LINE"); var u = (int)ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); var line = i.ReadLineFromIO() ?? string.Empty; if (line.Length > u) line = line.Substring(0, u); for (int k = 0; k < line.Length; k++) i.MemSet(addr + k, (long)line[k]); i.Push((long)line.Length); return Task.CompletedTask; }
+    // ANS-style READ-LINE: exclude CR/LF terminators
+    [Primitive("READ-LINE", HelpString = "READ-LINE ( c-addr u -- actual ) - read a line excluding CR/LF terminators")]
+    private static Task Prim_READLINE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "READ-LINE");
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var raw = i.ReadLineFromIO() ?? string.Empty;
+        int len = 0;
+        for (int k = 0; k < raw.Length && len < u; k++)
+        { char ch = raw[k]; if (ch == '\r' || ch == '\n') break; i.MemSet(addr + len, (long)ch); len++; }
+        i.Push((long)len);
+        return Task.CompletedTask;
+    }
 
-    [Primitive("ACCEPT", HelpString = "ACCEPT ( addr u -- u ) read line into buffer, return count")]
-    private static Task Prim_ACCEPT(ForthInterpreter i) { i.EnsureStack(2, "ACCEPT"); var u = (int)CorePrimitives.ToLong(i.PopInternal()); var addr = CorePrimitives.ToLong(i.PopInternal()); var line = i.ReadLineFromIO() ?? string.Empty; if (line.Length > u) line = line.Substring(0, u); for (int k = 0; k < line.Length; k++) i.MemSet(addr + k, (long)line[k]); i.Push((long)line.Length); return Task.CompletedTask; }
+    // ANS-style ACCEPT: exclude CR/LF terminators
+    [Primitive("ACCEPT", HelpString = "ACCEPT ( addr u -- u ) - read line excluding CR/LF terminators")]
+    private static Task Prim_ACCEPT(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "ACCEPT");
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var raw = i.ReadLineFromIO() ?? string.Empty;
+        int len = 0;
+        for (int k = 0; k < raw.Length && len < u; k++)
+        { char ch = raw[k]; if (ch == '\r' || ch == '\n') break; i.MemSet(addr + len, (long)ch); len++; }
+        i.Push((long)len);
+        return Task.CompletedTask;
+    }
 
-    [Primitive("EXPECT", HelpString = "EXPECT ( addr u -- u ) alias of ACCEPT")]
+    // EXPECT alias of ACCEPT
+    [Primitive("EXPECT", HelpString = "EXPECT ( addr u -- u ) - alias of ACCEPT")]
     private static Task Prim_EXPECT(ForthInterpreter i) => Prim_ACCEPT(i);
 }

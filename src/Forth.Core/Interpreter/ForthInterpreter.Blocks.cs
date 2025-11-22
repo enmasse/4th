@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Forth.Core.Interpreter
 {
-     public partial class ForthInterpreter
-     {
+    public partial class ForthInterpreter
+    {
         // Block device simulation
         internal readonly Dictionary<int, string> _blocks = new();
         internal int _currentBlock = 0;

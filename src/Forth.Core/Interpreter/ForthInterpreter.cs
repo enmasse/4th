@@ -1,11 +1,12 @@
 using Forth.Core.Binding;
 using Forth.Core.Execution;
-using System.Collections.Immutable; // added
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
 using System.Globalization;
-using System.IO; // ...existing using (may be needed by other parts)
+using System.IO;
 using System.IO.MemoryMappedFiles;
+using Forth.Core.Modules;
 
 namespace Forth.Core.Interpreter;
 
@@ -13,7 +14,7 @@ namespace Forth.Core.Interpreter;
 /// The core Forth interpreter implementation. Provides evaluation, dictionary management,
 /// and memory/stack primitives used by core primitives and tests.
 /// </summary>
-public partial class ForthInterpreter : IForthInterpreter // made partial
+public partial class ForthInterpreter : IForthInterpreter
 {
     internal readonly ForthStack _stack = new();
     internal readonly ForthStack _rstack = new();
@@ -76,7 +77,21 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     private readonly Task _loadPrelude;
 
     // LRU cache size configuration (new)
-    private readonly int _maxCachedBlocks;
+    private int _maxCachedBlocks;
+    /// <summary>
+    /// Gets or sets the maximum number of cached block mappings/accessors in the interpreter's LRU.
+    /// Setting this property will evict blocks if the new value is less than the current count.
+    /// </summary>
+    public int BlockCacheSize
+    {
+        get => _maxCachedBlocks;
+        set
+        {
+            if (value < 1) value = 1;
+            _maxCachedBlocks = value;
+            EnforceBlockCacheLimit();
+        }
+    }
 
     private readonly struct DefinitionRecord
     {
@@ -91,12 +106,6 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
 
     internal void RegisterDefinition(string name) =>
         _definitions.Add(new DefinitionRecord(name, _currentModule));
-
-    // Expose configured LRU block cache size for tests and callers
-    /// <summary>
-    /// The configured maximum number of cached block mappings/accessors in the interpreter's LRU.
-    /// </summary>
-    public int BlockCacheSize => _maxCachedBlocks;
 
     internal bool TryReadNextToken(out string token)
     {
@@ -213,7 +222,7 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     /// Create a new interpreter instance.
     /// </summary>
     /// <param name="io">Optional IO implementation to use for input/output. If null, a console IO is used.</param>
-    /// <param name="blockCacheSize">Optional LRU block cache size (defaults to existing MaxCachedBlocks constant if not provided).</param>
+    /// <param name="blockCacheSize">Optional LRU block cache size (defaults to 64 if not provided).</param>
     public ForthInterpreter(IForthIO? io = null, int? blockCacheSize = null)
     {
         _io = io ?? new ConsoleForthIO();
@@ -460,20 +469,6 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
             throw new ForthException(ForthErrorCode.StackUnderflow, $"Stack underflow in {word}");
         }
     }
-
-    internal static long ToLongPublic(object v) =>
-        ToLong(v);
-
-    private static long ToLong(object v) => v switch
-    {
-        long l => l,
-        int i => i,
-        short s => s,
-        byte b => b,
-        char c => c,
-        bool bo => bo ? -1L : 0L,
-        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
-    };
 
     // Return stack helpers
     internal void RPush(object value) =>
@@ -860,4 +855,15 @@ public partial class ForthInterpreter : IForthInterpreter // made partial
     }
 
     private sealed class ExitWordException : Exception { }
+    public IForthIO IO => _io;
+    public static long ToLong(object v) => v switch
+    {
+        long l => l,
+        int i => i,
+        short s => s,
+        byte b => b,
+        char c => c,
+        bool bo => bo ? -1L : 0L,
+        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
+    };
 }

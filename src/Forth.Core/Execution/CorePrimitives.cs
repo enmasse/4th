@@ -29,7 +29,7 @@ internal static partial class CorePrimitives
         _words.Value;
 
     // Helpers used across groups
-    private static long ToLong(object v) => ForthInterpreter.ToLongPublic(v);
+    private static long ToLong(object v) => ForthInterpreter.ToLong(v);
 
     private static bool ToBool(object v) => v switch
     {

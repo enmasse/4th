@@ -1,4 +1,4 @@
-Found 176 primitives in code:
+Found 177 primitives in code:
 
 !
 #
@@ -40,6 +40,7 @@ Found 176 primitives in code:
 @
 ABORT
 ACCEPT
+ADD-INPUT-LINE
 ALLOT
 AND
 APPEND-FILE
@@ -109,8 +110,7 @@ IS
 JOIN
 KEY
 KEY?
-LAST-READ-BYTES
-LAST-WRITE-BYTES
+LAST-STORE
 LATEST
 LEAVE
 LITERAL
@@ -146,6 +146,7 @@ REPOSITION-FILE
 ROT
 RP@
 RSHIFT
+RUN-NEXT
 S
 SAVE
 SEE
@@ -281,7 +282,7 @@ WRITE-FILE
 
 ANS core words missing (0):
 
-Other primitives in code not in ANS list (77):
+Other primitives in code not in ANS list (78):
 -
 -ROT
 .\
@@ -305,6 +306,7 @@ Other primitives in code not in ANS list (77):
 2OVER
 2R>
 2SWAP
+ADD-INPUT-LINE
 AND
 BIND
 CHAR
@@ -328,8 +330,7 @@ FNEGATE
 FVARIABLE
 HELP
 INVERT
-LAST-READ-BYTES
-LAST-WRITE-BYTES
+LAST-STORE
 LATEST
 LOAD-ASM
 LOAD-ASM-TYPE
@@ -351,6 +352,7 @@ READ-LINE
 ROT
 RP@
 RSHIFT
+RUN-NEXT
 S
 S\
 SEE

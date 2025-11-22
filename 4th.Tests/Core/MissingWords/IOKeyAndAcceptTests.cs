@@ -9,7 +9,7 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class IOKeyAndAcceptTests
 {
-    private sealed class TestIO : IForthIO
+    public sealed class TestIO : IForthIO
     {
         private readonly Queue<int> _keys = new();
         private readonly Queue<string?> _lines = new();

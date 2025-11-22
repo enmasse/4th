@@ -51,6 +51,8 @@ Progress / Repository tasks (current)
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Full test suite passing (225/225)
 - [x] ans-diff report updated (CI ready to fail on missing words)
+- [x] Add `ans-diff` project to solution and fix LangVersion to `preview`
+- [x] Run `ans-diff` and write report to `tools/ans-diff/report.md`
 
 Remaining / next work items
 - [ ] Optional: tighten ACCEPT/EXPECT/READ-LINE semantics (edge-case conformity: handling of CR/LF, partial reads)
@@ -61,6 +63,7 @@ Remaining / next work items
 - [ ] Consider unified string allocation helper for counted strings to reduce duplication
 - [ ] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
 - [ ] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
+- [ ] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
 
 Decisions made
 - Favor per-call MMF accessor disposal for clarity and analyzer satisfaction; revisit only with profiling evidence.

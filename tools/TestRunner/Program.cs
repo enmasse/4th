@@ -1,10 +1,11 @@
 using Forth.Core;
 using Forth.Core.Interpreter;
+using Forth.Core.Modules;
 using System;
 using System.IO;
 
 Console.WriteLine("Manual test runner: exercise interpreter");
-var f = new ForthInterpreter();
+var f = new ForthInterpreter(new TestIO());
 
 async Task DumpStack(string label, IForthInterpreter inst)
 {
@@ -25,12 +26,12 @@ await f.EvalAsync("123 =");
 await DumpStack("after compare", f);
 
 Console.WriteLine("Manual test: COUNT sequence");
-var fCount = new ForthInterpreter();
+var fCount = new ForthInterpreter(new TestIO());
 await fCount.EvalAsync("S\" hello\" COUNT SWAP DROP 5 =");
 await DumpStack("after COUNT compare", fCount);
 
 Console.WriteLine("Manual test: memory-tests steps inline");
-var f4 = new ForthInterpreter();
+var f4 = new ForthInterpreter(new TestIO());
 Directory.SetCurrentDirectory(Path.Combine(Directory.GetCurrentDirectory(), "tests", "forth"));
 await f4.EvalAsync("INCLUDE \"framework.4th\"");
 await f4.EvalAsync("CREATE BUF 16 ALLOT");
@@ -45,7 +46,7 @@ catch (Exception ex)
 }
 
 Console.WriteLine("Manual test: define and run TEST-STORE via harness");
-var f3 = new ForthInterpreter();
+var f3 = new ForthInterpreter(new TestIO());
 await f3.EvalAsync("INCLUDE \"tests/forth/framework.4th\"");
 await f3.EvalAsync("CREATE BUF 16 ALLOT");
 await f3.EvalAsync(": TEST-STORE 123 BUF ! BUF @ 123 = ASSERT-TRUE ;");
@@ -65,7 +66,7 @@ try
 {
     Directory.SetCurrentDirectory(Path.Combine(prev));
     Directory.SetCurrentDirectory(Path.Combine(prev, "tests", "forth"));
-    var f2 = new ForthInterpreter();
+    var f2 = new ForthInterpreter(new TestIO());
     var ok = await f2.EvalAsync("INCLUDE \"memory-tests.4th\"");
     Console.WriteLine($"INCLUDE result: {ok}");
 }

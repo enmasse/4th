@@ -3,8 +3,16 @@ using System.Collections.Generic;
 
 namespace Forth.Core.Interpreter;
 
+/// <summary>
+/// Provides tokenization logic for Forth source lines, handling string literals, comments, and special forms.
+/// </summary>
 public static class Tokenizer
 {
+    /// <summary>
+    /// Splits the input string into Forth tokens, handling quoted strings, comments, and special forms.
+    /// </summary>
+    /// <param name="input">The source line to tokenize.</param>
+    /// <returns>List of tokens as strings.</returns>
     public static List<string> Tokenize(string input)
     {
         var list = new List<string>();

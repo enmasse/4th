@@ -43,7 +43,13 @@ public sealed class ForthTestGenerator : ISourceGenerator
             var dispLiteral = displayName.Replace("\"", "\\\"");
             var includeCmd = "INCLUDE \"" + fileNameLiteral + "\"";
 
-            sb.AppendLine("    [Fact(DisplayName=\"" + dispLiteral + "\")]\n    public static async Task " + methodName + "() {\n        var interpreter = new ForthInterpreter();\n        var dir = System.IO.Path.GetDirectoryName(\"" + fileNameLiteral + "\");\n        var prev = System.IO.Directory.GetCurrentDirectory();\n        try { System.IO.Directory.SetCurrentDirectory(dir!); var ok = await interpreter.EvalAsync(\"" + includeCmd.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"); Assert.True(ok, \"Forth test failed: " + dispLiteral.Replace("\"", "\\\"") + "\"); } finally { System.IO.Directory.SetCurrentDirectory(prev); }\n    }");
+            sb.AppendLine("    [Fact(DisplayName=\"" + dispLiteral + "\")]");
+            sb.AppendLine("    public static async Task " + methodName + "() {");
+            sb.AppendLine("        var interpreter = new ForthInterpreter(new Forth.Core.Modules.TestIO());");
+            sb.AppendLine("        var dir = System.IO.Path.GetDirectoryName(\"" + fileNameLiteral + "\");");
+            sb.AppendLine("        var prev = System.IO.Directory.GetCurrentDirectory();");
+            sb.AppendLine("        try { System.IO.Directory.SetCurrentDirectory(dir!); var ok = await interpreter.EvalAsync(\"" + includeCmd.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"); Assert.True(ok, \"Forth test failed: " + dispLiteral.Replace("\"", "\\\"") + "\"); } finally { System.IO.Directory.SetCurrentDirectory(prev); }");
+            sb.AppendLine("    }");
         }
 
         sb.AppendLine("}} ");
