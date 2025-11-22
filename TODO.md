@@ -29,6 +29,9 @@ Recent extensions
 - `WRITE-FILE` / `APPEND-FILE` accept string, counted string address, or (addr u) memory range.
 - `>NUMBER` extended to accept counted string address and (addr u) forms in addition to raw string.
 - Tokenizer updated: S" skips at most one leading space; supports accurate literal lengths.
+- INCLUDE/LOAD: changed to evaluate entire file contents in a single `EvalAsync` call to preserve bracketed conditional constructs spanning line boundaries.
+- Token preprocessing: synthesize common bracket composites (e.g. `[IF]`, `[ELSE]`, `[THEN]`) from separated `[` `IF` `]` sequences so older test sources and style variants are handled.
+- `SkipBracketSection` improved to accept both composite tokens and separated bracket sequences when scanning for matching `[ELSE]`/`[THEN]`.
 
 Notes
 - `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
@@ -49,7 +52,8 @@ Progress / Repository tasks (current)
 - [x] Extend WRITE-FILE / APPEND-FILE for counted and memory forms
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
-- [x] Full test suite passing (225/225)
+- [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
+- [x] Full test suite passing (229/229)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add `ans-diff` project to solution and fix LangVersion to `preview`
 - [x] Run `ans-diff` and write report to `tools/ans-diff/report.md`
@@ -76,7 +80,8 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
-- Extended TYPE, >NUMBER, file primitives; all tests passing (225/225).
+- Fixed bracketed conditional handling across lines: INCLUDE/LOAD change, tokenizer preprocessing, SkipBracketSection improvements; full test suite passing (229/229).
+- Extended TYPE, >NUMBER, file primitives; all tests passing.
 - Tokenizer S" adjustments merged.
 - Prior: block system + LRU tests, analyzer & nullable warnings fixed, ans-diff integration.
 
