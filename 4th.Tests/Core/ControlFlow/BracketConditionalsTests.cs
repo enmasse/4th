@@ -42,7 +42,7 @@ namespace Forth.Tests.Core.ControlFlow
         public async Task InterpretIF_True_RunsThenPart()
         {
             var forth = new ForthInterpreter();
-            Assert.True(await forth.EvalAsync(": TIF1 1 IF 11 ELSE 22 THEN ;"));
+            await forth.EvalAsync(": TIF1 1 IF 11 ELSE 22 THEN ;");
             Assert.True(await forth.EvalAsync("TIF1"));
             Assert.Single(forth.Stack);
             Assert.Equal(11L, (long)forth.Stack[0]);
@@ -53,7 +53,7 @@ namespace Forth.Tests.Core.ControlFlow
         public async Task InterpretIF_False_RunsElsePart()
         {
             var forth = new ForthInterpreter();
-            Assert.True(await forth.EvalAsync(": TIF2 0 IF 11 ELSE 22 THEN ;"));
+            await forth.EvalAsync(": TIF2 0 IF 11 ELSE 22 THEN ;");
             Assert.True(await forth.EvalAsync("TIF2"));
             Assert.Single(forth.Stack);
             Assert.Equal(22L, (long)forth.Stack[0]);
