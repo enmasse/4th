@@ -619,6 +619,16 @@ public partial class ForthInterpreter : IForthInterpreter
                 continue;
             }
 
+            // In interpret state allow bracket conditionals to skip tokens
+            if (!_isCompiling && IsBracketSkipping())
+            {
+                if (!(tok == "[IF]" || tok == "[ELSE]" || tok == "[THEN]"))
+                {
+                    // Skip non-bracket directive tokens
+                    continue;
+                }
+            }
+
             if (!_isCompiling)
             {
                 if (_doesCollecting)
@@ -859,8 +869,9 @@ public partial class ForthInterpreter : IForthInterpreter
     {
         public bool Skipping { get; set; }
         public bool SeenElse { get; set; }
-        private readonly List<Func<ForthInterpreter, Task>> _noops = new();
-        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => Skipping ? _noops : base.GetCurrentList();
+        // Separate list so we do not invoke abstract base implementation
+        private readonly List<Func<ForthInterpreter, Task>> _list = new();
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => _list;
     }
     public IForthIO IO => _io;
     public static long ToLong(object v) => v switch
