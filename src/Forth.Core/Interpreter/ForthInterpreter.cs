@@ -872,4 +872,7 @@ public partial class ForthInterpreter : IForthInterpreter
         bool bo => bo ? -1L : 0L,
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
     };
+
+    internal List<Func<ForthInterpreter, Task>> CurrentList() =>
+        _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 }
