@@ -770,6 +770,15 @@ public partial class ForthInterpreter : IForthInterpreter
         return !_exitRequested;
     }
 
+    private bool IsBracketSkipping()
+    {
+        if (_isCompiling) return false;
+        if (_controlStack.Count == 0) return false;
+        var top = _controlStack.Peek();
+        if (top is BracketIfFrame bif) return bif.Skipping;
+        return false;
+    }
+
     internal List<Func<ForthInterpreter, Task>> CurrentList() =>
         _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
