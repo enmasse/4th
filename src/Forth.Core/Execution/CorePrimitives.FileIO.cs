@@ -108,9 +108,25 @@ internal static partial class CorePrimitives
 
     [Primitive("INCLUDE", IsImmediate = true, IsAsync = true, HelpString = "INCLUDE <filename> interpret file contents")]
     private static async Task Prim_INCLUDE(ForthInterpreter i)
-    { var fname = i.ReadNextTokenOrThrow("Expected filename after INCLUDE"); if (fname.Length >= 2 && fname[0] == '"' && fname[^1] == '"') fname = fname[1..^1]; if (!File.Exists(fname)) throw new ForthException(ForthErrorCode.CompileError, $"INCLUDE: file not found: {fname}"); foreach (var raw in await File.ReadAllLinesAsync(fname).ConfigureAwait(false)) { var line = raw?.Trim(); if (string.IsNullOrEmpty(line)) continue; await i.EvalAsync(line).ConfigureAwait(false); } }
+    {
+        var fname = i.ReadNextTokenOrThrow("Expected filename after INCLUDE");
+        if (fname.Length >= 2 && fname[0] == '"' && fname[^1] == '"') fname = fname[1..^1];
+        if (!File.Exists(fname)) throw new ForthException(ForthErrorCode.CompileError, $"INCLUDE: file not found: {fname}");
+        // Read entire file and evaluate as a single block so bracketed conditionals spanning lines are handled
+        var text = await File.ReadAllTextAsync(fname).ConfigureAwait(false);
+        // Split into non-empty trimmed lines and evaluate as a single combined line preserving spacing/newlines
+        // Use a single EvalAsync call so tokenization can see brackets across original line boundaries
+        await i.EvalAsync(text).ConfigureAwait(false);
+    }
 
     [Primitive("LOAD", IsAsync = true, HelpString = "LOAD ( filename -- ) interpret file at runtime")]
     private static async Task Prim_LOAD(ForthInterpreter i)
-    { i.EnsureStack(1, "LOAD"); var fObj = i.PopInternal(); if (fObj is not string fname) throw new ForthException(ForthErrorCode.TypeError, "LOAD expects filename string"); if (!File.Exists(fname)) throw new ForthException(ForthErrorCode.CompileError, $"LOAD: file not found: {fname}"); foreach (var raw in await File.ReadAllLinesAsync(fname).ConfigureAwait(false)) { var line = raw?.Trim(); if (string.IsNullOrEmpty(line)) continue; await i.EvalAsync(line).ConfigureAwait(false); } }
+    {
+        i.EnsureStack(1, "LOAD");
+        var fObj = i.PopInternal();
+        if (fObj is not string fname) throw new ForthException(ForthErrorCode.TypeError, "LOAD expects filename string");
+        if (!File.Exists(fname)) throw new ForthException(ForthErrorCode.CompileError, $"LOAD: file not found: {fname}");
+        var text = await File.ReadAllTextAsync(fname).ConfigureAwait(false);
+        await i.EvalAsync(text).ConfigureAwait(false);
+    }
 }
