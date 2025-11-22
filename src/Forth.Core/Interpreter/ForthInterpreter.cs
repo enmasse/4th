@@ -855,6 +855,13 @@ public partial class ForthInterpreter : IForthInterpreter
     }
 
     private sealed class ExitWordException : Exception { }
+    private sealed class BracketIfFrame : CompileFrame
+    {
+        public bool Skipping { get; set; }
+        public bool SeenElse { get; set; }
+        private readonly List<Func<ForthInterpreter, Task>> _noops = new();
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => Skipping ? _noops : base.GetCurrentList();
+    }
     public IForthIO IO => _io;
     public static long ToLong(object v) => v switch
     {
