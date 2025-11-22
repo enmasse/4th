@@ -286,4 +286,52 @@ internal static partial class CorePrimitives
         i.SetOrder(list);
         return Task.CompletedTask;
     }
+
+    [Primitive("ENVIRONMENT?", HelpString = "ENVIRONMENT? ( c-addr u | counted-addr -- false | value true ) - query environment")]
+    private static Task Prim_ENVIRONMENTQ(ForthInterpreter i)
+    {
+        // Supports queries used by tester.fs: FLOATING, FLOATING-STACK
+        // Accept either counted string address or (addr len) or plain string previously pushed
+        string? query = null;
+        if (i.Stack.Count >= 2 && i.Stack[^1] is long lenCell && i.Stack[^2] is long addrCell)
+        {
+            // treat as (addr len)
+            long addr = addrCell;
+            int len = (int)CorePrimitives.ToLong(lenCell);
+            var chars = new char[len];
+            for (int k = 0; k < len; k++) { i.MemTryGet(addr + k, out var v); chars[k] = (char)(CorePrimitives.ToLong(v) & 0xFF); }
+            i.PopInternal(); // len
+            i.PopInternal(); // addr
+            query = new string(chars);
+        }
+        else if (i.Stack.Count >= 1 && i.Stack[^1] is long countedAddr)
+        {
+            // counted string address form produced by S" or custom literal words
+            i.MemTryGet(countedAddr, out var lenObj);
+            int len = (int)CorePrimitives.ToLong(lenObj);
+            var chars = new char[len];
+            for (int k = 0; k < len; k++) { i.MemTryGet(countedAddr + 1 + k, out var v); chars[k] = (char)(CorePrimitives.ToLong(v) & 0xFF); }
+            i.PopInternal();
+            query = new string(chars);
+        }
+        else if (i.Stack.Count >= 1 && i.Stack[^1] is string s)
+        {
+            query = s; i.PopInternal();
+        }
+        if (query is null) { i.Push(0L); return Task.CompletedTask; }
+        query = query.Trim().ToUpperInvariant();
+        switch (query)
+        {
+            case "FLOATING":
+            case "FLOATING-STACK":
+                // Provide value TRUE then flag TRUE
+                i.Push(-1L); // value (TRUE)
+                i.Push(-1L); // recognized flag (TRUE)
+                break;
+            default:
+                i.Push(0L); // not recognized -> false only
+                break;
+        }
+        return Task.CompletedTask;
+    }
 }
