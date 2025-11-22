@@ -84,11 +84,19 @@ internal static partial class CorePrimitives
     private static Task Prim_RBracket(ForthInterpreter i) { i._isCompiling = true; i._mem[i.StateAddr] = 1; return Task.CompletedTask; }
 
     [Primitive("IF", IsImmediate = true, HelpString = "Begin an if-then construct")]
-    private static Task Prim_IF(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.IfFrame()); return Task.CompletedTask; }
+    private static Task Prim_IF(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "IF outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.IfFrame());
+        return Task.CompletedTask;
+    }
 
     [Primitive("ELSE", IsImmediate = true, HelpString = "Begin else-part of an if construct")]
     private static Task Prim_ELSE(ForthInterpreter i)
     {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "ELSE outside compilation");
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
             throw new ForthException(ForthErrorCode.CompileError, "ELSE without IF");
         if (ifr.ElsePart is not null)
@@ -101,6 +109,8 @@ internal static partial class CorePrimitives
     [Primitive("THEN", IsImmediate = true, HelpString = "End an if construct")]
     private static Task Prim_THEN(ForthInterpreter i)
     {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "THEN outside compilation");
         if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
             throw new ForthException(ForthErrorCode.CompileError, "THEN without IF");
         i._controlStack.Pop();
@@ -111,17 +121,25 @@ internal static partial class CorePrimitives
             ii.EnsureStack(1, "IF");
             var flag = ii.PopInternal();
             if (ToBool(flag))
-                foreach (var a in thenPart)
-                    await a(ii);
+            {
+                foreach (var a in thenPart) await a(ii);
+            }
             else if (elsePart is not null)
-                foreach (var a in elsePart)
-                    await a(ii);
+            {
+                foreach (var a in elsePart) await a(ii);
+            }
         });
         return Task.CompletedTask;
     }
 
     [Primitive("BEGIN", IsImmediate = true, HelpString = "Begin a loop construct")]
-    private static Task Prim_BEGIN(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.BeginFrame()); return Task.CompletedTask; }
+    private static Task Prim_BEGIN(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "BEGIN outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.BeginFrame());
+        return Task.CompletedTask;
+    }
 
     [Primitive("WHILE", IsImmediate = true, HelpString = "Begin a conditional part of a BEGIN...REPEAT loop")]
     private static Task Prim_WHILE(ForthInterpreter i)
@@ -186,7 +204,13 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("DO", IsImmediate = true, HelpString = "Begin a counted loop ( limit start -- )")]
-    private static Task Prim_DO(ForthInterpreter i) { i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.DoFrame()); return Task.CompletedTask; }
+    private static Task Prim_DO(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "DO outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.DoFrame());
+        return Task.CompletedTask;
+    }
 
     [Primitive("LOOP", IsImmediate = true, HelpString = "End a counted DO...LOOP")]
     private static Task Prim_LOOP(ForthInterpreter i) => LoopImpl(i);
@@ -260,6 +284,59 @@ internal static partial class CorePrimitives
         }
         i.CurrentList().Add(async ii => await self.ExecuteAsync(ii));
         return Task.CompletedTask;
+    }
+
+    [Primitive("[IF]", IsImmediate = true, HelpString = "[IF] ( flag -- ) - conditional compilation start (interpret/compile)")]
+    private static Task Prim_BRACKET_IF(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "[IF]");
+        var flagObj = i.PopInternal();
+        bool cond = ToBool(flagObj);
+        if (cond) return Task.CompletedTask; // keep emitting tokens
+        // Skip until matching [ELSE] or [THEN] at same nesting level
+        SkipBracketSection(i, skipElse: true);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("[ELSE]", IsImmediate = true, HelpString = "[ELSE] - conditional compilation alternate part")]
+    private static Task Prim_BRACKET_ELSE(ForthInterpreter i)
+    {
+        // We arrive here only if first part compiled/emitted; now skip until [THEN]
+        SkipBracketSection(i, skipElse: false);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("[THEN]", IsImmediate = true, HelpString = "[THEN] - end bracket conditional")]
+    private static Task Prim_BRACKET_THEN(ForthInterpreter i) => Task.CompletedTask; // no-op when reached
+
+    private static void SkipBracketSection(ForthInterpreter i, bool skipElse)
+    {
+        if (i._tokens is null) return; // nothing to skip
+        int depth = 0;
+        for (int idx = i._tokenIndex; idx < i._tokens.Count; idx++)
+        {
+            var t = i._tokens[idx];
+            if (t == "[IF]") { depth++; continue; }
+            if (t == "[THEN]")
+            {
+                if (depth == 0)
+                {
+                    // Found terminating [THEN]
+                    i._tokenIndex = idx + 1; // consume
+                    return;
+                }
+                depth--;
+                continue;
+            }
+            if (skipElse && t == "[ELSE]" && depth == 0)
+            {
+                // Stop before ELSE so ELSE body executes
+                i._tokenIndex = idx + 1; // consume [ELSE]
+                return;
+            }
+        }
+        // If we reach here, no matching terminator
+        throw new ForthException(ForthErrorCode.CompileError, "Unmatched bracket conditional");
     }
 
     // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
