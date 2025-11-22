@@ -619,16 +619,6 @@ public partial class ForthInterpreter : IForthInterpreter
                 continue;
             }
 
-            // In interpret state allow bracket conditionals to skip tokens
-            if (!_isCompiling && IsBracketSkipping())
-            {
-                if (!(tok == "[IF]" || tok == "[ELSE]" || tok == "[THEN]"))
-                {
-                    // Skip non-bracket directive tokens
-                    continue;
-                }
-            }
-
             if (!_isCompiling)
             {
                 if (_doesCollecting)
@@ -770,18 +760,6 @@ public partial class ForthInterpreter : IForthInterpreter
         return !_exitRequested;
     }
 
-    private bool IsBracketSkipping()
-    {
-        if (_isCompiling) return false;
-        if (_controlStack.Count == 0) return false;
-        var top = _controlStack.Peek();
-        if (top is BracketIfFrame bif) return bif.Skipping;
-        return false;
-    }
-
-    internal List<Func<ForthInterpreter, Task>> CurrentList() =>
-        _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
-
     private bool TryParseNumber(string token, out long value)
     {
         long GetBase(long def)
@@ -878,6 +856,7 @@ public partial class ForthInterpreter : IForthInterpreter
     {
         public bool Skipping { get; set; }
         public bool SeenElse { get; set; }
+        // Removed provisional BracketIfFrame and interpret-time skipping logic pending full ANS implementation
         // Separate list so we do not invoke abstract base implementation
         private readonly List<Func<ForthInterpreter, Task>> _list = new();
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => _list;

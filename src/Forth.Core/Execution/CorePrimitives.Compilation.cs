@@ -262,36 +262,5 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("[IF]", IsImmediate = true, HelpString = "[IF] ( flag -- ) - begin interpreted conditional section until [ELSE] or [THEN]")]
-    private static Task Prim_BracketIF(ForthInterpreter i)
-    {
-        // Interpret state expected; consume flag and set skip mode if false
-        i.EnsureStack(1, "[IF]");
-        var flag = i.PopInternal();
-        var cond = ToBool(flag);
-        // Push a special frame to track skipping
-        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.BracketIfFrame { Skipping = !cond });
-        return Task.CompletedTask;
-    }
-
-    [Primitive("[ELSE]", IsImmediate = true, HelpString = "[ELSE] - toggle skipping for current [IF] frame")]
-    private static Task Prim_BracketELSE(ForthInterpreter i)
-    {
-        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BracketIfFrame bif)
-            throw new ForthException(ForthErrorCode.CompileError, "[ELSE] without [IF]");
-        if (bif.SeenElse)
-            throw new ForthException(ForthErrorCode.CompileError, "Multiple [ELSE]");
-        bif.SeenElse = true;
-        bif.Skipping = !bif.Skipping; // flip skipping logic
-        return Task.CompletedTask;
-    }
-
-    [Primitive("[THEN]", IsImmediate = true, HelpString = "[THEN] - end bracket conditional section")]
-    private static Task Prim_BracketTHEN(ForthInterpreter i)
-    {
-        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BracketIfFrame)
-            throw new ForthException(ForthErrorCode.CompileError, "[THEN] without [IF]");
-        i._controlStack.Pop();
-        return Task.CompletedTask;
-    }
+    // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
 }
