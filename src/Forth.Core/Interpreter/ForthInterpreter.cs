@@ -855,7 +855,7 @@ public partial class ForthInterpreter : IForthInterpreter
     }
 
     private sealed class ExitWordException : Exception { }
-    private sealed class BracketIfFrame : CompileFrame
+    public sealed class BracketIfFrame : CompileFrame
     {
         public bool Skipping { get; set; }
         public bool SeenElse { get; set; }
