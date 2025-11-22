@@ -605,6 +605,21 @@ public partial class ForthInterpreter : IForthInterpreter
                     processed.Add("'");
                     continue;
                 }
+
+                // Handle generic bracketed composite like: [ IF ] -> "[IF]"
+                if (t == "[" && ti + 2 < _tokens.Count && _tokens[ti + 2] == "]")
+                {
+                    var inner = _tokens[ti + 1];
+                    // Only synthesize known bracketed forms to avoid changing other uses
+                    var upper = inner.ToUpperInvariant();
+                    if (upper == "IF" || upper == "ELSE" || upper == "THEN")
+                    {
+                        processed.Add("[" + upper + "]");
+                        ti += 2; // consume inner and closing bracket
+                        continue;
+                    }
+                }
+
                 processed.Add(t);
             }
             _tokens = processed;
