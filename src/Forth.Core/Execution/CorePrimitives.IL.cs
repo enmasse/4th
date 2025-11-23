@@ -18,25 +18,29 @@ internal static partial class CorePrimitives
         while (i.TryReadNextToken(out var tok)) { if (tok == "}IL") break; tokens.Add(tok); }
         if (tokens.Count == 0) throw new ForthException(ForthErrorCode.CompileError, "Empty IL block");
 
-        var dm = new DynamicMethod("IL$" + Guid.NewGuid().ToString("N"), typeof(void), new[] { typeof(ForthStack), typeof(ForthInterpreter) }, typeof(ForthInterpreter).Module, true);
+        // Signature: (ForthInterpreter intr, ForthStack stack)
+        var dm = new DynamicMethod("IL$" + Guid.NewGuid().ToString("N"), typeof(void), new[] { typeof(ForthInterpreter), typeof(ForthStack) }, typeof(ForthInterpreter).Module, true)
+        {
+            InitLocals = true
+        };
         var il = dm.GetILGenerator();
 
-        // Build opcode map (normalized): e.g., ldarg.0 -> Ldarg_0
         var opMap = BuildOpcodeMap();
-
-        // Locals cache: index -> LocalBuilder (default long)
-        var locals = new Dictionary<int, LocalBuilder>();
+        var locals = new List<LocalBuilder>();
         LocalBuilder EnsureLocal(int index, Type? t = null)
         {
-            if (!locals.TryGetValue(index, out var lb))
+            while (locals.Count <= index)
             {
-                lb = il.DeclareLocal(t ?? typeof(long));
-                locals[index] = lb;
+                locals.Add(il.DeclareLocal(typeof(long)));
+            }
+            var lb = locals[index];
+            if (t != null && lb.LocalType != t)
+            {
+                locals[index] = lb = il.DeclareLocal(t);
             }
             return lb;
         }
 
-        // Labels
         var labels = new Dictionary<string, Label>(StringComparer.OrdinalIgnoreCase);
         Label GetLabel(string name)
         {
@@ -44,6 +48,9 @@ internal static partial class CorePrimitives
             return l;
         }
 
+        Type? lastPushedType = null;
+
+        bool emittedRet = false;
         int idx = 0;
         while (idx < tokens.Count)
         {
@@ -52,56 +59,82 @@ internal static partial class CorePrimitives
             var norm = NormalizeOpcodeToken(t);
             if (opMap.TryGetValue(norm, out var op))
             {
-                // Ensure locals when using ldloc/stloc short forms
-                if (op.Name.StartsWith("Ldloc_", StringComparison.Ordinal))
+                if (op == OpCodes.Ldloc_0 || op == OpCodes.Ldloc_1 || op == OpCodes.Ldloc_2 || op == OpCodes.Ldloc_3)
                 {
-                    if (int.TryParse(op.Name.AsSpan("Ldloc_".Length), out var lidx)) EnsureLocal(lidx);
+                    int lidx = op == OpCodes.Ldloc_0 ? 0 : op == OpCodes.Ldloc_1 ? 1 : op == OpCodes.Ldloc_2 ? 2 : 3;
+                    var lb0 = EnsureLocal(lidx);
+                    il.Emit(OpCodes.Ldloc, lb0);
+                    lastPushedType = lb0.LocalType;
+                    continue;
                 }
-                else if (op.Name.StartsWith("Stloc_", StringComparison.Ordinal))
+                if (op == OpCodes.Stloc_0 || op == OpCodes.Stloc_1 || op == OpCodes.Stloc_2 || op == OpCodes.Stloc_3)
                 {
-                    if (int.TryParse(op.Name.AsSpan("Stloc_".Length), out var sidx)) EnsureLocal(sidx);
+                    int sidx = op == OpCodes.Stloc_0 ? 0 : op == OpCodes.Stloc_1 ? 1 : op == OpCodes.Stloc_2 ? 2 : 3;
+                    var lb1 = EnsureLocal(sidx, lastPushedType ?? typeof(long));
+                    il.Emit(OpCodes.Stloc, lb1);
+                    lastPushedType = null;
+                    continue;
                 }
 
                 switch (op.OperandType)
                 {
                     case OperandType.InlineNone:
                         il.Emit(op);
+                        if (op == OpCodes.Ldc_I4_0 || op == OpCodes.Ldc_I4_1 || op == OpCodes.Ldc_I4_2 || op == OpCodes.Ldc_I4_3 || op == OpCodes.Ldc_I4_4 || op == OpCodes.Ldc_I4_5 || op == OpCodes.Ldc_I4_6 || op == OpCodes.Ldc_I4_7 || op == OpCodes.Ldc_I4_8 || op == OpCodes.Ldc_I4_M1)
+                            lastPushedType = typeof(int);
+                        else if (op == OpCodes.Conv_I8)
+                            lastPushedType = typeof(long);
+                        else if (op == OpCodes.Box)
+                            lastPushedType = typeof(object);
+                        else if (op == OpCodes.Add)
+                            lastPushedType = typeof(long);
+                        else if (op == OpCodes.Dup)
+                            { }
+                        else if (op == OpCodes.Ret) emittedRet = true;
+                        else lastPushedType = null;
                         break;
                     case OperandType.ShortInlineI:
                         EnsureHasNext(tokens, idx, op);
                         var i8 = ParseSByte(tokens[idx++]);
                         il.Emit(op, i8);
+                        lastPushedType = typeof(int);
                         break;
                     case OperandType.InlineI:
                         EnsureHasNext(tokens, idx, op);
                         var i32 = ParseInt(tokens[idx++]);
                         il.Emit(op, i32);
+                        lastPushedType = typeof(int);
                         break;
                     case OperandType.InlineI8:
                         EnsureHasNext(tokens, idx, op);
                         var i64 = ParseLong(tokens[idx++]);
                         il.Emit(op, i64);
+                        lastPushedType = typeof(long);
                         break;
                     case OperandType.ShortInlineR:
                         EnsureHasNext(tokens, idx, op);
                         var r4 = ParseFloat(tokens[idx++]);
                         il.Emit(op, r4);
+                        lastPushedType = typeof(float);
                         break;
                     case OperandType.InlineR:
                         EnsureHasNext(tokens, idx, op);
                         var r8 = ParseDouble(tokens[idx++]);
                         il.Emit(op, r8);
+                        lastPushedType = typeof(double);
                         break;
                     case OperandType.InlineString:
                         EnsureHasNext(tokens, idx, op);
                         var s = Unquote(tokens[idx++]);
                         il.Emit(op, s);
+                        lastPushedType = typeof(string);
                         break;
                     case OperandType.InlineBrTarget:
                     case OperandType.ShortInlineBrTarget:
                         EnsureHasNext(tokens, idx, op);
                         var labName = tokens[idx++];
                         il.Emit(op, GetLabel(labName));
+                        lastPushedType = null;
                         break;
                     case OperandType.InlineSwitch:
                         EnsureHasNext(tokens, idx, op);
@@ -110,41 +143,65 @@ internal static partial class CorePrimitives
                         var arr = new Label[count];
                         for (int k = 0; k < count; k++) arr[k] = GetLabel(tokens[idx++]);
                         il.Emit(op, arr);
+                        lastPushedType = null;
                         break;
                     case OperandType.InlineType:
                         EnsureHasNext(tokens, idx, op);
                         var typeName = Unquote(tokens[idx++]);
                         var tinfo = ResolveType(typeName) ?? throw new ForthException(ForthErrorCode.CompileError, $"Type not found: {typeName}");
                         il.Emit(op, tinfo);
+                        lastPushedType = typeof(Type);
                         break;
                     case OperandType.InlineField:
                         EnsureHasNext(tokens, idx, op);
                         var fieldSig = Unquote(tokens[idx++]);
                         var finfo = ResolveField(fieldSig) ?? throw new ForthException(ForthErrorCode.CompileError, $"Field not found: {fieldSig}");
                         il.Emit(op, finfo);
+                        lastPushedType = finfo.FieldType;
                         break;
                     case OperandType.InlineMethod:
                         EnsureHasNext(tokens, idx, op);
                         var methodSig = Unquote(tokens[idx++]);
                         var minfo = ResolveMethod(methodSig) ?? throw new ForthException(ForthErrorCode.CompileError, $"Method not found: {methodSig}");
-                        il.Emit(op, minfo);
+                        var m = (MethodInfo)minfo;
+                        if (op == OpCodes.Callvirt && !m.IsVirtual) il.Emit(OpCodes.Call, m); else il.Emit(op, m);
+                        lastPushedType = m.ReturnType == typeof(void) ? null : m.ReturnType;
                         break;
                     case OperandType.InlineTok:
                         EnsureHasNext(tokens, idx, op);
                         var tokSig = Unquote(tokens[idx++]);
                         var mi = ResolveMethod(tokSig);
-                        if (mi is not null) { il.Emit(op, mi); break; }
+                        if (mi is not null) { var mm = (MethodInfo)mi; if (op == OpCodes.Callvirt && !mm.IsVirtual) il.Emit(OpCodes.Call, mm); else il.Emit(op, mm); lastPushedType = mm.ReturnType == typeof(void) ? null : mm.ReturnType; break; }
                         var fi = ResolveField(tokSig);
-                        if (fi is not null) { il.Emit(op, fi); break; }
+                        if (fi is not null) { il.Emit(op, fi); lastPushedType = fi.FieldType; break; }
                         var tt = ResolveType(tokSig);
-                        if (tt is not null) { il.Emit(op, tt); break; }
+                        if (tt is not null) { il.Emit(op, tt); lastPushedType = typeof(Type); break; }
                         throw new ForthException(ForthErrorCode.CompileError, $"Unable to resolve token: {tokSig}");
                     case OperandType.InlineVar:
                     case OperandType.ShortInlineVar:
                         EnsureHasNext(tokens, idx, op);
                         var varIdx = ParseInt(tokens[idx++]);
-                        EnsureLocal(varIdx);
-                        if (op.OperandType == OperandType.ShortInlineVar) il.Emit(op, (byte)varIdx); else il.Emit(op, (short)varIdx);
+                        var lb = EnsureLocal(varIdx, (op == OpCodes.Stloc || op == OpCodes.Stloc_S) ? (lastPushedType ?? typeof(long)) : null);
+                        if (op == OpCodes.Ldloc_S || op == OpCodes.Ldloc)
+                        {
+                            il.Emit(OpCodes.Ldloc, lb);
+                            lastPushedType = lb.LocalType;
+                        }
+                        else if (op == OpCodes.Stloc_S || op == OpCodes.Stloc)
+                        {
+                            il.Emit(OpCodes.Stloc, lb);
+                            lastPushedType = null;
+                        }
+                        else if (op == OpCodes.Ldloca_S || op == OpCodes.Ldloca)
+                        {
+                            il.Emit(OpCodes.Ldloca, lb);
+                            lastPushedType = lb.LocalType.MakeByRefType();
+                        }
+                        else
+                        {
+                            il.Emit(op, (short)varIdx);
+                            lastPushedType = null;
+                        }
                         break;
                     default:
                         throw new ForthException(ForthErrorCode.CompileError, $"Unsupported operand type: {op.OperandType}");
@@ -155,9 +212,9 @@ internal static partial class CorePrimitives
             throw new ForthException(ForthErrorCode.CompileError, $"Unknown IL token: {t}");
         }
 
-        il.Emit(OpCodes.Ret);
-        var action = (Action<ForthStack, ForthInterpreter>)dm.CreateDelegate(typeof(Action<ForthStack, ForthInterpreter>));
-        if (!i._isCompiling) action(i.DataStack, i); else i.CurrentList().Add(ii => { action(ii.DataStack, ii); return Task.CompletedTask; });
+        if (!emittedRet) il.Emit(OpCodes.Ret);
+        var action = (Action<ForthInterpreter, ForthStack>)dm.CreateDelegate(typeof(Action<ForthInterpreter, ForthStack>));
+        if (!i._isCompiling) action(i, i._stack); else i.CurrentList().Add(ii => { action(ii, ii._stack); return Task.CompletedTask; });
         return Task.CompletedTask;
     }
 

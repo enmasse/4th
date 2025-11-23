@@ -27,6 +27,11 @@ Status — implemented / obvious support (non-exhaustive)
 - Extended arithmetic: `*/MOD` plus double-cell ops `D+`, `D-`, `M*`
 
 Recent extensions
+- Inline IL: stabilized `IL{ ... }IL`
+  - DynamicMethod signature now `(ForthInterpreter intr, ForthStack stack)`; `ldarg.0` is interpreter, `ldarg.1` is stack
+  - Local type inference (declare `object` for `Pop()` results, `long` for arithmetic); consistent `LocalBuilder`-based `ldloc/stloc/ldloca`
+  - Normalize non-virtual method calls to `call` even if `callvirt` token is used
+  - Added comprehensive tests for fixed-slot/short/inline locals, increment, and POP/PUSH via interpreter and via `ForthStack`
 - `TYPE` now supports: plain string, counted string address, (addr u) memory form, and string+length form; rejects bare numeric per tests.
 - `WRITE-FILE` / `APPEND-FILE` accept string, counted string address, or (addr u) memory range.
 - `>NUMBER` extended to accept counted string address and (addr u) forms in addition to raw string.
@@ -55,15 +60,15 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (233/233)
+- [x] Full test suite passing (241/241)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
 - [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
-- [x] Fix `ADD-INPUT-LINE` detection to prefer `(addr u)` over counted-addr when ambiguous
 - [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
 - [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods
 - [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
+- [x] Inline IL: local typing + non-virtual `call` normalization + signature swap; add comprehensive tests
 
 Remaining / next work items
 - [ ] Optional: tighten ACCEPT/EXPECT/READ-LINE semantics (edge-case conformity: handling of CR/LF, partial reads)
@@ -81,6 +86,7 @@ Decisions made
 - Favor per-call MMF accessor disposal for clarity and analyzer satisfaction; revisit only with profiling evidence.
 - Extended primitives prefer pattern matching and numeric helper detection over additional stack peeks to keep code concise.
 - Kept tokenizer S" behavior minimal (single leading space skip) to avoid unintended trimming.
+- Inline IL: chose `(ForthInterpreter, ForthStack)` param order for inline IL dynamic methods; `ldarg.0` is interpreter.
 
 Potential future extensions
 - Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
@@ -88,6 +94,7 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
+- Inline IL: fix var opcode handling; add tests for fixed/short/inline locals, increment, POP/PUSH (interpreter + stack). Normalize non-virtual calls; swap dynamic method args order. Full suite passing (241/241).
 - Fixed ADD-INPUT-LINE ambiguity: prefer (addr u) pair over counted-addr when both patterns match.
 - Added xUnit tests exercising `TEST-IO`/`ADD-INPUT-LINE` (direct string, counted-addr, addr/u) at `4th.Tests/Core/Modules/TestIOModuleTests.cs`.
 - Added Forth tester-harness tests at `tests/forth/add-input-line-tests.tester.4th` and a compatibility `.4th` variant.
@@ -96,8 +103,3 @@ Recent activity (most recent first)
 - Generator produces `ForthGeneratedTests.g.cs` during build; rebuild to make Test Explorer discover tests.
 - Ran `ans-diff` and wrote `tools/ans-diff/report.md`.
 - Full test suite passing after changes (233/233).
-
-If needed, next actionable micro-task candidates
-- Add XML docs for Tokenizer (clear CS1591 warnings)
-- Implement configurable block cache size (interpreter ctor or setter)
-- Add tests for counted-address WRITE-FILE with zero-length strings
