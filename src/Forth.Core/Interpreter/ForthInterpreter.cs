@@ -361,14 +361,23 @@ public partial class ForthInterpreter : IForthInterpreter
     /// Gets a read-only snapshot of the data stack contents (top at end of list).
     /// </summary>
     public IReadOnlyList<object> Stack =>
-        _stack.AsReadOnly();
+        _stack.AsReadOnly().Select(fv => fv.ToObject()).ToList();
 
     /// <summary>
     /// Pushes a raw object onto the data stack.
     /// </summary>
     /// <param name="value">Value to push.</param>
-    public void Push(object value) =>
-        _stack.Push(value);
+    public void Push(object value)
+    {
+        ForthValue fv = value switch
+        {
+            long l => ForthValue.FromLong(l),
+            double d => ForthValue.FromDouble(d),
+            string s => ForthValue.FromString(s),
+            _ => ForthValue.FromObject(value)
+        };
+        _stack.Push(fv);
+    }
 
     /// <summary>
     /// Pops and returns the top item on the data stack.
@@ -471,8 +480,17 @@ public partial class ForthInterpreter : IForthInterpreter
     }
 
     // Return stack helpers
-    internal void RPush(object value) =>
-        _rstack.Push(value);
+    internal void RPush(object value)
+    {
+        ForthValue fv = value switch
+        {
+            long l => ForthValue.FromLong(l),
+            double d => ForthValue.FromDouble(d),
+            string s => ForthValue.FromString(s),
+            _ => ForthValue.FromObject(value)
+        };
+        _rstack.Push(fv);
+    }
 
     internal object RPop() =>
         _rstack.Pop();

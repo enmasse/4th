@@ -97,6 +97,7 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
+- Refactored ForthStack to use typed ForthValue struct, storing primitives as values without boxing to match CLR evaluation stack structure.
 - Updated Roslyn source-generator to group generated tests by file using nested classes only for multi-test files, simplifying single-test file names.
 - Tightened ACCEPT/EXPECT/READ-LINE to read character-by-character for ANS conformity, updated TestIO for shared input buffer.
 - Duplicated ACCEPT tests in both .4th (generator) and .tester.4th (ttester) formats.
