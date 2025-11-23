@@ -65,10 +65,14 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "READ-LINE");
         var u = (int)ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
-        var raw = i.ReadLineFromIO() ?? string.Empty;
         int len = 0;
-        for (int k = 0; k < raw.Length && len < u; k++)
-        { char ch = raw[k]; if (ch == '\r' || ch == '\n') break; i.MemSet(addr + len, (long)ch); len++; }
+        while (len < u)
+        {
+            int ch = i.ReadKey();
+            if (ch == -1 || ch == '\r' || ch == '\n') break;
+            i.MemSet(addr + len, (long)ch);
+            len++;
+        }
         i.Push((long)len);
         return Task.CompletedTask;
     }
@@ -80,10 +84,14 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "ACCEPT");
         var u = (int)ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
-        var raw = i.ReadLineFromIO() ?? string.Empty;
         int len = 0;
-        for (int k = 0; k < raw.Length && len < u; k++)
-        { char ch = raw[k]; if (ch == '\r' || ch == '\n') break; i.MemSet(addr + len, (long)ch); len++; }
+        while (len < u)
+        {
+            int ch = i.ReadKey();
+            if (ch == -1 || ch == '\r' || ch == '\n') break;
+            i.MemSet(addr + len, (long)ch);
+            len++;
+        }
         i.Push((long)len);
         return Task.CompletedTask;
     }

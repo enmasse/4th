@@ -10,12 +10,36 @@ public class SourceAndReadLineTests
     private sealed class TestIO : Forth.Core.IForthIO
     {
         public readonly System.Collections.Generic.List<string> Outputs = new();
-        private readonly string _line;
-        public TestIO(string line) { _line = line; }
+        private string _input;
+        public TestIO(string line) { _input = line + "\n"; }
         public void Print(string text) => Outputs.Add(text);
         public void PrintNumber(long number) => Outputs.Add(number.ToString());
         public void NewLine() => Outputs.Add("\n");
-        public string? ReadLine() => _line;
+        public string? ReadLine()
+        {
+            if (string.IsNullOrEmpty(_input)) return null;
+            var idx = _input.IndexOf('\n');
+            if (idx == -1)
+            {
+                var res = _input;
+                _input = "";
+                return res;
+            }
+            else
+            {
+                var res = _input[..idx];
+                _input = _input[(idx + 1)..];
+                return res;
+            }
+        }
+        public int ReadKey()
+        {
+            if (string.IsNullOrEmpty(_input)) return -1;
+            var ch = _input[0];
+            _input = _input[1..];
+            return ch;
+        }
+        public bool KeyAvailable() => !string.IsNullOrEmpty(_input);
     }
 
     [Fact]

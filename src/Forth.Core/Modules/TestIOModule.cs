@@ -98,7 +98,18 @@ namespace Forth.Core.Modules
     /// </summary>
     public class TestIO : IForthIO
     {
-        private Queue<string> _lines = new();
+        private string _input = "";
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TestIO"/> class with optional input lines.
+        /// </summary>
+        /// <param name="keys">Optional collection of key codes to simulate input.</param>
+        /// <param name="lines">Optional collection of input lines to simulate.</param>
+        /// <param name="keyAvailable">Whether a key is available.</param>
+        public TestIO(IEnumerable<int>? keys = null, IEnumerable<string?>? lines = null, bool keyAvailable = false)
+        {
+            if (keys != null) foreach (var k in keys) _input += (char)k;
+            if (lines != null) foreach (var l in lines) if (l != null) AddInputLine(l);
+        }
         /// <summary>
         /// Prints the specified text to the console output.
         /// </summary>
@@ -116,16 +127,38 @@ namespace Forth.Core.Modules
         /// Reads the next input line from the simulated input queue.
         /// Returns an empty string if no lines are available.
         /// </summary>
-        public string? ReadLine() => _lines.Count > 0 ? _lines.Dequeue() : string.Empty;
+        public string? ReadLine()
+        {
+            if (string.IsNullOrEmpty(_input)) return null;
+            var idx = _input.IndexOf('\n');
+            if (idx == -1)
+            {
+                var res = _input;
+                _input = "";
+                return res;
+            }
+            else
+            {
+                var res = _input[..idx];
+                _input = _input[(idx + 1)..];
+                return res;
+            }
+        }
         /// <summary>
         /// Reads a key from the input. Returns -1 to indicate no key is available in test mode.
         /// </summary>
-        public int ReadKey() => -1;
+        public int ReadKey()
+        {
+            if (string.IsNullOrEmpty(_input)) return -1;
+            var ch = _input[0];
+            _input = _input[1..];
+            return ch;
+        }
         /// <summary>
         /// Indicates whether a key is available for reading in test mode.
         /// Always returns false in this test implementation.
         /// </summary>
-        public bool KeyAvailable() => false;
+        public bool KeyAvailable() => !string.IsNullOrEmpty(_input);
         /// <summary>
         /// Sets the input lines for the simulated input queue.
         /// Replaces any existing lines with the provided collection.
@@ -133,7 +166,7 @@ namespace Forth.Core.Modules
         /// <param name="line">The collection of input lines to set.</param>
         public void AddInputLine(string line)
         {
-            _lines.Enqueue(line);
+            _input += line + "\n";
         }
     }
 }

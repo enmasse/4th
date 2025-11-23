@@ -41,26 +41,34 @@ public sealed class ForthTestGenerator : ISourceGenerator
             var common = string.Join("\n", lines.Take(includeIndex + 1)) + "\n"; // Include the INCLUDE line
             var rest = string.Join("\n", lines.Skip(includeIndex + 1)) + "\n";
             var testGroups = ParseTestGroups(rest);
+            var fileName = System.IO.Path.GetFileNameWithoutExtension(af.Path);
+            var className = SanitizeName(fileName);
+            bool useNestedClass = testGroups.Count > 1;
+            if (useNestedClass)
+            {
+                sb.AppendLine("        public static class " + className + " {");
+            }
+
             if (testGroups.Count == 0)
             {
                 // Fallback to whole file
-                var displayName = System.IO.Path.GetFileNameWithoutExtension(af.Path);
+                var displayName = fileName;
                 var methodName = "Test_" + SanitizeName(displayName);
                 var codeToEval = content.Replace("\"", "\"\"");
-                sb.AppendLine("    [Fact(DisplayName=\"" + displayName.Replace("\"", "\\\"") + "\")]");
-                sb.AppendLine("    public static async Task " + methodName + "() {");
-                sb.AppendLine("        var interpreter = new ForthInterpreter(new Forth.Core.Modules.TestIO());");
-                sb.AppendLine("        var dir = System.IO.Path.GetDirectoryName(\"" + af.Path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\");");
-                sb.AppendLine("        var prev = System.IO.Directory.GetCurrentDirectory();");
-                sb.AppendLine("        var code = @\"" + codeToEval + "\";");
-                sb.AppendLine("        try {");
-                sb.AppendLine("            System.IO.Directory.SetCurrentDirectory(dir!);");
-                sb.AppendLine("            var ok = await interpreter.EvalAsync(code);");
-                sb.AppendLine("            Assert.True(ok, \"Forth test failed: " + displayName.Replace("\"", "\\\"") + "\");");
-                sb.AppendLine("        } finally {");
-                sb.AppendLine("            System.IO.Directory.SetCurrentDirectory(prev);");
-                sb.AppendLine("        }");
-                sb.AppendLine("    }");
+                sb.AppendLine("            [Fact(DisplayName=\"" + displayName.Replace("\"", "\\\"") + "\")]");
+                sb.AppendLine("            public static async Task " + methodName + "() {");
+                sb.AppendLine("                var interpreter = new ForthInterpreter(new Forth.Core.Modules.TestIO());");
+                sb.AppendLine("                var dir = System.IO.Path.GetDirectoryName(\"" + af.Path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\");");
+                sb.AppendLine("                var prev = System.IO.Directory.GetCurrentDirectory();");
+                sb.AppendLine("                var code = @\"" + codeToEval + "\";");
+                sb.AppendLine("                try {");
+                sb.AppendLine("                    System.IO.Directory.SetCurrentDirectory(dir!);");
+                sb.AppendLine("                    var ok = await interpreter.EvalAsync(code);");
+                sb.AppendLine("                    Assert.True(ok, \"Forth test failed: " + displayName.Replace("\"", "\\\"") + "\");");
+                sb.AppendLine("                } finally {");
+                sb.AppendLine("                    System.IO.Directory.SetCurrentDirectory(prev);");
+                sb.AppendLine("                }");
+                sb.AppendLine("            }");
             }
             else
             {
@@ -69,21 +77,27 @@ public sealed class ForthTestGenerator : ISourceGenerator
                     var displayName = group.Name;
                     var methodName = "Test_" + SanitizeName(displayName);
                     var codeToEval = (common + group.Code).Replace("\"", "\"\"");
-                    sb.AppendLine("    [Fact(DisplayName=\"" + displayName.Replace("\"", "\\\"") + "\")]");
-                    sb.AppendLine("    public static async Task " + methodName + "() {");
-                    sb.AppendLine("        var interpreter = new ForthInterpreter(new Forth.Core.Modules.TestIO());");
-                    sb.AppendLine("        var dir = System.IO.Path.GetDirectoryName(\"" + af.Path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\");");
-                    sb.AppendLine("        var prev = System.IO.Directory.GetCurrentDirectory();");
-                    sb.AppendLine("        var code = @\"" + codeToEval + "\";");
-                    sb.AppendLine("        try {");
-                    sb.AppendLine("            System.IO.Directory.SetCurrentDirectory(dir!);");
-                    sb.AppendLine("            var ok = await interpreter.EvalAsync(code);");
-                    sb.AppendLine("            Assert.True(ok, \"Forth test failed: " + displayName.Replace("\"", "\\\"") + "\");");
-                    sb.AppendLine("        } finally {");
-                    sb.AppendLine("            System.IO.Directory.SetCurrentDirectory(prev);");
-                    sb.AppendLine("        }");
-                    sb.AppendLine("    }");
+                    string indent = useNestedClass ? "            " : "        ";
+                    sb.AppendLine(indent + "[Fact(DisplayName=\"" + displayName.Replace("\"", "\\\"") + "\")]");
+                    sb.AppendLine(indent + "public static async Task " + methodName + "() {");
+                    sb.AppendLine(indent + "    var interpreter = new ForthInterpreter(new Forth.Core.Modules.TestIO());");
+                    sb.AppendLine(indent + "    var dir = System.IO.Path.GetDirectoryName(\"" + af.Path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\");");
+                    sb.AppendLine(indent + "    var prev = System.IO.Directory.GetCurrentDirectory();");
+                    sb.AppendLine(indent + "    var code = @\"" + codeToEval + "\";");
+                    sb.AppendLine(indent + "    try {");
+                    sb.AppendLine(indent + "        System.IO.Directory.SetCurrentDirectory(dir!);");
+                    sb.AppendLine(indent + "        var ok = await interpreter.EvalAsync(code);");
+                    sb.AppendLine(indent + "        Assert.True(ok, \"Forth test failed: " + displayName.Replace("\"", "\\\"") + "\");");
+                    sb.AppendLine(indent + "    } finally {");
+                    sb.AppendLine(indent + "        System.IO.Directory.SetCurrentDirectory(prev);");
+                    sb.AppendLine(indent + "    }");
+                    sb.AppendLine(indent + "}");
                 }
+            }
+
+            if (useNestedClass)
+            {
+                sb.AppendLine("        }");
             }
         }
 

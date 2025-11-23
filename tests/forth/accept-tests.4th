@@ -1,0 +1,43 @@
+INCLUDE "../ttester.4th"
+\ ACCEPT tests
+TESTING ACCEPT basic
+
+S" hello" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 10 ACCEPT
+B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
+
+TESTING ACCEPT with CR
+
+S" hello\rworld" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 10 ACCEPT
+B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
+
+TESTING ACCEPT with LF
+
+S" hello\nworld" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 10 ACCEPT
+B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
+
+TESTING ACCEPT partial
+
+S" hel\rlo" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 10 ACCEPT
+B C@ B 1 + C@ B 2 + C@
+
+TESTING ACCEPT buffer limit
+
+S" abcdefghij" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 5 ACCEPT
+B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
+
+TESTING ACCEPT CR LF
+
+S" a\r\nb" ADD-INPUT-LINE
+CREATE B 16 ALLOT
+B 10 ACCEPT
+B C@

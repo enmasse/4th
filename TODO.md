@@ -39,6 +39,7 @@ Recent extensions
 - INCLUDE/LOAD: changed to evaluate entire file contents in a single `EvalAsync` call to preserve bracketed conditional constructs spanning line boundaries.
 - Token preprocessing: synthesize common bracket composites (e.g. `[IF]`, `[ELSE]`, `[THEN]`) from separated `[` `IF` `]` sequences so older test sources and style variants are handled.
 - `SkipBracketSection` improved to accept both composite tokens and separated bracket sequences when scanning for matching `[ELSE]`/`[THEN]`.
+- ACCEPT/EXPECT/READ-LINE: updated to read character-by-character for proper ANS conformity, handling partial reads and CR/LF termination.
 
 Notes
 - `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
@@ -60,19 +61,20 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (250/250)
+- [x] Full test suite passing (257/257)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
 - [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
 - [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
-- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group
+- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group, grouped by file (nested classes for multi-test files)
 - [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
 - [x] Inline IL: local typing + non-virtual `call` normalization + signature swap; add comprehensive tests
 - [x] Enable `EnforceExtendedAnalyzerRules` property in `4th.Tests.Generators` project to satisfy analyzer guidance
+- [x] Tighten ACCEPT/EXPECT/READ-LINE semantics for edge-case conformity (character-by-character reading)
+- [x] Duplicate new tests as ttester tests (both .4th and .tester.4th formats)
 
 Remaining / next work items
-- [ ] Optional: tighten ACCEPT/EXPECT/READ-LINE semantics (edge-case conformity: handling of CR/LF, partial reads)
 - [ ] Add configurable LRU block cache size (interpreter ctor or setter)
 - [ ] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
 - [ ] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
@@ -87,6 +89,7 @@ Decisions made
 - Extended primitives prefer pattern matching and numeric helper detection over additional stack peeks to keep code concise.
 - Kept tokenizer S" behavior minimal (single leading space skip) to avoid unintended trimming.
 - Inline IL: chose `(ForthInterpreter, ForthStack)` param order for inline IL dynamic methods; `ldarg.0` is interpreter.
+- ACCEPT/EXPECT/READ-LINE: implemented character-by-character reading using ReadKey() for accurate partial read handling and CR/LF termination.
 
 Potential future extensions
 - Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
@@ -94,7 +97,10 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
-- Modified Roslyn source-generator to split .4th test files into individual [Fact] methods per TESTING group for better isolation and reporting (250 tests now).
+- Updated Roslyn source-generator to group generated tests by file using nested classes only for multi-test files, simplifying single-test file names.
+- Tightened ACCEPT/EXPECT/READ-LINE to read character-by-character for ANS conformity, updated TestIO for shared input buffer.
+- Duplicated ACCEPT tests in both .4th (generator) and .tester.4th (ttester) formats.
+- Full test suite passing (257/257).
 - Combined related tests in .tester.4th files into single T{ }T blocks using ttester.4th's multi-result capabilities.
 - Added TESTING comments to group related tests in each .tester.4th file.
 - Changed all .tester.4th files to reference ttester.4th instead of tester.fs.

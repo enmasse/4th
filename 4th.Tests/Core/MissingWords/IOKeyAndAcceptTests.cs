@@ -14,23 +14,50 @@ public class IOKeyAndAcceptTests
         private readonly Queue<int> _keys = new();
         private readonly Queue<string?> _lines = new();
         private bool _keyAvailable;
+        private string _input = "";
 
         public readonly List<string> Outputs = new();
         public TestIO(IEnumerable<int>? keys = null, IEnumerable<string?>? lines = null, bool keyAvailable = false)
         {
-            if (keys != null) foreach (var k in keys) _keys.Enqueue(k);
-            if (lines != null) foreach (var l in lines) _lines.Enqueue(l);
+            if (keys != null) foreach (var k in keys) _input += (char)k;
+            if (lines != null) foreach (var l in lines) if (l != null) AddInputLine(l);
             _keyAvailable = keyAvailable;
         }
 
         public void Print(string text) => Outputs.Add(text);
         public void PrintNumber(long number) => Outputs.Add(number.ToString());
         public void NewLine() => Outputs.Add("\n");
-        public string? ReadLine() => _lines.Count > 0 ? _lines.Dequeue() : null;
-        public int ReadKey() => _keys.Count > 0 ? _keys.Dequeue() : -1;
-        public bool KeyAvailable() => _keyAvailable || _keys.Count > 0;
+        public string? ReadLine()
+        {
+            if (string.IsNullOrEmpty(_input)) return null;
+            var idx = _input.IndexOf('\n');
+            if (idx == -1)
+            {
+                var res = _input;
+                _input = "";
+                return res;
+            }
+            else
+            {
+                var res = _input[..idx];
+                _input = _input[(idx + 1)..];
+                return res;
+            }
+        }
+        public int ReadKey()
+        {
+            if (string.IsNullOrEmpty(_input)) return -1;
+            var ch = _input[0];
+            _input = _input[1..];
+            return ch;
+        }
+        public bool KeyAvailable() => !string.IsNullOrEmpty(_input) || _keyAvailable || _keys.Count > 0;
 
         public void SetKeyAvailable(bool v) => _keyAvailable = v;
+        public void AddInputLine(string line)
+        {
+            _input += line + "\n";
+        }
     }
 
     [Fact]
