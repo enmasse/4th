@@ -214,4 +214,112 @@ public class InlineILRawOpcodeTests
         Assert.Single(f.Stack);
         Assert.Equal(42L, (long)f.Stack[0]);
     }
+
+    [Fact]
+    public async Task RawOpcodes_Branch_IncrementIfNonZero()
+    {
+        var f = new ForthInterpreter();
+        var define = @": INCNZ IL{ 
+            ldarg.0 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Pop()""
+            call ""Forth.Core.Interpreter.ForthInterpreter::ToLong(object)"" 
+            stloc.s 0 
+            // if value == 0 skip increment
+            ldloc.s 0 
+            ldc.i4.0 
+            conv.i8 
+            ceq 
+            brtrue.s SKIP 
+            ldloc.s 0 
+            ldc.i4.1 
+            conv.i8 
+            add 
+            stloc.s 0 
+            SKIP: 
+            ldarg.0 
+            ldloc.s 0 
+            box System.Int64 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Push(object)"" 
+            ret 
+        }IL ;";
+        Assert.True(await f.EvalAsync(define));
+        Assert.True(await f.EvalAsync("0 INCNZ"));
+        Assert.Equal(0L, (long)f.Stack[0]);
+        Assert.True(await f.EvalAsync("5 INCNZ"));
+        Assert.Equal(6L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task RawOpcodes_Loop_Sum1ToN()
+    {
+        var f = new ForthInterpreter();
+        var define = @": SUM1TON IL{ 
+            ldarg.0 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Pop()"" 
+            call ""Forth.Core.Interpreter.ForthInterpreter::ToLong(object)"" 
+            stloc.s 0             // n
+            ldc.i4.0 
+            conv.i8 
+            stloc.s 1             // acc
+            LOOP: 
+            ldloc.s 0 
+            ldc.i4.0 
+            conv.i8 
+            ceq 
+            brtrue.s END          // if n == 0 end
+            ldloc.s 1 
+            ldloc.s 0 
+            add 
+            stloc.s 1             // acc += n
+            ldloc.s 0 
+            ldc.i4.1 
+            conv.i8 
+            sub 
+            stloc.s 0             // n--
+            br.s LOOP 
+            END: 
+            ldarg.0 
+            ldloc.s 1 
+            box System.Int64 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Push(object)"" 
+            ret 
+        }IL ;";
+        Assert.True(await f.EvalAsync(define));
+        Assert.True(await f.EvalAsync("5 SUM1TON"));
+        Assert.Single(f.Stack);
+        Assert.Equal(15L, (long)f.Stack[0]);
+    }
+
+    [Fact]
+    public async Task RawOpcodes_Branch_NegateIfPositive()
+    {
+        var f = new ForthInterpreter();
+        var define = @": NEGIFPOS IL{ 
+            ldarg.0 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Pop()"" 
+            call ""Forth.Core.Interpreter.ForthInterpreter::ToLong(object)"" 
+            stloc.s 0 
+            ldloc.s 0 
+            ldc.i4.0 
+            conv.i8 
+            cgt                // value > 0 ?
+            brfalse.s DONE      // if not positive skip
+            ldloc.s 0 
+            neg 
+            stloc.s 0 
+            DONE: 
+            ldarg.0 
+            ldloc.s 0 
+            box System.Int64 
+            callvirt ""Forth.Core.Interpreter.ForthInterpreter::Push(object)"" 
+            ret 
+        }IL ;";
+        Assert.True(await f.EvalAsync(define));
+        Assert.True(await f.EvalAsync("5 NEGIFPOS"));
+        Assert.Equal(-5L, (long)f.Stack[0]);
+        Assert.True(await f.EvalAsync("0 NEGIFPOS"));
+        Assert.Equal(0L, (long)f.Stack[1]);
+        Assert.True(await f.EvalAsync("-3 NEGIFPOS"));
+        Assert.Equal(-3L, (long)f.Stack[2]);
+    }
 }

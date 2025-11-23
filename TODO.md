@@ -69,6 +69,7 @@ Progress / Repository tasks (current)
 - [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods
 - [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
 - [x] Inline IL: local typing + non-virtual `call` normalization + signature swap; add comprehensive tests
+- [x] Enable `EnforceExtendedAnalyzerRules` property in `4th.Tests.Generators` project to satisfy analyzer guidance
 
 Remaining / next work items
 - [ ] Optional: tighten ACCEPT/EXPECT/READ-LINE semantics (edge-case conformity: handling of CR/LF, partial reads)
