@@ -49,23 +49,7 @@ namespace Forth.Core.Modules
                 throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
             }
 
-            // Prioritize counted string detection: any numeric top whose cell holds a plausible length
-            if (IsNumeric(top))
-            {
-                long addrCandidate = ForthInterpreter.ToLong(top);
-                i.MemTryGet(addrCandidate, out var lenCell);
-                long len = ForthInterpreter.ToLong(lenCell);
-                if (len >= 0 && len < 1000)
-                {
-                    var sbc = new StringBuilder();
-                    for (long k = 0; k < len; k++) { i.MemTryGet(addrCandidate + 1 + k, out var v); sbc.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
-                    i.PopInternal();
-                    if (i.IO is TestIO tioCounted) { tioCounted.AddInputLine(sbc.ToString()); return Task.CompletedTask; }
-                    throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
-                }
-            }
-
-            // Form 2: ( addr u ) pair: top length, next address or string (only if counted detection failed)
+            // Prefer (addr u) pair when top is numeric and second is address or string.
             if (i.Stack.Count >= 2 && IsNumeric(top) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
             {
                 var uObj = i.PopInternal();
@@ -86,6 +70,22 @@ namespace Forth.Core.Modules
                 }
                 if (i.IO is TestIO tioPair) { tioPair.AddInputLine(line); return Task.CompletedTask; }
                 throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+            }
+
+            // Prioritize counted string detection: numeric top whose cell holds a plausible length
+            if (IsNumeric(top))
+            {
+                long addrCandidate = ForthInterpreter.ToLong(top);
+                i.MemTryGet(addrCandidate, out var lenCell);
+                long len = ForthInterpreter.ToLong(lenCell);
+                if (len >= 0 && len < 1000)
+                {
+                    var sbc = new StringBuilder();
+                    for (long k = 0; k < len; k++) { i.MemTryGet(addrCandidate + 1 + k, out var v); sbc.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
+                    i.PopInternal();
+                    if (i.IO is TestIO tioCounted) { tioCounted.AddInputLine(sbc.ToString()); return Task.CompletedTask; }
+                    throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+                }
             }
 
             throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE unsupported stack pattern");

@@ -1,4 +1,4 @@
-Found 177 primitives in code:
+Found 181 primitives in code:
 
 !
 #
@@ -75,6 +75,7 @@ DUP
 ELSE
 EMIT
 END-MODULE
+ENVIRONMENT?
 ERASE
 EXECUTE
 EXIT
@@ -176,6 +177,9 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 [
+[ELSE]
+[IF]
+[THEN]
 ]
 
 
@@ -282,10 +286,13 @@ WRITE-FILE
 
 ANS core words missing (0):
 
-Other primitives in code not in ANS list (78):
+Other primitives in code not in ANS list (82):
 -
 -ROT
 .\
+[ELSE]
+[IF]
+[THEN]
 *
 */
 /
@@ -316,6 +323,7 @@ DROP
 DUMP
 DUP
 END-MODULE
+ENVIRONMENT?
 EXECUTE
 F-
 F!
