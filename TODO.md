@@ -1,5 +1,7 @@
 # TODO: ANS/Forth conformity gap analysis
 
+_Last updated: 2025-11-23_
+
 Goal
 - Compare the current implementation against the ANS Forth core wordlist and identify words that are missing or partially implemented.
 
@@ -53,10 +55,15 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (229/229)
+- [x] Full test suite passing (233/233)
 - [x] ans-diff report updated (CI ready to fail on missing words)
-- [x] Add `ans-diff` project to solution and fix LangVersion to `preview`
-- [x] Run `ans-diff` and write report to `tools/ans-diff/report.md`
+- [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
+- [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
+- [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
+- [x] Fix `ADD-INPUT-LINE` detection to prefer `(addr u)` over counted-addr when ambiguous
+- [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
+- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods
+- [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
 
 Remaining / next work items
 - [ ] Optional: tighten ACCEPT/EXPECT/READ-LINE semantics (edge-case conformity: handling of CR/LF, partial reads)
@@ -68,6 +75,7 @@ Remaining / next work items
 - [ ] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
 - [ ] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
 - [ ] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
+- [ ] Enable `EnforceExtendedAnalyzerRules` property in `4th.Tests.Generators` project to satisfy analyzer guidance
 
 Decisions made
 - Favor per-call MMF accessor disposal for clarity and analyzer satisfaction; revisit only with profiling evidence.
@@ -80,12 +88,16 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
-- Fixed bracketed conditional handling across lines: INCLUDE/LOAD change, tokenizer preprocessing, SkipBracketSection improvements; full test suite passing (229/229).
-- Extended TYPE, >NUMBER, file primitives; all tests passing.
-- Tokenizer S" adjustments merged.
-- Prior: block system + LRU tests, analyzer & nullable warnings fixed, ans-diff integration.
+- Fixed ADD-INPUT-LINE ambiguity: prefer (addr u) pair over counted-addr when both patterns match.
+- Added xUnit tests exercising `TEST-IO`/`ADD-INPUT-LINE` (direct string, counted-addr, addr/u) at `4th.Tests/Core/Modules/TestIOModuleTests.cs`.
+- Added Forth tester-harness tests at `tests/forth/add-input-line-tests.tester.4th` and a compatibility `.4th` variant.
+- Removed legacy `tests/forth/framework.4th` file and updated test set.
+- Added Roslyn source-generator `4th.Tests.Generators/ForthTestGenerator.cs` to generate xUnit wrappers for `.4th` files.
+- Generator produces `ForthGeneratedTests.g.cs` during build; rebuild to make Test Explorer discover tests.
+- Ran `ans-diff` and wrote `tools/ans-diff/report.md`.
+- Full test suite passing after changes (233/233).
 
 If needed, next actionable micro-task candidates
 - Add XML docs for Tokenizer (clear CS1591 warnings)
-- Implement configurable block cache size
+- Implement configurable block cache size (interpreter ctor or setter)
 - Add tests for counted-address WRITE-FILE with zero-length strings

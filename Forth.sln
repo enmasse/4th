@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11218.70 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Forth.ProtoActor", "modules\Forth.ProtoActor\Forth.ProtoActor.csproj", "{917D652F-62BE-4AF9-AF81-BEFF99E2F651}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ans-diff", "tools\ans-diff\ans-diff.csproj", "{7E402432-F12B-499E-86DA-75EFE858AA12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "4th.Tests.Generators", "4th.Tests.Generators\4th.Tests.Generators.csproj", "{5528219B-40D6-A0C1-3E41-85E63A0C23FF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,6 +105,18 @@ Global
 		{7E402432-F12B-499E-86DA-75EFE858AA12}.Release|x64.Build.0 = Release|Any CPU
 		{7E402432-F12B-499E-86DA-75EFE858AA12}.Release|x86.ActiveCfg = Release|Any CPU
 		{7E402432-F12B-499E-86DA-75EFE858AA12}.Release|x86.Build.0 = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|x64.Build.0 = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Debug|x86.Build.0 = Debug|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|x64.ActiveCfg = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|x64.Build.0 = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|x86.ActiveCfg = Release|Any CPU
+		{5528219B-40D6-A0C1-3E41-85E63A0C23FF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,5 +126,8 @@ Global
 		{06BCD259-F10E-4D46-B0B8-42EF72B4FAF9} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{917D652F-62BE-4AF9-AF81-BEFF99E2F651} = {CA253913-39DE-BFD0-C9A3-4B7EC6FBDF17}
 		{7E402432-F12B-499E-86DA-75EFE858AA12} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {56F097AE-F580-4560-ABC3-D456ECE3A2C9}
 	EndGlobalSection
 EndGlobal
