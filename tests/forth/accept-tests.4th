@@ -1,5 +1,6 @@
 INCLUDE "../ttester.4th"
 \ ACCEPT tests
+
 TESTING ACCEPT basic
 
 S" hello" ADD-INPUT-LINE

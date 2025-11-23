@@ -361,7 +361,7 @@ public partial class ForthInterpreter : IForthInterpreter
     /// Gets a read-only snapshot of the data stack contents (top at end of list).
     /// </summary>
     public IReadOnlyList<object> Stack =>
-        _stack.AsReadOnly().Select(fv => fv.ToObject()).ToList();
+        _stack.Select(fv => fv.ToObject()).ToList();
 
     /// <summary>
     /// Pushes a raw object onto the data stack.

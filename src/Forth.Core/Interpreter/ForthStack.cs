@@ -1,22 +1,63 @@
+using System.Collections.Immutable;
+
 namespace Forth.Core.Interpreter;
 
 /// <summary>
 /// Encapsulates the parameter stack for the Forth interpreter.
 /// </summary>
-internal sealed class ForthStack
+internal sealed class ForthStack : IReadOnlyList<ForthValue>
 {
-    private readonly List<ForthValue> _items = new();
+    private sealed class Node
+    {
+        public ForthValue Value { get; }
+        public Node? Next { get; }
+        public Node(ForthValue value, Node? next) => (Value, Next) = (value, next);
+    }
+
+    private Node? _head;
+    private int _count;
 
     /// <summary>Gets the number of items currently on the stack.</summary>
-    public int Count => _items.Count;
+    public int Count => _count;
     /// <summary>Index-based access (0-based from bottom of stack).</summary>
-    public ForthValue this[int index] => _items[index];
-    /// <summary>Returns a read-only view of the stack items (top is last element).</summary>
-    public IReadOnlyList<ForthValue> AsReadOnly() => _items;
+    public ForthValue this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= _count) throw new ArgumentOutOfRangeException(nameof(index));
+            var node = _head;
+            for (int i = 0; i < index; i++) node = node!.Next;
+            return node!.Value;
+        }
+    }
+
+    /// <summary>
+    /// Returns an enumerator that iterates through the collection from bottom to top.
+    /// </summary>
+    public IEnumerator<ForthValue> GetEnumerator()
+    {
+        var node = _head;
+        var stack = new Stack<ForthValue>();
+        while (node != null)
+        {
+            stack.Push(node.Value);
+            node = node.Next;
+        }
+        while (stack.Count > 0)
+        {
+            yield return stack.Pop();
+        }
+    }
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>Push a value onto the stack.</summary>
     /// <param name="value">Value to push.</param>
-    public void Push(ForthValue value) => _items.Add(value);
+    public void Push(ForthValue value)
+    {
+        _head = new Node(value, _head);
+        _count++;
+    }
 
     /// <summary>Push a value onto the stack.</summary>
     /// <param name="value">Value to push.</param>
@@ -36,10 +77,10 @@ internal sealed class ForthStack
     /// <exception cref="ForthException">Thrown when stack is empty.</exception>
     public ForthValue PopValue()
     {
-        var idx = _items.Count - 1;
-        if (idx < 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
-        var v = _items[idx];
-        _items.RemoveAt(idx);
+        if (_count == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
+        var v = _head!.Value;
+        _head = _head.Next;
+        _count--;
         return v;
     }
 
@@ -54,8 +95,8 @@ internal sealed class ForthStack
     /// <exception cref="ForthException">Thrown when stack is empty.</exception>
     public ForthValue PeekValue()
     {
-        if (_items.Count == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
-        return _items[^1];
+        if (_count == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
+        return _head!.Value;
     }
 
     /// <summary>Return the top-most value without removing it.</summary>
@@ -69,13 +110,26 @@ internal sealed class ForthStack
     public object Top() => Peek();
     /// <summary>Returns the nth value from the top (1 = top).</summary>
     /// <param name="n">Position from top (1-based).</param>
-    public object NthFromTop(int n) => _items[^n].ToObject();
+    public object NthFromTop(int n)
+    {
+        if (n <= 0 || n > _count) throw new System.ArgumentOutOfRangeException(nameof(n));
+        Node? node = _head;
+        for (int i = 1; i < n; i++) node = node?.Next;
+        return node!.Value.ToObject();
+    }
     /// <summary>Drops (removes) the top-most value.</summary>
-    public void DropTop() => _items.RemoveAt(_items.Count - 1);
+    public void DropTop()
+    {
+        if (_count == 0) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
+        _head = _head!.Next;
+        _count--;
+    }
     /// <summary>Swaps the two top-most values.</summary>
     public void SwapTop2()
     {
-        var last = _items.Count - 1;
-        (_items[last-1], _items[last]) = (_items[last], _items[last-1]);
+        if (_count < 2) throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.StackUnderflow, "Stack underflow");
+        var first = _head!.Value;
+        var second = _head.Next!.Value;
+        _head = new Node(second, new Node(first, _head.Next.Next));
     }
 }

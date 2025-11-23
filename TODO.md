@@ -97,21 +97,8 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
+
+- Changed ForthStack to implement IReadOnlyList<ForthValue> for full list interface including indexing.
+- Implemented IReadOnlyCollection<ForthValue> directly in ForthStack, removing AsReadOnly method for cleaner API.
+- Refactored ForthStack to use a custom immutable linked list for O(1) push/pop operations, improving performance over ImmutableList's O(log n).
 - Refactored ForthStack to use typed ForthValue struct, storing primitives as values without boxing to match CLR evaluation stack structure.
-- Updated Roslyn source-generator to group generated tests by file using nested classes only for multi-test files, simplifying single-test file names.
-- Tightened ACCEPT/EXPECT/READ-LINE to read character-by-character for ANS conformity, updated TestIO for shared input buffer.
-- Duplicated ACCEPT tests in both .4th (generator) and .tester.4th (ttester) formats.
-- Full test suite passing (257/257).
-- Combined related tests in .tester.4th files into single T{ }T blocks using ttester.4th's multi-result capabilities.
-- Added TESTING comments to group related tests in each .tester.4th file.
-- Changed all .tester.4th files to reference ttester.4th instead of tester.fs.
-- Enabled EnforceExtendedAnalyzerRules in 4th.Tests.Generators project.
-- Inline IL: fix var opcode handling; add tests for fixed/short/inline locals, increment, POP/PUSH (interpreter + stack). Normalize non-virtual calls; swap dynamic method args order. Full suite passing (241/241).
-- Fixed ADD-INPUT-LINE ambiguity: prefer (addr u) pair over counted-addr when both patterns match.
-- Added xUnit tests exercising `TEST-IO`/`ADD-INPUT-LINE` (direct string, counted-addr, addr/u) at `4th.Tests/Core/Modules/TestIOModuleTests.cs`.
-- Added Forth tester-harness tests at `tests/forth/add-input-line-tests.tester.4th` and a compatibility `.4th` variant.
-- Removed legacy `tests/forth/framework.4th` file and updated test set.
-- Added Roslyn source-generator `4th.Tests.Generators/ForthTestGenerator.cs` to generate xUnit wrappers for `.4th` files.
-- Generator produces `ForthGeneratedTests.g.cs` during build; rebuild to make Test Explorer discover tests.
-- Ran `ans-diff` and wrote `tools/ans-diff/report.md`.
-- Full test suite passing after changes (233/233).
