@@ -1,6 +1,6 @@
 # TODO: ANS/Forth conformity gap analysis
 
-_Last updated: 2025-11-23_
+_Last updated: 2024-11-23_
 
 Goal
 - Compare the current implementation against the ANS Forth core wordlist and identify words that are missing or partially implemented.
@@ -66,7 +66,7 @@ Progress / Repository tasks (current)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
 - [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
 - [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
-- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods
+- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group
 - [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
 - [x] Inline IL: local typing + non-virtual `call` normalization + signature swap; add comprehensive tests
 - [x] Enable `EnforceExtendedAnalyzerRules` property in `4th.Tests.Generators` project to satisfy analyzer guidance
@@ -81,7 +81,6 @@ Remaining / next work items
 - [ ] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
 - [ ] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
 - [ ] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
-- [ ] Enable `EnforceExtendedAnalyzerRules` property in `4th.Tests.Generators` project to satisfy analyzer guidance
 
 Decisions made
 - Favor per-call MMF accessor disposal for clarity and analyzer satisfaction; revisit only with profiling evidence.
