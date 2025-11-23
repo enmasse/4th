@@ -1,5 +1,6 @@
-INCLUDE "../tester.fs"
+INCLUDE "../ttester.4th"
 \ ADD-INPUT-LINE tests using tester harness
+TESTING ADD-INPUT-LINE tests
 
 T{ 
   S" HELLO" ADD-INPUT-LINE

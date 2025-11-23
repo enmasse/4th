@@ -60,7 +60,7 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (241/241)
+- [x] Full test suite passing (250/250)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -95,6 +95,11 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
+- Modified Roslyn source-generator to split .4th test files into individual [Fact] methods per TESTING group for better isolation and reporting (250 tests now).
+- Combined related tests in .tester.4th files into single T{ }T blocks using ttester.4th's multi-result capabilities.
+- Added TESTING comments to group related tests in each .tester.4th file.
+- Changed all .tester.4th files to reference ttester.4th instead of tester.fs.
+- Enabled EnforceExtendedAnalyzerRules in 4th.Tests.Generators project.
 - Inline IL: fix var opcode handling; add tests for fixed/short/inline locals, increment, POP/PUSH (interpreter + stack). Normalize non-virtual calls; swap dynamic method args order. Full suite passing (241/241).
 - Fixed ADD-INPUT-LINE ambiguity: prefer (addr u) pair over counted-addr when both patterns match.
 - Added xUnit tests exercising `TEST-IO`/`ADD-INPUT-LINE` (direct string, counted-addr, addr/u) at `4th.Tests/Core/Modules/TestIOModuleTests.cs`.

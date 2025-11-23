@@ -196,9 +196,10 @@
   ret 
 }IL ;
 
-INCLUDE "../tester.fs"
+INCLUDE "../ttester.4th"
 
 \ Arithmetic
+TESTING Arithmetic
 T{ 8 9 ADD2RAW -> 17 }T
 T{ 3 4 ADD2_FIXED -> 7 }T
 T{ 10 20 ADD2_SHORTVAR -> 30 }T
@@ -206,20 +207,25 @@ T{ 7 8 ADD2_INLINEVAR -> 15 }T
 T{ PUSH123RAW -> 123 }T
 
 \ Roundtrip pop/push
+TESTING Roundtrip pop/push
 T{ 42 POPPUSH -> 42 }T
 T{ 99 POPPUSH_STACK -> 99 }T
 
 \ Increment
+TESTING Increment
 T{ 41 INC1RAW -> 42 }T
 
 \ Conditional increment if non-zero
+TESTING Conditional increment if non-zero
 T{ 0 INCNZ -> 0 }T
 T{ 5 INCNZ -> 6 }T
 
 \ Loop sum
+TESTING Loop sum
 T{ 5 SUM1TON -> 15 }T
 
 \ Conditional negate
+TESTING Conditional negate
 T{ 5 NEGIFPOS -> -5 }T
 T{ 0 NEGIFPOS -> 0 }T
 T{ -3 NEGIFPOS -> -3 }T
