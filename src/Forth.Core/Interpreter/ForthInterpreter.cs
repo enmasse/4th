@@ -384,14 +384,14 @@ public partial class ForthInterpreter : IForthInterpreter
     /// </summary>
     /// <returns>The popped value.</returns>
     public object Pop() =>
-        _stack.Pop();
+        _stack.PopValue().ToObject();
 
     /// <summary>
     /// Peeks at the top item on the data stack without removing it.
     /// </summary>
     /// <returns>The top stack value.</returns>
     public object Peek() =>
-        _stack.Peek();
+        _stack.PeekValue().ToObject();
 
     /// <summary>
     /// Adds a new synchronous word to the dictionary.
