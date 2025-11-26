@@ -5,6 +5,11 @@ namespace Forth.Core.Interpreter;
 
 internal static class NumberParser
 {
+    /// <summary>
+    /// Normalizes a value to a long for stack operations.
+    /// </summary>
+    /// <param name="val">The value to normalize.</param>
+    /// <returns>The normalized long value.</returns>
     public static object Normalize(object? val) => val switch
     {
         null => 0L,
@@ -17,6 +22,13 @@ internal static class NumberParser
         _ => val!
     };
 
+    /// <summary>
+    /// Attempts to parse a string token into a long integer using the current base.
+    /// </summary>
+    /// <param name="token">The string token to parse.</param>
+    /// <param name="getBase">Function to get the current numeric base.</param>
+    /// <param name="value">The parsed value if successful.</param>
+    /// <returns>True if parsing succeeded, false otherwise.</returns>
     public static bool TryParse(string token, Func<long,long> getBase, out long value)
     {
         value = 0;

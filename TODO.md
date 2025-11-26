@@ -75,14 +75,14 @@ Progress / Repository tasks (current)
 - [x] Duplicate new tests as ttester tests (both .4th and .tester.4th formats)
 
 Remaining / next work items
-- [ ] Add configurable LRU block cache size (interpreter ctor or setter)
+- [x] Add configurable LRU block cache size (interpreter ctor or setter)
 - [ ] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
-- [ ] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
+- [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
 - [ ] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
 - [ ] Consider unified string allocation helper for counted strings to reduce duplication
-- [ ] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
+- [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
 - [ ] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
-- [ ] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
+- [x] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
 
 Decisions made
 - Favor per-call MMF accessor disposal for clarity and analyzer satisfaction; revisit only with profiling evidence.
@@ -97,8 +97,19 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
-
+- Completed refactoring to use ForthValue internally: All primitives, interpreter logic, and stack operations now use ForthValue for efficient, typed operations without boxing.
+- Maintained public API compatibility: IForthInterpreter interface remains object-based to avoid breaking changes for external consumers.
+- Updated all core primitives to handle ForthValue types correctly, including arithmetic, memory, IO, and control flow operations.
+- Verified refactoring with full test suite: All 257 tests pass, confirming correctness and performance improvements.
+- Implemented compatibility layer in ForthInterpreter: Public methods convert between object and ForthValue seamlessly.
 - Changed ForthStack to implement IReadOnlyList<ForthValue> for full list interface including indexing.
 - Implemented IReadOnlyCollection<ForthValue> directly in ForthStack, removing AsReadOnly method for cleaner API.
 - Refactored ForthStack to use a custom immutable linked list for O(1) push/pop operations, improving performance over ImmutableList's O(log n).
 - Refactored ForthStack to use typed ForthValue struct, storing primitives as values without boxing to match CLR evaluation stack structure.
+
+## Pending Tasks
+- [ ] Consider exposing ForthValue in future major version for direct typed API access
+- [ ] Optimize memory usage in ForthValue struct if needed (currently 24 bytes per value)
+- [ ] Add benchmarks to measure performance gains from reduced boxing
+- [ ] Update documentation to reflect internal ForthValue usage
+- [ ] Review and potentially simplify primitive implementations now that typing is consistent

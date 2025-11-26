@@ -109,11 +109,9 @@ internal static partial class CorePrimitives
     private static Task Prim_SOURCE(ForthInterpreter i)
     {
         var src = i.CurrentSource ?? string.Empty;
-        var addr = i._nextAddr;
-        for (int k = 0; k < src.Length; k++) i.MemSet(addr + k, src[k]);
-        i._nextAddr += src.Length;
-        i.Push(addr);
-        i.Push((long)src.Length);
+        var addr = i.AllocateCountedString(src);
+        i.Push(ForthValue.FromLong(addr));
+        i.Push(ForthValue.FromLong(src.Length));
         return Task.CompletedTask;
     }
 

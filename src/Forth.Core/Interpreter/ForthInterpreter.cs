@@ -908,4 +908,14 @@ public partial class ForthInterpreter : IForthInterpreter
 
     internal List<Func<ForthInterpreter, Task>> CurrentList() =>
         _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
+
+    internal long AllocateCountedString(string str)
+    {
+        var addr = _nextAddr;
+        _mem[addr] = str.Length;
+        for (int idx = 0; idx < str.Length; idx++)
+            _mem[addr + 1 + idx] = (long)str[idx];
+        _nextAddr = addr + 1 + str.Length;
+        return addr;
+    }
 }

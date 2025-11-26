@@ -165,18 +165,14 @@ internal static partial class CorePrimitives
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
-        // Allocate length cell followed by characters
-        var addr = i._nextAddr; // length cell
-        i._mem[addr] = str.Length; // store length
-        for (int idx = 0; idx < str.Length; idx++)
-            i._mem[addr + 1 + idx] = (long)str[idx];
-        i._nextAddr = addr + 1 + str.Length;
+        // Allocate counted string
+        var addr = i.AllocateCountedString(str);
         if (!i._isCompiling)
-            i.Push(addr); // counted string address
+            i.Push(ForthValue.FromLong(addr)); // counted string address
         else
         {
             var capturedAddr = addr;
-            i.CurrentList().Add(ii => { ii.Push(capturedAddr); return Task.CompletedTask; });
+            i.CurrentList().Add(ii => { ii.Push(ForthValue.FromLong(capturedAddr)); return Task.CompletedTask; });
         }
         return Task.CompletedTask;
     }

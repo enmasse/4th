@@ -12,4 +12,8 @@
   <ItemGroup>
     <Folder Include="Forth\" />
   </ItemGroup>
+
+  <Target Name="RunAnsDiff" AfterTargets="Build">
+    <Exec Command="dotnet run --project ../tools/ans-diff/ans-diff.csproj -- $(OutputPath)Forth.Core.dll" WorkingDirectory="$(ProjectDir)" />
+  </Target>
 </Project>

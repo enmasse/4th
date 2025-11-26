@@ -572,4 +572,100 @@ public class FileIOTests
             if (File.Exists(path)) File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task WriteFileBytes_NegativeLength_Throws()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        long h = -1;
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+            Assert.True(await forth.EvalAsync($"\"{path}\" 1 OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            h = (long)forth.Stack[^1];
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Try to write with negative length
+            await forth.EvalAsync($"{h} 0 -1 WRITE-FILE-BYTES");
+            Assert.Fail("Expected exception");
+        }
+        catch (ForthException ex)
+        {
+            Assert.Equal(ForthErrorCode.CompileError, ex.Code);
+        }
+        finally
+        {
+            try { if (h >= 0) await forth.EvalAsync($"{h} CLOSE-FILE"); } catch { }
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileBytes_NegativeLength_Throws()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        long h = -1;
+        try
+        {
+            File.WriteAllText(path, "x"); // create file
+            Assert.True(await forth.EvalAsync($"\"{path}\" 0 OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            h = (long)forth.Stack[^1];
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Try to read with negative length
+            await forth.EvalAsync($"{h} 0 -1 READ-FILE-BYTES");
+            Assert.Fail("Expected exception");
+        }
+        catch (ForthException ex)
+        {
+            Assert.Equal(ForthErrorCode.CompileError, ex.Code);
+        }
+        finally
+        {
+            try { if (h >= 0) await forth.EvalAsync($"{h} CLOSE-FILE"); } catch { }
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task WriteFileBytes_InvalidHandle_Throws()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+
+        try
+        {
+            // Try to write with invalid handle (999)
+            await forth.EvalAsync("999 0 1 WRITE-FILE-BYTES");
+            Assert.Fail("Expected exception");
+        }
+        catch (ForthException ex)
+        {
+            Assert.Equal(ForthErrorCode.CompileError, ex.Code);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileBytes_InvalidHandle_Throws()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+
+        try
+        {
+            // Try to read with invalid handle (999)
+            await forth.EvalAsync("999 0 1 READ-FILE-BYTES");
+            Assert.Fail("Expected exception");
+        }
+        catch (ForthException ex)
+        {
+            Assert.Equal(ForthErrorCode.CompileError, ex.Code);
+        }
+    }
 }
