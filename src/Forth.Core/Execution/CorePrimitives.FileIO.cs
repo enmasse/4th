@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Forth.Core;
 using Forth.Core.Interpreter;
+using VT = Forth.Core.Interpreter.ValueType;
 
 namespace Forth.Core.Execution;
 
@@ -17,14 +19,14 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "WRITE-FILE");
         var filenameFv = i._stack.PopValue();
         var dataFv = i._stack.PopValue();
-        if (dataFv.Type == Forth.Core.Interpreter.ValueType.String && filenameFv.Type == Forth.Core.Interpreter.ValueType.String)
+        if (dataFv.Type == VT.String && filenameFv.Type == VT.String)
         {
             var str = dataFv.AsString;
             var fname = filenameFv.AsString;
             using var sw = new StreamWriter(fname, false, Encoding.UTF8);
             sw.Write(str);
         }
-        else if (dataFv.Type == Forth.Core.Interpreter.ValueType.Long && filenameFv.Type == Forth.Core.Interpreter.ValueType.String)
+        else if (dataFv.Type == VT.Long && filenameFv.Type == VT.String)
         {
             var addr = dataFv.AsLong;
             var fname = filenameFv.AsString;
@@ -53,14 +55,14 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "APPEND-FILE");
         var filenameFv = i._stack.PopValue();
         var dataFv = i._stack.PopValue();
-        if (dataFv.Type == Forth.Core.Interpreter.ValueType.String && filenameFv.Type == Forth.Core.Interpreter.ValueType.String)
+        if (dataFv.Type == VT.String && filenameFv.Type == VT.String)
         {
             var str = dataFv.AsString;
             var fname = filenameFv.AsString;
             using var sw = new StreamWriter(fname, true, Encoding.UTF8);
             sw.Write(str);
         }
-        else if (dataFv.Type == Forth.Core.Interpreter.ValueType.Long && filenameFv.Type == Forth.Core.Interpreter.ValueType.String)
+        else if (dataFv.Type == VT.Long && filenameFv.Type == VT.String)
         {
             var addr = dataFv.AsLong;
             var fname = filenameFv.AsString;
@@ -103,7 +105,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "READ-FILE");
         var filenameFv = i._stack.PopValue();
-        if (filenameFv.Type != ValueType.String)
+        if (filenameFv.Type != VT.String)
             throw new ForthException(ForthErrorCode.TypeError, "READ-FILE expects string filename");
         var fname = filenameFv.AsString;
         if (!File.Exists(fname))
@@ -118,7 +120,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "FILE-EXISTS");
         var filenameFv = i._stack.PopValue();
-        if (filenameFv.Type != ValueType.String)
+        if (filenameFv.Type != VT.String)
             throw new ForthException(ForthErrorCode.TypeError, "FILE-EXISTS expects string filename");
         var fname = filenameFv.AsString;
         i._stack.Push(ForthValue.FromLong(File.Exists(fname) ? -1L : 0L));
@@ -130,7 +132,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "FILE-SIZE");
         var filenameFv = i._stack.PopValue();
-        if (filenameFv.Type != ValueType.String)
+        if (filenameFv.Type != VT.String)
             throw new ForthException(ForthErrorCode.TypeError, "FILE-SIZE expects string filename");
         var fname = filenameFv.AsString;
         try
@@ -151,7 +153,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "OPEN-FILE");
         var modeFv = i._stack.PopValue();
         var filenameFv = i._stack.PopValue();
-        if (filenameFv.Type != ValueType.String || modeFv.Type != ValueType.Long)
+        if (filenameFv.Type != VT.String || modeFv.Type != VT.Long)
             throw new ForthException(ForthErrorCode.TypeError, "OPEN-FILE expects (filename mode -- ior fid)");
         var fname = filenameFv.AsString;
         var mode = modeFv.AsLong;
@@ -183,7 +185,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "CLOSE-FILE");
         var handleFv = i._stack.PopValue();
-        if (handleFv.Type != ValueType.Long)
+        if (handleFv.Type != VT.Long)
             throw new ForthException(ForthErrorCode.TypeError, "CLOSE-FILE expects handle");
         var handle = handleFv.AsLong;
         if (_openFiles.TryGetValue((int)handle, out var fs))
@@ -205,7 +207,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "REPOSITION-FILE");
         var offsetFv = i._stack.PopValue();
         var handleFv = i._stack.PopValue();
-        if (offsetFv.Type != ValueType.Long || handleFv.Type != ValueType.Long)
+        if (offsetFv.Type != VT.Long || handleFv.Type != VT.Long)
             throw new ForthException(ForthErrorCode.TypeError, "REPOSITION-FILE expects (handle offset -- )");
         var offset = offsetFv.AsLong;
         var handle = handleFv.AsLong;
@@ -227,7 +229,7 @@ internal static partial class CorePrimitives
         var uFv = i._stack.PopValue();
         var addrFv = i._stack.PopValue();
         var handleFv = i._stack.PopValue();
-        if (uFv.Type != ValueType.Long || addrFv.Type != ValueType.Long || handleFv.Type != ValueType.Long)
+        if (uFv.Type != VT.Long || addrFv.Type != VT.Long || handleFv.Type != VT.Long)
             throw new ForthException(ForthErrorCode.TypeError, "READ-FILE-BYTES expects (handle addr u -- )");
         var u = uFv.AsLong;
         var addr = addrFv.AsLong;
@@ -257,7 +259,7 @@ internal static partial class CorePrimitives
         var uFv = i._stack.PopValue();
         var addrFv = i._stack.PopValue();
         var handleFv = i._stack.PopValue();
-        if (uFv.Type != ValueType.Long || addrFv.Type != ValueType.Long || handleFv.Type != ValueType.Long)
+        if (uFv.Type != VT.Long || addrFv.Type != VT.Long || handleFv.Type != VT.Long)
             throw new ForthException(ForthErrorCode.TypeError, "WRITE-FILE-BYTES expects (handle addr u -- )");
         var u = uFv.AsLong;
         var addr = addrFv.AsLong;

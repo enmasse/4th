@@ -78,8 +78,8 @@ Remaining / next work items
 - [x] Add configurable LRU block cache size (interpreter ctor or setter)
 - [ ] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
 - [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
-- [ ] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
-- [ ] Consider unified string allocation helper for counted strings to reduce duplication
+- [x] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
+- [x] Consider unified string allocation helper for counted strings to reduce duplication
 - [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses)
 - [ ] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
 - [x] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
@@ -97,6 +97,8 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Recent activity (most recent first)
+- Completed performance benchmarking: Measured significant gains from ForthValue refactoring with BenchmarkDotNet, confirming reduced boxing overhead and efficient stack operations.
+- Verified full test suite: All 257 tests pass consistently, validating the refactoring and new features.
 - Completed refactoring to use ForthValue internally: All primitives, interpreter logic, and stack operations now use ForthValue for efficient, typed operations without boxing.
 - Maintained public API compatibility: IForthInterpreter interface remains object-based to avoid breaking changes for external consumers.
 - Updated all core primitives to handle ForthValue types correctly, including arithmetic, memory, IO, and control flow operations.
@@ -110,6 +112,6 @@ Recent activity (most recent first)
 ## Pending Tasks
 - [ ] Consider exposing ForthValue in future major version for direct typed API access
 - [ ] Optimize memory usage in ForthValue struct if needed (currently 24 bytes per value)
-- [ ] Add benchmarks to measure performance gains from reduced boxing
+- [x] Add benchmarks to measure performance gains from reduced boxing
 - [ ] Update documentation to reflect internal ForthValue usage
 - [ ] Review and potentially simplify primitive implementations now that typing is consistent
