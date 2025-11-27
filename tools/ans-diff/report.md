@@ -1,4 +1,4 @@
-Found 181 primitives in code:
+Found 182 primitives in code:
 
 !
 #
@@ -104,6 +104,7 @@ HEX
 HOLD
 I
 IF
+IL{
 IMMEDIATE
 INCLUDE
 INVERT
@@ -286,7 +287,7 @@ WRITE-FILE
 
 ANS core words missing (0):
 
-Other primitives in code not in ANS list (82):
+Other primitives in code not in ANS list (83):
 -
 -ROT
 .\
@@ -337,6 +338,7 @@ FLUSH-BLOCK-FILE
 FNEGATE
 FVARIABLE
 HELP
+IL{
 INVERT
 LAST-STORE
 LATEST

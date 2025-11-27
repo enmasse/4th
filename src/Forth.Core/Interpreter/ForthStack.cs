@@ -5,7 +5,7 @@ namespace Forth.Core.Interpreter;
 /// <summary>
 /// Encapsulates the parameter stack for the Forth interpreter.
 /// </summary>
-internal sealed class ForthStack : IReadOnlyList<ForthValue>
+internal sealed class ForthStack : IReadOnlyList<object>
 {
     private sealed class Node
     {
@@ -19,28 +19,28 @@ internal sealed class ForthStack : IReadOnlyList<ForthValue>
 
     /// <summary>Gets the number of items currently on the stack.</summary>
     public int Count => _count;
-    /// <summary>Index-based access (0-based from bottom of stack).</summary>
-    public ForthValue this[int index]
+    /// <summary>Index-based access (0-based from bottom of stack) returning boxed objects.</summary>
+    public object this[int index]
     {
         get
         {
             if (index < 0 || index >= _count) throw new ArgumentOutOfRangeException(nameof(index));
             var node = _head;
             for (int i = 0; i < index; i++) node = node!.Next;
-            return node!.Value;
+            return node!.Value.ToObject();
         }
     }
 
     /// <summary>
     /// Returns an enumerator that iterates through the collection from bottom to top.
     /// </summary>
-    public IEnumerator<ForthValue> GetEnumerator()
+    public IEnumerator<object> GetEnumerator()
     {
         var node = _head;
-        var stack = new Stack<ForthValue>();
+        var stack = new Stack<object>();
         while (node != null)
         {
-            stack.Push(node.Value);
+            stack.Push(node.Value.ToObject());
             node = node.Next;
         }
         while (stack.Count > 0)

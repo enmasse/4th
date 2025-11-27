@@ -33,6 +33,9 @@ class Program
         // If executed from tools/ans-diff dir, assume repo root is two levels up
         if (Path.GetFileName(repoRoot).Equals("ans-diff", StringComparison.OrdinalIgnoreCase))
             repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
+        // If executed from 4th dir, assume repo root is one level up
+        else if (Path.GetFileName(repoRoot).Equals("4th", StringComparison.OrdinalIgnoreCase))
+            repoRoot = Path.GetFullPath(Path.Combine(repoRoot, ".."));
 
         var sb = new StringBuilder();
 

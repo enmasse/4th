@@ -3,6 +3,9 @@ namespace Forth.Core;
 /// <summary>
 /// Public surface for the Forth interpreter. Executes single lines of Forth source code and
 /// exposes the parameter stack for inspection (top of stack is the last element).
+///
+/// Internally uses optimized ForthValue structs for performance, but maintains object-based
+/// compatibility for the public API.
 /// </summary>
 public interface IForthInterpreter
 {
@@ -15,6 +18,9 @@ public interface IForthInterpreter
 
     /// <summary>
     /// Current parameter stack (top is last element). Contains boxed numeric values, strings, tasks, and other objects pushed by words.
+    /// 
+    /// Note: While the public API uses object types for compatibility, the internal implementation uses typed ForthValue structs
+    /// for optimal performance without boxing overhead.
     /// </summary>
     IReadOnlyList<object> Stack { get; }
 

@@ -1,4 +1,5 @@
 using Forth.Core.Interpreter;
+using VT = Forth.Core.Interpreter.ValueType;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -11,9 +12,12 @@ internal static partial class CorePrimitives
     private static Task Prim_Plus(ForthInterpreter i)
     {
         i.EnsureStack(2, "+");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
-        i.Push(a + b);
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(a + b));
         return Task.CompletedTask;
     }
 
@@ -21,9 +25,12 @@ internal static partial class CorePrimitives
     private static Task Prim_Minus(ForthInterpreter i)
     {
         i.EnsureStack(2, "-");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
-        i.Push(a - b);
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(a - b));
         return Task.CompletedTask;
     }
 
@@ -31,9 +38,12 @@ internal static partial class CorePrimitives
     private static Task Prim_Star(ForthInterpreter i)
     {
         i.EnsureStack(2, "*");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
-        i.Push(a * b);
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(a * b));
         return Task.CompletedTask;
     }
 
@@ -41,10 +51,13 @@ internal static partial class CorePrimitives
     private static Task Prim_Slash(ForthInterpreter i)
     {
         i.EnsureStack(2, "/");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
         if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
-        i.Push(a / b);
+        i._stack.Push(ForthValue.FromLong(a / b));
         return Task.CompletedTask;
     }
 
@@ -52,13 +65,16 @@ internal static partial class CorePrimitives
     private static Task Prim_SlashMod(ForthInterpreter i)
     {
         i.EnsureStack(2, "/MOD");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
         if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
         var quot = a / b;
         var rem = a % b;
-        i.Push(rem);
-        i.Push(quot);
+        i._stack.Push(ForthValue.FromLong(rem));
+        i._stack.Push(ForthValue.FromLong(quot));
         return Task.CompletedTask;
     }
 
@@ -66,10 +82,13 @@ internal static partial class CorePrimitives
     private static Task Prim_Mod(ForthInterpreter i)
     {
         i.EnsureStack(2, "MOD");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
         if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
-        i.Push(a % b);
+        i._stack.Push(ForthValue.FromLong(a % b));
         return Task.CompletedTask;
     }
 
@@ -77,9 +96,12 @@ internal static partial class CorePrimitives
     private static Task Prim_MIN(ForthInterpreter i)
     {
         i.EnsureStack(2, "MIN");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
-        i.Push(a < b ? a : b);
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(a < b ? a : b));
         return Task.CompletedTask;
     }
 
@@ -87,9 +109,12 @@ internal static partial class CorePrimitives
     private static Task Prim_MAX(ForthInterpreter i)
     {
         i.EnsureStack(2, "MAX");
-        var b = ToLong(i.PopInternal());
-        var a = ToLong(i.PopInternal());
-        i.Push(a > b ? a : b);
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var b = bFv.LongValue;
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(a > b ? a : b));
         return Task.CompletedTask;
     }
 
@@ -97,8 +122,10 @@ internal static partial class CorePrimitives
     private static Task Prim_NEGATE(ForthInterpreter i)
     {
         i.EnsureStack(1, "NEGATE");
-        var a = ToLong(i.PopInternal());
-        i.Push(-a);
+        var aFv = i._stack.PopValue();
+        if (aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        var a = aFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(-a));
         return Task.CompletedTask;
     }
 
@@ -106,12 +133,16 @@ internal static partial class CorePrimitives
     private static Task Prim_StarSlash(ForthInterpreter i)
     {
         i.EnsureStack(3, "*/");
-        var dval = ToLong(i.PopInternal());
-        var n2 = ToLong(i.PopInternal());
-        var n1 = ToLong(i.PopInternal());
+        var dFv = i._stack.PopValue();
+        var n2Fv = i._stack.PopValue();
+        var n1Fv = i._stack.PopValue();
+        if (dFv.Type != VT.Long || n2Fv.Type != VT.Long || n1Fv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var dval = dFv.LongValue;
+        var n2 = n2Fv.LongValue;
+        var n1 = n1Fv.LongValue;
         if (dval == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
         var prod = n1 * n2;
-        i.Push(prod / dval);
+        i._stack.Push(ForthValue.FromLong(prod / dval));
         return Task.CompletedTask;
     }
 
@@ -119,9 +150,13 @@ internal static partial class CorePrimitives
     private static Task Prim_StarSlashMod(ForthInterpreter i)
     {
         i.EnsureStack(3, "*/MOD");
-        var d = ToLong(i.PopInternal());
-        var n2 = ToLong(i.PopInternal());
-        var n1 = ToLong(i.PopInternal());
+        var dFv = i._stack.PopValue();
+        var n2Fv = i._stack.PopValue();
+        var n1Fv = i._stack.PopValue();
+        if (dFv.Type != VT.Long || n2Fv.Type != VT.Long || n1Fv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var d = dFv.LongValue;
+        var n2 = n2Fv.LongValue;
+        var n1 = n1Fv.LongValue;
         if (d == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
 
         var prod = new BigInteger(n1) * new BigInteger(n2);
@@ -135,8 +170,8 @@ internal static partial class CorePrimitives
         var quot = (long)quotBig;
         var rem = (long)remBig;
         // Push remainder then quotient as per /MOD convention
-        i.Push(rem);
-        i.Push(quot);
+        i._stack.Push(ForthValue.FromLong(rem));
+        i._stack.Push(ForthValue.FromLong(quot));
         return Task.CompletedTask;
     }
 
@@ -145,10 +180,15 @@ internal static partial class CorePrimitives
     private static Task Prim_DPlus(ForthInterpreter i)
     {
         i.EnsureStack(4, "D+");
-        var d2_hi = ToLong(i.PopInternal());
-        var d2_lo = ToLong(i.PopInternal());
-        var d1_hi = ToLong(i.PopInternal());
-        var d1_lo = ToLong(i.PopInternal());
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var d2_hi = d2_hiFv.LongValue;
+        var d2_lo = d2_loFv.LongValue;
+        var d1_hi = d1_hiFv.LongValue;
+        var d1_lo = d1_loFv.LongValue;
 
         unchecked
         {
@@ -162,8 +202,8 @@ internal static partial class CorePrimitives
             ulong uh2 = (ulong)d2_hi;
             ulong high = uh1 + uh2 + carry;
 
-            i.Push((long)low);
-            i.Push((long)high);
+            i._stack.Push(ForthValue.FromLong((long)low));
+            i._stack.Push(ForthValue.FromLong((long)high));
         }
 
         return Task.CompletedTask;
@@ -174,10 +214,15 @@ internal static partial class CorePrimitives
     private static Task Prim_DMinus(ForthInterpreter i)
     {
         i.EnsureStack(4, "D-");
-        var d2_hi = ToLong(i.PopInternal());
-        var d2_lo = ToLong(i.PopInternal());
-        var d1_hi = ToLong(i.PopInternal());
-        var d1_lo = ToLong(i.PopInternal());
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var d2_hi = d2_hiFv.LongValue;
+        var d2_lo = d2_loFv.LongValue;
+        var d1_hi = d1_hiFv.LongValue;
+        var d1_lo = d1_loFv.LongValue;
 
         unchecked
         {
@@ -191,8 +236,8 @@ internal static partial class CorePrimitives
             ulong uh2 = (ulong)d2_hi;
             ulong high = uh1 - uh2 - borrow;
 
-            i.Push((long)low);
-            i.Push((long)high);
+            i._stack.Push(ForthValue.FromLong((long)low));
+            i._stack.Push(ForthValue.FromLong((long)high));
         }
 
         return Task.CompletedTask;
@@ -203,8 +248,11 @@ internal static partial class CorePrimitives
     private static Task Prim_MStar(ForthInterpreter i)
     {
         i.EnsureStack(2, "M*");
-        var n2 = ToLong(i.PopInternal());
-        var n1 = ToLong(i.PopInternal());
+        var n2Fv = i._stack.PopValue();
+        var n1Fv = i._stack.PopValue();
+        if (n2Fv.Type != VT.Long || n1Fv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var n2 = n2Fv.LongValue;
+        var n1 = n1Fv.LongValue;
 
         var prod = new BigInteger(n1) * new BigInteger(n2);
         var mask = (BigInteger.One << 64) - 1;
@@ -214,8 +262,8 @@ internal static partial class CorePrimitives
         long low = (long)(ulong)lowBig;
         long high = (long)highBig;
 
-        i.Push(low);
-        i.Push(high);
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
         return Task.CompletedTask;
     }
 }

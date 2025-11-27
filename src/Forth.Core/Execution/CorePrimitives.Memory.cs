@@ -110,8 +110,8 @@ internal static partial class CorePrimitives
     {
         var src = i.CurrentSource ?? string.Empty;
         var addr = i.AllocateCountedString(src);
-        i.Push(ForthValue.FromLong(addr));
-        i.Push(ForthValue.FromLong(src.Length));
+        i.Push(addr);
+        i.Push((long)src.Length);
         return Task.CompletedTask;
     }
 

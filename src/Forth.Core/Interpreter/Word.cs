@@ -31,6 +31,18 @@ internal class Word
         IsAsync = true;
     }
 
-    public Task ExecuteAsync(ForthInterpreter intr = null!) =>
-        _run(intr);
+    public async Task ExecuteAsync(ForthInterpreter intr = null!)
+    {
+        try
+        {
+            await _run(intr).ConfigureAwait(false);
+        }
+        catch (System.Exception ex)
+        {
+            // Swallow internal exit exception used to signal EXIT from a word.
+            if (ex.GetType().Name == "ExitWordException")
+                return;
+            throw;
+        }
+    }
 }

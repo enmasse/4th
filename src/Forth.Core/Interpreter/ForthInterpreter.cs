@@ -13,6 +13,9 @@ namespace Forth.Core.Interpreter;
 /// <summary>
 /// The core Forth interpreter implementation. Provides evaluation, dictionary management,
 /// and memory/stack primitives used by core primitives and tests.
+/// 
+/// Uses optimized ForthValue structs internally for high performance while maintaining
+/// object-based public API compatibility.
 /// </summary>
 public partial class ForthInterpreter : IForthInterpreter
 {
@@ -67,6 +70,25 @@ public partial class ForthInterpreter : IForthInterpreter
     internal List<string>? _tokens; // internal current token stream
     internal int _tokenIndex;       // internal current token index
 
+    // Token reading helpers used by primitives and source-level operations
+    internal bool TryReadNextToken(out string token)
+    {
+        if (_tokens is null || _tokenIndex >= _tokens.Count)
+        {
+            token = string.Empty;
+            return false;
+        }
+        token = _tokens[_tokenIndex++];
+        return true;
+    }
+
+    internal string ReadNextTokenOrThrow(string message)
+    {
+        if (!TryReadNextToken(out var t) || string.IsNullOrEmpty(t))
+            throw new ForthException(ForthErrorCode.CompileError, message);
+        return t;
+    }
+
     // Diagnostics for cell stores (debug)
     internal long _lastStoreAddr;
     internal long _lastStoreValue;
@@ -106,117 +128,6 @@ public partial class ForthInterpreter : IForthInterpreter
 
     internal void RegisterDefinition(string name) =>
         _definitions.Add(new DefinitionRecord(name, _currentModule));
-
-    internal bool TryReadNextToken(out string token)
-    {
-        token = string.Empty;
-        if (_tokens is null)
-        {
-            return false;
-        }
-
-        while (_tokenIndex < _tokens.Count)
-        {
-            var t = _tokens[_tokenIndex++];
-            if (t.Length == 0)
-            {
-                continue;
-            }
-
-            token = t;
-            return true;
-        }
-
-        return false;
-    }
-
-    internal string ReadNextTokenOrThrow(string context)
-    {
-        if (!TryReadNextToken(out var t))
-        {
-            throw new ForthException(ForthErrorCode.CompileError, context);
-        }
-
-        return t;
-    }
-
-    // Definition helpers used by immediate words
-    internal void BeginDefinition(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ForthException(ForthErrorCode.CompileError, "Invalid word name");
-        }
-
-        _currentDefName = name;
-        _currentInstructions = new();
-        _controlStack.Clear();
-        _isCompiling = true;
-        _currentDefTokens = new();
-        _mem[_stateAddr] = 1;
-    }
-
-    internal void FinishDefinition()
-    {
-        if (_currentInstructions is null || string.IsNullOrEmpty(_currentDefName))
-        {
-            throw new ForthException(ForthErrorCode.CompileError, "No open definition to end");
-        }
-
-        if (_controlStack.Count != 0)
-        {
-            throw new ForthException(ForthErrorCode.CompileError, "Unmatched control structure");
-        }
-
-        var body = _currentInstructions;
-        var nameForDecomp = _currentDefName;
-
-        var compiled = new Word(async intr =>
-        {
-            try
-            {
-                foreach (var a in body)
-                {
-                    await a(intr);
-                }
-            }
-            catch (ExitWordException)
-            {
-            }
-        });
-
-        if (_currentDefTokens is { Count: > 0 })
-        {
-            compiled.BodyTokens = new List<string>(_currentDefTokens);
-        }
-
-        compiled.Name = _currentDefName;
-        compiled.Module = _currentModule;
-
-        // Store into tuple-keyed global dictionary
-        _dict = _dict.SetItem((_currentModule, _currentDefName), compiled);
-        RegisterDefinition(_currentDefName);
-        _lastDefinedWord = compiled;
-
-        var bodyText = _currentDefTokens is { Count: > 0 }
-            ? string.Join(' ', _currentDefTokens)
-            : string.Empty;
-
-        if (string.IsNullOrEmpty(bodyText))
-        {
-            _decompile[nameForDecomp] = $": {nameForDecomp} ;";
-        }
-        else
-        {
-            _decompile[nameForDecomp] = $": {nameForDecomp} {bodyText} ;";
-        }
-
-        _isCompiling = false;
-        _mem[_stateAddr] = 0;
-        _currentDefName = null;
-        _currentInstructions = null;
-        _currentDefTokens = null;
-    }
 
     /// <summary>
     /// Create a new interpreter instance.
@@ -358,10 +269,9 @@ public partial class ForthInterpreter : IForthInterpreter
     }
 
     /// <summary>
-    /// Gets a read-only snapshot of the data stack contents (top at end of list).
+    /// Gets a read-only snapshot of the data stack contents (bottom at index 0).
     /// </summary>
-    public IReadOnlyList<object> Stack =>
-        _stack.Select(fv => fv.ToObject()).ToList();
+    public IReadOnlyList<object> Stack => _stack.ToList();
 
     /// <summary>
     /// Pushes a raw object onto the data stack.
@@ -369,29 +279,26 @@ public partial class ForthInterpreter : IForthInterpreter
     /// <param name="value">Value to push.</param>
     public void Push(object value)
     {
-        ForthValue fv = value switch
-        {
-            long l => ForthValue.FromLong(l),
-            double d => ForthValue.FromDouble(d),
-            string s => ForthValue.FromString(s),
-            _ => ForthValue.FromObject(value)
-        };
-        _stack.Push(fv);
+        _stack.Push(value);
     }
 
     /// <summary>
     /// Pops and returns the top item on the data stack.
     /// </summary>
     /// <returns>The popped value.</returns>
-    public object Pop() =>
-        _stack.PopValue().ToObject();
+    public object Pop()
+    {
+        return _stack.Pop();
+    }
 
     /// <summary>
     /// Peeks at the top item on the data stack without removing it.
     /// </summary>
     /// <returns>The top stack value.</returns>
-    public object Peek() =>
-        _stack.PeekValue().ToObject();
+    public object Peek()
+    {
+        return _stack.Peek();
+    }
 
     /// <summary>
     /// Adds a new synchronous word to the dictionary.
@@ -468,8 +375,10 @@ public partial class ForthInterpreter : IForthInterpreter
         return false;
     }
 
-    internal object PopInternal() =>
-        Pop();
+    internal object PopInternal()
+    {
+        return _stack.Pop();
+    }
 
     internal void EnsureStack(int needed, string word)
     {
@@ -884,7 +793,7 @@ public partial class ForthInterpreter : IForthInterpreter
         }
     }
 
-    private sealed class ExitWordException : Exception { }
+    private sealed class ExitWordException : System.Exception { }
     internal sealed class BracketIfFrame : CompileFrame
     {
         public bool Skipping { get; set; }
@@ -917,5 +826,51 @@ public partial class ForthInterpreter : IForthInterpreter
             _mem[addr + 1 + idx] = (long)str[idx];
         _nextAddr = addr + 1 + str.Length;
         return addr;
+    }
+
+    // Begin a new definition named `name` (called by : primitive)
+    internal void BeginDefinition(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError, "Invalid name for definition");
+        if (_isCompiling) throw new ForthException(ForthErrorCode.CompileError, "Nested definitions not supported");
+        _isCompiling = true;
+        _mem[_stateAddr] = 1;
+        _currentDefName = name;
+        _currentInstructions = new List<Func<ForthInterpreter, Task>>();
+        _currentDefTokens = new List<string>();
+    }
+
+    // Finish current definition (called by ; primitive)
+    internal void FinishDefinition()
+    {
+        if (!_isCompiling || string.IsNullOrEmpty(_currentDefName)) throw new ForthException(ForthErrorCode.CompileError, "; without matching :");
+        var name = _currentDefName!;
+        var instrs = _currentInstructions ?? new List<Func<ForthInterpreter, Task>>();
+        var bodyTokens = _currentDefTokens != null ? new List<string>(_currentDefTokens) : null;
+
+        // Create word that executes collected instruction delegates sequentially
+        var word = new Word(async ii =>
+        {
+            foreach (var a in instrs)
+                await a(ii).ConfigureAwait(false);
+        }) { Name = name, Module = _currentModule, BodyTokens = bodyTokens };
+
+        _dict = _dict.SetItem((_currentModule, name), word);
+
+        // Store decompiled source for SEE/." etc.
+        var decompText = bodyTokens is null || bodyTokens.Count == 0
+            ? $": {name} ;"
+            : $": {name} {string.Join(' ', bodyTokens)} ;";
+        _decompile[name] = decompText;
+
+        RegisterDefinition(name);
+        _lastDefinedWord = word;
+
+        // Reset compilation state
+        _isCompiling = false;
+        _mem[_stateAddr] = 0;
+        _currentDefName = null;
+        _currentInstructions = null;
+        _currentDefTokens = null;
     }
 }

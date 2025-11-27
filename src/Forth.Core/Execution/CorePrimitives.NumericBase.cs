@@ -50,7 +50,8 @@ internal static partial class CorePrimitives
             }
             else
             {
-                throw new ForthException(ForthErrorCode.TypeError, ">NUMBER expects string, counted address or addr u start consumed");
+                // Fallback: allow other object types by calling ToString()
+                s = obj?.ToString() ?? string.Empty;
             }
         }
 
