@@ -295,10 +295,7 @@ internal static partial class CorePrimitives
             long idx = start;
             while (true)
             {
-                // Termination check before executing body with current index
-                if (idx >= limit && start <= limit) break;
-                if (idx <= limit && start > limit) break;
-
+                // Execute body at current index
                 ii.PushLoopIndex(idx);
                 try
                 {
@@ -318,7 +315,18 @@ internal static partial class CorePrimitives
                 ii.EnsureStack(1, "+LOOP");
                 var step = ToLong(ii.PopInternal());
                 if (step == 0) step = (start <= limit) ? 1 : -1; // avoid infinite loops
-                idx += step;
+
+                var next = idx + step;
+                // Terminate when updated index reaches or crosses the limit
+                if (start <= limit)
+                {
+                    if (next >= limit) break;
+                }
+                else
+                {
+                    if (next <= limit) break;
+                }
+                idx = next;
             }
         });
         return Task.CompletedTask;

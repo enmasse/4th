@@ -220,7 +220,7 @@ internal static partial class CorePrimitives
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
-        // ANS-style S" produces c-addr u
+        // ANS-style S" produces c-addr u (tokenizer already handles leading-space rule)
         if (!i._isCompiling)
         {
             var addr = i.AllocateCountedString(str);

@@ -1,5 +1,26 @@
 # TODO: ANS/Forth conformity gap analysis
 
+- Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics:
+  - Fully align skipping and nesting behavior with ANS Forth.
+  - Support mixed composite tokens and separated bracket forms reliably.
+  - Add more tests covering nested, empty branches, and edge tokenization cases.
+
+- Correct `>NUMBER` parsing semantics:
+  - Ensure proper accumulation for decimal and hex bases.
+  - Handle remainder and partial conversion per ANS.
+  - Add tests for mixed digits, base changes, and remainder reporting.
+  - Investigate c-addr off-by-one: confirm `S"` pushes `addr+1` and correct `u`; fix first-digit loss (e.g., "123" -> 123 not 23), and verify hex remainder case ("FFZ" in HEX -> 255, rem=1, digits=2).
+
+- Adjust block `LIST` formatting:
+  - Match expected line-number prefix and content formatting.
+  - Avoid stray nulls/control characters in output.
+  - Add tests for typical and empty lines.
+
+- Fix `APPEND-FILE` behavior:
+  - Prevent duplicated content and stray control characters.
+  - Ensure newline handling matches expectations.
+  - Add tests for multiple appends and exact byte content.
+
 _Last updated: 2025-11-27_
 
 Goal

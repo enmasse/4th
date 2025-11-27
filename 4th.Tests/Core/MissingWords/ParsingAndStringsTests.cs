@@ -25,10 +25,11 @@ public class ParsingAndStringsTests
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("S\" hello\""));
         Assert.Equal(2, forth.Stack.Count);
-        var len = (long)forth.Stack[0];
-        var addr = (long)forth.Stack[1];
-        Assert.Equal(5L, len);
-        var str = forth.ReadMemoryString(addr, len);
+        // ANS: S" pushes c-addr u (address first, then length)
+        var caddr = (long)forth.Stack[0];
+        var u = (long)forth.Stack[1];
+        Assert.Equal(5L, u);
+        var str = forth.ReadMemoryString(caddr, u);
         Assert.Equal("hello", str);
     }
 }

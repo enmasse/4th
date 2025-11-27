@@ -57,6 +57,9 @@ internal static partial class CorePrimitives
         var dict = ImmutableDictionary.CreateBuilder<(string? Module, string Name), Word>(new KeyComparer());
         var primType = typeof(CorePrimitives);
         var methods = primType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
+        
+        var seenPrimitives = new Dictionary<string, (string MethodName, string? Module)>(StringComparer.OrdinalIgnoreCase);
+        
         foreach (var method in methods)
         {
             var attr = method.GetCustomAttribute<PrimitiveAttribute>();
@@ -64,6 +67,23 @@ internal static partial class CorePrimitives
             {
                 var name = attr.Name;
                 var module = attr.Module;
+                
+                // Check for duplicate primitive declarations
+                if (seenPrimitives.TryGetValue(name, out var existing))
+                {
+                    // Allow same name in different modules
+                    if (string.Equals(existing.Module, module, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            $"Duplicate primitive '{name}' declared in methods '{existing.MethodName}' and '{method.Name}'. " +
+                            $"Each primitive name must be unique within a module.");
+                    }
+                }
+                else
+                {
+                    seenPrimitives[name] = (method.Name, module);
+                }
+                
                 var func = (Func<ForthInterpreter, Task>)Delegate.CreateDelegate(typeof(Func<ForthInterpreter, Task>), method);
                 var word = new Word(func);
                 word.Name = name;
