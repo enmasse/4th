@@ -1,4 +1,4 @@
-Found 236 primitives in code:
+Found 237 primitives in code:
 
 -
 -ROT
@@ -89,6 +89,7 @@ CHAR+
 CHARS
 CLOSE-BLOCK-FILE
 CLOSE-FILE
+COMPARE
 CONSTANT
 COUNT
 CR
@@ -376,7 +377,7 @@ WORDLIST
 WORDS
 WRITE-FILE
 
-Other primitives in code not in tracked sets (101):
+Other primitives in code not in tracked sets (102):
 -
 -ROT
 ?DO
@@ -413,6 +414,7 @@ BIN
 BIND
 CHAR
 CLOSE-BLOCK-FILE
+COMPARE
 DEPTH
 DROP
 DUMP

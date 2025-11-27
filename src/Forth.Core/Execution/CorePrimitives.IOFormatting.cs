@@ -43,7 +43,7 @@ internal static partial class CorePrimitives
         throw new ForthException(ForthErrorCode.TypeError, "TYPE expects string or (addr len)");
     }
 
-    private static bool IsNumeric(object o) => o is long || o is int || o is short || o is byte;
+    internal static bool IsNumeric(object o) => o is long || o is int || o is short || o is byte;
 
     [Primitive("WORDS", HelpString = "List all available word names")]
     private static Task Prim_WORDS(ForthInterpreter i) { var names = i.GetAllWordNames(); var sb = new StringBuilder(); bool first = true; foreach (var n in names) { if (!first) sb.Append(' '); first = false; sb.Append(n); } i.WriteText(sb.ToString()); return Task.CompletedTask; }

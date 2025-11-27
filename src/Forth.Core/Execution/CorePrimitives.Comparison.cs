@@ -110,4 +110,46 @@ internal static partial class CorePrimitives
         i.Push(a < b ? -1L : 0L);
         return Task.CompletedTask;
     }
+
+    [Primitive("COMPARE", HelpString = "COMPARE ( c-addr1 u1 c-addr2 u2 -- n ) - compare two strings lexicographically, n=-1 less, 0 equal, 1 greater")]
+    private static Task Prim_COMPARE(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "COMPARE");
+        var addr2 = i.PopInternal();
+        var u2 = ToLong(i.PopInternal());
+        var addr1 = i.PopInternal();
+        var u1 = ToLong(i.PopInternal());
+        if (u1 < 0 || u2 < 0) throw new ForthException(ForthErrorCode.TypeError, "COMPARE negative length");
+        string str1, str2;
+        if (addr1 is string s1)
+        {
+            str1 = u1 <= s1.Length ? s1.Substring(0, (int)u1) : s1;
+        }
+        else if (IsNumeric(addr1))
+        {
+            var a1 = ToLong(addr1);
+            str1 = i.ReadMemoryString(a1, u1);
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, "COMPARE expects string or (addr len) for str1");
+        }
+        if (addr2 is string s2)
+        {
+            str2 = u2 <= s2.Length ? s2.Substring(0, (int)u2) : s2;
+        }
+        else if (IsNumeric(addr2))
+        {
+            var a2 = ToLong(addr2);
+            str2 = i.ReadMemoryString(a2, u2);
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, "COMPARE expects string or (addr len) for str2");
+        }
+        var cmp = string.CompareOrdinal(str1, str2);
+        var result = cmp < 0 ? -1 : cmp > 0 ? 1 : 0;
+        i.Push((long)result);
+        return Task.CompletedTask;
+    }
 }

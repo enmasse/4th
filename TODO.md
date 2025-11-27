@@ -33,6 +33,7 @@ Status — implemented / obvious support (non-exhaustive)
 Recent extensions
 - Implemented missing ANS-tracked words: `."`, `ABORT"`, `>BODY`, `M/MOD`, `S"` with regression tests.
 - Implemented Core-Ext `WITHIN` with regression tests.
+- Implemented Core-Ext `COMPARE` with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -86,7 +87,7 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (294/294)
+- [x] Full test suite passing (312/312)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -129,7 +130,6 @@ Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
 - ALLOCATE
 - BUFFER
 - CASE
-- COMPARE
 - CREATE-FILE
 - DEFER!
 - DEFER@
