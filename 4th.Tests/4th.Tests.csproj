@@ -45,4 +45,8 @@
     <AdditionalFiles Remove="..\tests\forth\memory-tests.4th" />
     <AdditionalFiles Remove="..\tests\forth\test-io-sim-tests.4th" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\tests\ttester.4th" Link="ttester.4th" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
