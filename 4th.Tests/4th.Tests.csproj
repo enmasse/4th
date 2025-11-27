@@ -47,6 +47,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\tests\ttester.4th" Link="ttester.4th" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\tests\ttester.4th" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

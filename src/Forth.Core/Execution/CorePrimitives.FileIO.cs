@@ -11,40 +11,43 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("WRITE-FILE", HelpString = "WRITE-FILE ( data filename -- ) - write data to file")]
-    private static Task Prim_WRITEFILE(ForthInterpreter i)
+    [Primitive("WRITE-FILE", HelpString = "WRITE-FILE ( c-addr u filename | string string | counted-addr string -- ) - write string data to file")]
+    private static async Task Prim_WRITEFILE(ForthInterpreter i)
     {
-        // data filename --
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after WRITE-FILE");
-        var data = i.PopInternal();
-        try
+        // Check for counted-addr string form
+        if (i.Stack.Count >= 2 && i.Stack[^1] is string && i.Stack[^2] is long)
         {
-            string text;
-            if (data is string sd)
-            {
-                text = sd;
-            }
-            else if (data is long addr)
-            {
-                text = i.ReadCountedString(addr);
-            }
-            else
-            {
-                text = data?.ToString() ?? string.Empty;
-            }
-
-            System.IO.File.WriteAllText(filenameToken, text, Encoding.UTF8);
-            // update interpreter diagnostics
-            i._lastWriteHandle = 0;
-            i._lastWriteBuffer = Encoding.UTF8.GetBytes(text);
-            i._lastWritePositionAfter = new FileInfo(filenameToken).Length;
-        }
-        catch (Exception)
-        {
-            throw new ForthException(ForthErrorCode.Unknown, "WRITE-FILE failed");
+            var filename = (string)i.PopInternal();
+            var countedAddr = (long)i.PopInternal();
+            var content = i.ReadCountedString(countedAddr);
+            await File.WriteAllTextAsync(filename, content);
+            return;
         }
 
-        return Task.CompletedTask;
+        // Check for string string form
+        if (i.Stack.Count >= 2 && i.Stack[^1] is string && i.Stack[^2] is string)
+        {
+            var filename = (string)i.PopInternal();
+            var content = (string)i.PopInternal();
+            await File.WriteAllTextAsync(filename, content);
+            return;
+        }
+
+        // Standard form: c-addr u filename
+        i.EnsureStack(3, "WRITE-FILE");
+        var filenameObj = i.PopInternal();
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+
+        if (filenameObj is string fname)
+        {
+            var content = i.ReadMemoryString(addr, u);
+            await File.WriteAllTextAsync(fname, content);
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, "WRITE-FILE expects string filename");
+        }
     }
 
     [Primitive("APPEND-FILE", HelpString = "APPEND-FILE ( data filename -- ) - append data to file")]

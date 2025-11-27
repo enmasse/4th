@@ -26,6 +26,8 @@ Status — implemented / obvious support (non-exhaustive)
 - Wordlist/search-order: `GET-ORDER`, `SET-ORDER`, `WORDLIST`, `DEFINITIONS`, `FORTH`
 - Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE`
 - Extended arithmetic: `*/MOD` plus double-cell ops `D+`, `D-`, `M*`
+- Environment queries: `ENV` wordlist with `OS`, `CPU`, `MEMORY`, `MACHINE`, `USER`, `PWD`
+- Help system: `HELP` (general help or word-specific)
 
 Recent extensions
 - Inline IL: stabilized `IL{ ... }IL`
@@ -49,6 +51,10 @@ Recent extensions
 - Diagnostics: added last-read/last-write buffers and positions so introspection tests can validate live stream behavior.
 - Tokenizer updates and bracketed-conditional handling were adjusted earlier; file inclusion behavior complements those changes to avoid unmatched bracket conditionals.
 - Fixed generated test dependency on `ttester.4th` by copying it to output directory via project configuration.
+- Added ENV wordlist for environment queries (OS, CPU, MEMORY, MACHINE, USER, PWD).
+- Enhanced REPL with command history, HELP/STACK commands, and improved error handling.
+- Extended HELP primitive to show general help when no word specified.
+- Added comprehensive tests validating all README examples.
 
 Notes
 - `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
@@ -56,6 +62,8 @@ Notes
 - Awaitable detection centralized in `AwaitableHelper`.
 - Block system implemented with per-block files + LRU cache + atomic save.
 - INCLUDE/LOAD accept quoted string stack arguments and unquote before file access.
+- ENV wordlist provides system environment information.
+- HELP shows general help or word-specific help.
 
 Progress / Repository tasks (current)
 - [x] Create `tools/ans-diff` and integrate report artifact
@@ -81,8 +89,6 @@ Progress / Repository tasks (current)
 - [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group, grouped by file (nested classes for multi-test files)
 - [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
 - [x] Mark the unified string allocation helper as completed.
-
-Remaining / next work items
 - [x] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
 - [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
 - [x] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
@@ -90,3 +96,14 @@ Remaining / next work items
 - [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — basic negative checks implemented, expand coverage
 - [x] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
 - [x] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
+- [x] Add optional `ENV` wordlist or mechanism for platform/environment queries.
+- [x] Add a REPL (Read-Eval-Print Loop) for interactive use.
+- [x] Add tests to ensure that the examples in README works
+- [x] Extend HELP primitive to show general help when no word specified
+
+Potential future extensions
+- Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
+- Support for binary file I/O or more advanced block operations.
+- Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
+- Add optional `ENV` wordlist or mechanism for platform/environment queries.
+- Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).

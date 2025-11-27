@@ -3,6 +3,8 @@ using Xunit;
 using Forth.Core;
 using Forth.Core.Interpreter;
 using System.Linq;
+using System;
+using System.IO;
 
 namespace Forth.Tests.Core
 {
@@ -370,6 +372,102 @@ namespace Forth.Tests.Core
             var f = New();
             var ex = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("CHAR"));
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
+        }
+
+        /// <summary>
+        /// ENV words should return environment information.
+        /// </summary>
+        [Fact]
+        public async Task EnvWords_ReturnValues()
+        {
+            var f = New();
+            await f.EvalAsync("\"ENV\" USING");
+
+            // Test OS
+            await f.EvalAsync("ENV:OS");
+            Assert.Single(f.Stack);
+            Assert.IsType<string>(f.Stack[0]);
+            Assert.NotEmpty((string)f.Stack[0]);
+            f.Pop();
+
+            // Test CPU
+            await f.EvalAsync("ENV:CPU");
+            Assert.Single(f.Stack);
+            Assert.IsType<long>(f.Stack[0]);
+            Assert.True((long)f.Stack[0] > 0);
+            f.Pop();
+
+            // Test MEMORY
+            await f.EvalAsync("ENV:MEMORY");
+            Assert.Single(f.Stack);
+            Assert.IsType<long>(f.Stack[0]);
+            Assert.True((long)f.Stack[0] > 0);
+            f.Pop();
+
+            // Test MACHINE
+            await f.EvalAsync("ENV:MACHINE");
+            Assert.Single(f.Stack);
+            Assert.IsType<string>(f.Stack[0]);
+            Assert.NotEmpty((string)f.Stack[0]);
+            f.Pop();
+
+            // Test USER
+            await f.EvalAsync("ENV:USER");
+            Assert.Single(f.Stack);
+            Assert.IsType<string>(f.Stack[0]);
+            Assert.NotEmpty((string)f.Stack[0]);
+            f.Pop();
+
+            // Test PWD
+            await f.EvalAsync("ENV:PWD");
+            Assert.Single(f.Stack);
+            Assert.IsType<string>(f.Stack[0]);
+            Assert.NotEmpty((string)f.Stack[0]);
+            f.Pop();
+        }
+
+        /// <summary>
+        /// HELP and STACK commands should work in REPL context.
+        /// </summary>
+        [Fact]
+        public async Task ReplCommands_Work()
+        {
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(output);
+
+            try
+            {
+                var f = New();
+                // Add REPL words
+                f.AddWord("HELP", i => Console.WriteLine("Forth REPL commands:\n  WORDS - list all words\n  HELP - show this help\n  BYE - exit\n\nForth syntax: stack-based, postfix notation"));
+                f.AddWord("STACK", i => {
+                    var stack = i.Stack;
+                    if (stack.Count == 0)
+                        Console.WriteLine("<empty>");
+                    else
+                        Console.WriteLine(string.Join(" ", stack.Select(o => o?.ToString() ?? "null")));
+                });
+
+                // Test HELP
+                await f.EvalAsync("HELP");
+                var helpOutput = output.ToString();
+                Assert.Contains("Forth REPL commands", helpOutput);
+
+                // Test STACK empty
+                output.GetStringBuilder().Clear();
+                await f.EvalAsync("STACK");
+                Assert.Contains("<empty>", output.ToString());
+
+                // Test STACK with items
+                output.GetStringBuilder().Clear();
+                await f.EvalAsync("1 2 3 STACK");
+                Assert.Contains("1 2 3", output.ToString());
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
         }
     }
 }

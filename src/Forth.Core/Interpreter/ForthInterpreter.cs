@@ -166,6 +166,9 @@ public partial class ForthInterpreter : IForthInterpreter
             var blkWord = new Word(ii => { ii.Push((long)ii.GetCurrentBlockNumber()); return Task.CompletedTask; }) { Name = "BLK", Module = null };
             _dict = _dict.SetItem((null, "BLK"), blkWord);
         }
+
+        // Add ENV wordlist words
+        AddEnvWords();
     }
 
     private async Task LoadPreludeAsync()
@@ -899,5 +902,26 @@ public partial class ForthInterpreter : IForthInterpreter
             sb.Append((char)chv);
         }
         return sb.ToString();
+    }
+
+    private void AddEnvWords()
+    {
+        // OS name
+        _dict = _dict.SetItem(("ENV", "OS"), new Word(i => { i.Push(Environment.OSVersion.Platform.ToString()); return Task.CompletedTask; }) { Name = "OS", Module = "ENV" });
+
+        // CPU count
+        _dict = _dict.SetItem(("ENV", "CPU"), new Word(i => { i.Push((long)Environment.ProcessorCount); return Task.CompletedTask; }) { Name = "CPU", Module = "ENV" });
+
+        // Total memory (in bytes, as long)
+        _dict = _dict.SetItem(("ENV", "MEMORY"), new Word(i => { i.Push(Environment.WorkingSet); return Task.CompletedTask; }) { Name = "MEMORY", Module = "ENV" });
+
+        // Machine name
+        _dict = _dict.SetItem(("ENV", "MACHINE"), new Word(i => { i.Push(Environment.MachineName); return Task.CompletedTask; }) { Name = "MACHINE", Module = "ENV" });
+
+        // User name
+        _dict = _dict.SetItem(("ENV", "USER"), new Word(i => { i.Push(Environment.UserName); return Task.CompletedTask; }) { Name = "USER", Module = "ENV" });
+
+        // Current directory
+        _dict = _dict.SetItem(("ENV", "PWD"), new Word(i => { i.Push(Environment.CurrentDirectory); return Task.CompletedTask; }) { Name = "PWD", Module = "ENV" });
     }
 }

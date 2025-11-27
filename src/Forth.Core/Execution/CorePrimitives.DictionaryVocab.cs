@@ -79,8 +79,22 @@ internal static partial class CorePrimitives
     [Primitive("END-MODULE", IsImmediate = true, HelpString = "END-MODULE - end the current module namespace")]
     private static Task Prim_ENDMODULE(ForthInterpreter i) { i._currentModule = null; return Task.CompletedTask; }
 
-    [Primitive("USING", IsImmediate = true, HelpString = "USING <module> - import a module into current namespace")]
-    private static Task Prim_USING(ForthInterpreter i) { var m = i.ReadNextTokenOrThrow("Expected name after USING"); if (!i._usingModules.Contains(m)) i._usingModules.Add(m); return Task.CompletedTask; }
+    [Primitive("USING", HelpString = "USING ( \"name\" -- ) - add module to search order")]
+    private static Task Prim_USING(ForthInterpreter i)
+    {
+        string module;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string s)
+        {
+            module = s;
+            i.PopInternal();
+        }
+        else
+        {
+            module = i.ReadNextTokenOrThrow("Expected module name for USING");
+        }
+        i._usingModules.Add(module);
+        return Task.CompletedTask;
+    }
 
     [Primitive("LOAD-ASM", IsImmediate = true, HelpString = "LOAD-ASM <path> - load assembly words from file")]
     private static Task Prim_LOADASM(ForthInterpreter i) { var path = i.ReadNextTokenOrThrow("Expected path after LOAD-ASM"); var count = AssemblyWordLoader.Load(i, path); i.Push((long)count); return Task.CompletedTask; }
