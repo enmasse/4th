@@ -24,7 +24,7 @@ class Program
         "KEY", "KEY?", "ACCEPT", "EXPECT", "SOURCE", ">IN", "WORD",
         "OPEN-FILE", "CLOSE-FILE", "FILE-SIZE", "REPOSITION-FILE",
         "BLOCK", "LOAD", "SAVE", "BLK",
-        "D+", "D-", "M*", "*/MOD", "S>D", "M+", "SM/REM", "FM/MOD",
+        "D+", "D-", "M*", "*/MOD", "S>D", "S\"", "M+", "SM/REM", "FM/MOD",
         // Newly implemented core words
         "0<", "0>", "1+", "1-", "ABS", "2*", "2/", "U<", "UM*", "UM/MOD",
         "2DROP", "NIP", "TUCK", "?DUP", "SP!", "SP@", "BL", "2!", "2@", "CELL+", "CELLS", "CHAR+", "CHARS", "ALIGN", "2R@", "C,"
@@ -36,9 +36,6 @@ class Program
         // If executed from tools/ans-diff dir, assume repo root is two levels up
         if (Path.GetFileName(repoRoot).Equals("ans-diff", StringComparison.OrdinalIgnoreCase))
             repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
-        // If executed from 4th dir, assume repo root is one level up
-        else if (Path.GetFileName(repoRoot).Equals("4th", StringComparison.OrdinalIgnoreCase))
-            repoRoot = Path.GetFullPath(Path.Combine(repoRoot, ".."));
 
         var sb = new StringBuilder();
 
@@ -48,14 +45,19 @@ class Program
             .Where(p => !p.Contains(Path.Combine("tools", "ans-diff")))
             .ToArray();
 
-        var primNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        var primRegex = new Regex(@"\[Primitive\(\s*""(?<name>[^""]+)""", RegexOptions.Compiled);
+        var primNames = new HashSet<string>();
+        // Match the string literal inside [Primitive("...")], handling escaped quotes
+        var primRegex = new Regex(@"\[Primitive\(\s*""(?<name>(?:\\.|[^""\\])*)""", RegexOptions.Compiled);
         foreach (var f in csFiles)
         {
             var txt = File.ReadAllText(f);
             foreach (Match m in primRegex.Matches(txt))
             {
-                primNames.Add(m.Groups["name"].Value);
+                var raw = m.Groups["name"].Value;
+                // Unescape C#-style escapes (e.g. \" -> ") so the captured name matches the actual primitive value
+                var name = Regex.Unescape(raw);
+                Console.WriteLine($"Matched name: {name}");
+                primNames.Add(name);
             }
         }
 
@@ -65,7 +67,7 @@ class Program
         sb.AppendLine();
         var ansSet = new HashSet<string>(AnsCore, StringComparer.OrdinalIgnoreCase);
         var found = primNames.Where(p => ansSet.Contains(p)).OrderBy(s => s).ToArray();
-        var missing = AnsCore.Where(a => !primNames.Contains(a, StringComparer.OrdinalIgnoreCase)).OrderBy(s => s).ToArray();
+        var missing = AnsCore.Where(a => !primNames.Contains(a)).OrderBy(s => s).ToArray();
         var extras = primNames.Where(p => !ansSet.Contains(p)).OrderBy(s => s).ToArray();
 
         sb.AppendLine($"\nANS core words present ({found.Length}):");
@@ -92,6 +94,7 @@ class Program
         if (missing.Length > 0)
         {
             Console.WriteLine($"\nFailing due to {missing.Length} missing ANS core words.");
+            foreach (var m in missing) Console.WriteLine($"- {m}");
             return 2;
         }
 

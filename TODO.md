@@ -1,6 +1,6 @@
 # TODO: ANS/Forth conformity gap analysis
 
-_Last updated: 2025-11-28_
+_Last updated: 2025-11-27_
 
 Goal
 - Compare the current implementation against the ANS Forth core wordlist and identify words that are missing or partially implemented.
@@ -79,10 +79,11 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (261/261)
+- [x] Full test suite passing (286/286)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
+- [x] Fix `ADD-INPUT-LINE` numeric / counted-addr disambiguation and update tests (handled counted strings, addr/len pair ordering)
 - [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
 - [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
 - [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group, grouped by file (nested classes for multi-test files)

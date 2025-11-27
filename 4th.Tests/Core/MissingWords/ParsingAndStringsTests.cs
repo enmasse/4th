@@ -18,4 +18,17 @@ public class ParsingAndStringsTests
         Assert.Equal(" hello world", Assert.IsType<string>(forth.Stack[0]));
         Assert.Equal(12L, (long)forth.Stack[1]);
     }
+
+    [Fact]
+    public async Task SQuote_PushesAddrLen()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("S\" hello\""));
+        Assert.Equal(2, forth.Stack.Count);
+        var len = (long)forth.Stack[0];
+        var addr = (long)forth.Stack[1];
+        Assert.Equal(5L, len);
+        var str = forth.ReadMemoryString(addr, len);
+        Assert.Equal("hello", str);
+    }
 }

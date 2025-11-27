@@ -838,6 +838,15 @@ public partial class ForthInterpreter : IForthInterpreter
         return addr;
     }
 
+    internal long AllocateString(string str)
+    {
+        var addr = _nextAddr;
+        for (int idx = 0; idx < str.Length; idx++)
+            _mem[addr + idx] = (long)str[idx];
+        _nextAddr += str.Length;
+        return addr;
+    }
+
     // Begin a new definition named `name` (called by : primitive)
     internal void BeginDefinition(string name)
     {

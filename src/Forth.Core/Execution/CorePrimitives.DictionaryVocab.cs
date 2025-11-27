@@ -202,14 +202,24 @@ internal static partial class CorePrimitives
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
-        // Allocate counted string
-        var addr = i.AllocateCountedString(str);
+        // ANS-style S" should produce a counted string: push length then address
         if (!i._isCompiling)
-            i.Push((long)addr); // counted string address
+        {
+            var addr = i.AllocateCountedString(str);
+            i.Push((long)str.Length);
+            // push address of first character (addr+1) so consumers can call ReadMemoryString(addr,len)
+            i.Push(addr + 1);
+        }
         else
         {
-            var capturedAddr = addr;
-            i.CurrentList().Add(ii => { ii.Push((long)capturedAddr); return Task.CompletedTask; });
+            var captured = str;
+            i.CurrentList().Add(ii =>
+            {
+                var a = ii.AllocateCountedString(captured);
+                ii.Push((long)captured.Length);
+                ii.Push(a + 1);
+                return Task.CompletedTask;
+            });
         }
         return Task.CompletedTask;
     }

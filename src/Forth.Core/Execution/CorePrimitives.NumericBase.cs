@@ -16,6 +16,8 @@ internal static partial class CorePrimitives
         string s;
         int start;
         int consumed;
+        long uVar = 0;
+        long addrVar = 0;
 
         // Detect addr u start consumed form: need 4 numeric values
         bool formAddrU = i.Stack.Count >= 4 && IsNum(i.Stack[^1]) && IsNum(i.Stack[^2]) && IsNum(i.Stack[^3]) && IsNum(i.Stack[^4]);
@@ -23,10 +25,14 @@ internal static partial class CorePrimitives
         {
             consumed = (int)ToLong(i.PopInternal());
             start = (int)ToLong(i.PopInternal());
-            long u = ToLong(i.PopInternal());
-            long addr = ToLong(i.PopInternal());
+            // Stack contains (len addr start consumed) with len pushed before addr by S".
+            // Popping yields consumed, start, addr, len — so read addr then len and assign accordingly.
+            var poppedAddr = ToLong(i.PopInternal());
+            var poppedLen = ToLong(i.PopInternal());
+            addrVar = poppedAddr;
+            uVar = poppedLen;
             var sb = new System.Text.StringBuilder();
-            for (long k = 0; k < u; k++) { i.MemTryGet(addr + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
+            for (long k = 0; k < uVar; k++) { i.MemTryGet(addrVar + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); }
             s = sb.ToString();
         }
         else
@@ -75,6 +81,65 @@ internal static partial class CorePrimitives
             digits++;
         }
         int remainder = s.Length - idx;
+        // If no digits were found and we detected a 4-number form, try fallbacks to handle
+        // ambiguous orderings produced by S" (which pushes len then addr) and other cases.
+        if (digits == 0 && formAddrU)
+        {
+            // Try interpreted as counted string where uVar is addr and addrVar is len (S" case):
+            try
+            {
+                var sbc = new System.Text.StringBuilder();
+                // uVar holds addr, addrVar holds len in this scenario
+                for (long k = 0; k < addrVar; k++) { i.MemTryGet(uVar + 1 + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sbc.Append(ch); }
+                s = sbc.ToString();
+                idx = System.Math.Clamp(start, 0, s.Length);
+                while (idx < s.Length && char.IsWhiteSpace(s[idx])) idx++;
+                value = 0; digits = 0;
+                while (idx < s.Length)
+                {
+                    int d;
+                    char ch = s[idx];
+                    if (ch >= '0' && ch <= '9') d = ch - '0';
+                    else if (ch >= 'A' && ch <= 'Z') d = ch - 'A' + 10;
+                    else if (ch >= 'a' && ch <= 'z') d = ch - 'a' + 10;
+                    else break;
+                    if (d >= b) break;
+                    value = value * b + d;
+                    idx++; digits++;
+                }
+                remainder = s.Length - idx;
+            }
+            catch { /* ignore and try next fallback */ }
+
+            // If still no digits, try swapped addr/u interpretation (addrVar as u, uVar as addr)
+            if (digits == 0)
+            {
+                try
+                {
+                    var sb2 = new System.Text.StringBuilder();
+                    for (long k = 0; k < addrVar; k++) { i.MemTryGet(uVar + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb2.Append(ch); }
+                    s = sb2.ToString();
+                    idx = System.Math.Clamp(start, 0, s.Length);
+                    while (idx < s.Length && char.IsWhiteSpace(s[idx])) idx++;
+                    value = 0; digits = 0;
+                    while (idx < s.Length)
+                    {
+                        int d;
+                        char ch = s[idx];
+                        if (ch >= '0' && ch <= '9') d = ch - '0';
+                        else if (ch >= 'A' && ch <= 'Z') d = ch - 'A' + 10;
+                        else if (ch >= 'a' && ch <= 'z') d = ch - 'a' + 10;
+                        else break;
+                        if (d >= b) break;
+                        value = value * b + d;
+                        idx++; digits++;
+                    }
+                    remainder = s.Length - idx;
+                }
+                catch { }
+            }
+        }
+
         i.Push(value);
         i.Push((long)remainder);
         i.Push((long)(consumed + digits));

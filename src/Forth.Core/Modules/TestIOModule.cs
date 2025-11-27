@@ -54,22 +54,61 @@ namespace Forth.Core.Modules
             {
                 var uObj = i.PopInternal();
                 var addrOrStrObj = i.PopInternal();
-                long u = ForthInterpreter.ToLong(uObj);
-                if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "Negative length for ADD-INPUT-LINE");
-                string line;
+
+                // If addrOrStrObj is a string, treat as (string u) form
                 if (addrOrStrObj is string direct)
                 {
-                    line = u <= direct.Length ? direct.Substring(0, (int)u) : direct;
+                    long u = ForthInterpreter.ToLong(uObj);
+                    if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "Negative length for ADD-INPUT-LINE");
+                    var line = u <= direct.Length ? direct.Substring(0, (int)u) : direct;
+                    if (i.IO is TestIO tioPair) { tioPair.AddInputLine(line); return Task.CompletedTask; }
+                    throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
                 }
-                else
+
+                // Both numeric: try to interpret as counted-addr (S" produced) first,
+                // then as (addr u) or swapped (u addr).
+                long n1 = ForthInterpreter.ToLong(uObj); // popped top
+                long n2 = ForthInterpreter.ToLong(addrOrStrObj); // next
+
+                // counted-addr form from S" yields ( len addrOfChars ) on stack where addrOfChars == addr+1
+                // When popped, n1 == addrOfChars and n2 == len. Detect by checking length cell at n1-1.
+                if (n1 > 0)
                 {
-                    long addr = ForthInterpreter.ToLong(addrOrStrObj);
-                    var sb = new StringBuilder();
-                    for (long k = 0; k < u; k++) { i.MemTryGet(addr + k, out var v); sb.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
-                    line = sb.ToString();
+                    i.MemTryGet(n1 - 1, out var maybeLenCell);
+                    try
+                    {
+                        var maybeLen = ForthInterpreter.ToLong(maybeLenCell);
+                        if (maybeLen == n2)
+                        {
+                            var sb = new StringBuilder();
+                            for (long k = 0; k < n2; k++) { i.MemTryGet(n1 + k, out var v); sb.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
+                            if (i.IO is TestIO tioPair) { tioPair.AddInputLine(sb.ToString()); return Task.CompletedTask; }
+                            throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+                        }
+                    }
+                    catch { /* fall through to other interpretations */ }
                 }
-                if (i.IO is TestIO tioPair) { tioPair.AddInputLine(line); return Task.CompletedTask; }
-                throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+
+                // Try (addr = n2, u = n1)
+                if (n2 >= 0 && n1 >= 0 && n2 + n1 <= i._nextAddr)
+                {
+                    var sb = new StringBuilder();
+                    for (long k = 0; k < n1; k++) { i.MemTryGet(n2 + k, out var v); sb.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
+                    if (i.IO is TestIO tioPair) { tioPair.AddInputLine(sb.ToString()); return Task.CompletedTask; }
+                    throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+                }
+
+                // Try swapped (addr = n1, u = n2)
+                if (n1 >= 0 && n2 >= 0 && n1 + n2 <= i._nextAddr)
+                {
+                    var sb = new StringBuilder();
+                    for (long k = 0; k < n2; k++) { i.MemTryGet(n1 + k, out var v); sb.Append((char)(ForthInterpreter.ToLong(v) & 0xFF)); }
+                    if (i.IO is TestIO tioPair) { tioPair.AddInputLine(sb.ToString()); return Task.CompletedTask; }
+                    throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE requires TestIO");
+                }
+
+                // fallback to error
+                throw new ForthException(ForthErrorCode.TypeError, "ADD-INPUT-LINE unsupported numeric pair");
             }
 
             // Prioritize counted string detection: numeric top whose cell holds a plausible length

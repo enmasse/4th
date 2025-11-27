@@ -14,7 +14,42 @@ internal static partial class CorePrimitives
     [Primitive("WRITE-FILE", HelpString = "WRITE-FILE ( c-addr u filename | string string | counted-addr string -- ) - write string data to file")]
     private static async Task Prim_WRITEFILE(ForthInterpreter i)
     {
-        // Check for counted-addr string form
+        // If top is filename string and there are two numeric values below, accept either
+        // (addr u filename) or (u addr filename) produced by different string literals.
+        if (i.Stack.Count >= 3 && i.Stack[^1] is string && i.Stack[^2] is long && i.Stack[^3] is long)
+        {
+            var filename = (string)i.PopInternal();
+            var v1 = ToLong(i.PopInternal()); // popped top
+            var v2 = ToLong(i.PopInternal()); // next
+
+            // Disambiguate forms. If v1 points to the first char of a counted string
+            // then the length cell will be at (v1 - 1) and equal to v2 -> prefer that.
+            string content;
+            // If v1 points to first char of a counted string, the length cell is at v1-1.
+            // Since MemTryGet has no boolean return, call it separately and compare.
+            if (v1 > 0)
+            {
+                long maybeLen = 0;
+                i.MemTryGet(v1 - 1, out maybeLen);
+                if (ToLong(maybeLen) == v2)
+                {
+                    content = i.ReadMemoryString(v1, v2);
+                }
+                else
+                {
+                    content = i.ReadMemoryString(v2, v1);
+                }
+            }
+            else
+            {
+                content = i.ReadMemoryString(v2, v1);
+            }
+
+            await File.WriteAllTextAsync(filename, content);
+            return;
+        }
+
+        // Check for counted-addr string form (single counted-addr value then filename)
         if (i.Stack.Count >= 2 && i.Stack[^1] is string && i.Stack[^2] is long)
         {
             var filename = (string)i.PopInternal();
@@ -24,7 +59,7 @@ internal static partial class CorePrimitives
             return;
         }
 
-        // Check for string string form
+        // Check for string string form (content filename)
         if (i.Stack.Count >= 2 && i.Stack[^1] is string && i.Stack[^2] is string)
         {
             var filename = (string)i.PopInternal();
@@ -54,7 +89,21 @@ internal static partial class CorePrimitives
     private static Task Prim_APPENDFILE(ForthInterpreter i)
     {
         var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after APPEND-FILE");
-        var data = i.PopInternal();
+        // support (addr u filename) and (u addr filename) forms as written by S" variations
+        object data;
+        if (i.Stack.Count >= 2 && i.Stack[^1] is long && i.Stack[^2] is long)
+        {
+            var v1 = ToLong(i.PopInternal());
+            var v2 = ToLong(i.PopInternal());
+            long addr = v1; long u = v2;
+            bool plausible = addr >= 0 && u >= 0 && addr + u <= i._nextAddr;
+            if (!plausible) { addr = v2; u = v1; }
+            data = i.ReadMemoryString(addr, u);
+        }
+        else
+        {
+            data = i.PopInternal();
+        }
         try
         {
             string text = data is string sd ? sd : data is long addr ? i.ReadCountedString(addr) : data?.ToString() ?? string.Empty;
@@ -221,6 +270,14 @@ internal static partial class CorePrimitives
 
         if (pathToken.Length >= 2 && pathToken[0] == '"' && pathToken[^1] == '"')
             pathToken = pathToken[1..^1];
+        // Resolve relative paths against the current working directory rather than
+        // perform repository/test-specific searches. Let callers control which
+        // working directory is active when invoking INCLUDE (tests or REPL can set
+        // the current directory as needed).
+        if (!System.IO.Path.IsPathRooted(pathToken))
+        {
+            pathToken = System.IO.Path.GetFullPath(pathToken, System.IO.Directory.GetCurrentDirectory());
+        }
 
         var text = await System.IO.File.ReadAllTextAsync(pathToken).ConfigureAwait(false);
         // Evaluate the entire file content in one go so multi-line constructs are preserved
