@@ -17,6 +17,9 @@ internal static partial class CorePrimitives
     [Primitive("CR", HelpString = "Emit newline")]
     private static Task Prim_CR(ForthInterpreter i) { i.NewLine(); return Task.CompletedTask; }
 
+    [Primitive("BL", HelpString = "BL ( -- 32 ) ASCII space character")]
+    private static Task Prim_BL(ForthInterpreter i) { i.Push(32L); return Task.CompletedTask; }
+
     [Primitive("EMIT", HelpString = "Emit character with given code ( n -- )")]
     private static Task Prim_EMIT(ForthInterpreter i) { i.EnsureStack(1, "EMIT"); var n = ToLong(i.PopInternal()); char ch = (char)(n & 0xFFFF); i.WriteText(ch.ToString()); return Task.CompletedTask; }
 

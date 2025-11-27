@@ -414,6 +414,13 @@ public partial class ForthInterpreter : IForthInterpreter
     internal object RTop() =>
         _rstack.Peek();
 
+    internal object RNth(int n)
+    {
+        var arr = _rstack.ToArray();
+        if (n >= arr.Length) throw new ForthException(ForthErrorCode.StackUnderflow, "Return stack underflow in RNth");
+        return arr[arr.Length - 1 - n];
+    }
+
     internal long ValueGet(string name) =>
         _values.TryGetValue(name, out var v) ? v : 0L;
 

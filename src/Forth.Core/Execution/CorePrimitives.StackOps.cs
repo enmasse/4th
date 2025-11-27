@@ -45,4 +45,45 @@ internal static partial class CorePrimitives
         i.Push(b);
         return Task.CompletedTask;
     }
+
+    [Primitive("2DROP", HelpString = "2DROP ( a b -- ) drop top two items")]
+    private static Task Prim_2DROP(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "2DROP");
+        i.PopInternal();
+        i.PopInternal();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("NIP", HelpString = "NIP ( a b -- b ) drop second item")]
+    private static Task Prim_NIP(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "NIP");
+        var b = i.PopInternal();
+        i.PopInternal();
+        i.Push(b);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("TUCK", HelpString = "TUCK ( a b -- b a b ) copy top under second")]
+    private static Task Prim_TUCK(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "TUCK");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        i.Push(b);
+        i.Push(a);
+        i.Push(b);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("?DUP", HelpString = "?DUP ( n -- n n | 0 ) duplicate if non-zero")]
+    private static Task Prim_QDUP(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "?DUP");
+        var n = i.PopInternal();
+        i.Push(n);
+        if (ToLong(n) != 0) i.Push(n);
+        return Task.CompletedTask;
+    }
 }

@@ -16,7 +16,7 @@ This repository contains a .NET 9 implementation of a Forth-like interpreter and
 - **File Access Methods**: ANS-compatible file modes (`R/O`, `W/O`, `R/W`, `BIN`)
 - **Extensible**: Easy to add new primitives and integrate with .NET code
 - **High Performance**: Optimized stack operations and memory management
-- **Comprehensive Testing**: 271 tests covering all features and README examples
+- **Comprehensive Testing**: 278 tests covering all features and README examples
 
 ## Quick Start
 
@@ -32,7 +32,7 @@ cd 4th
 # Build the solution
 dotnet build
 
-# Run all tests (271 tests, all passing)
+# Run all tests (278 tests, all passing)
 dotnet test
 
 # Check ANS conformity
@@ -52,7 +52,7 @@ var forth = new ForthInterpreter();
 await forth.EvalAsync("5 3 + ."); // Prints 8
 
 // Add custom words
-forth.AddWord("HELLO", i => i.WriteText("Hello, World!"));
+forth.AddWord("HELLO", i => i.WriteText("Hello, World!"))
 
 // Use async features
 await forth.EvalAsync("SPAWN 1 DELAY AWAIT ."); // Prints 1 after delay

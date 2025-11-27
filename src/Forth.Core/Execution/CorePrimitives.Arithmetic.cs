@@ -266,4 +266,106 @@ internal static partial class CorePrimitives
         i._stack.Push(ForthValue.FromLong(high));
         return Task.CompletedTask;
     }
+
+    [Primitive("0<", HelpString = "0< ( n -- flag ) true if n < 0")]
+    private static Task Prim_ZeroLess(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "0<");
+        var n = ToLong(i.PopInternal());
+        i.Push(n < 0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("0>", HelpString = "0> ( n -- flag ) true if n > 0")]
+    private static Task Prim_ZeroGreater(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "0>");
+        var n = ToLong(i.PopInternal());
+        i.Push(n > 0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("1+", HelpString = "1+ ( n -- n+1 ) increment by 1")]
+    private static Task Prim_OnePlus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "1+");
+        var n = ToLong(i.PopInternal());
+        i.Push(n + 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("1-", HelpString = "1- ( n -- n-1 ) decrement by 1")]
+    private static Task Prim_OneMinus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "1-");
+        var n = ToLong(i.PopInternal());
+        i.Push(n - 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ABS", HelpString = "ABS ( n -- |n| ) absolute value")]
+    private static Task Prim_Abs(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "ABS");
+        var n = ToLong(i.PopInternal());
+        i.Push(n < 0 ? -n : n);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("2*", HelpString = "2* ( n -- n*2 ) arithmetic left shift by 1")]
+    private static Task Prim_2Star(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "2*");
+        var n = ToLong(i.PopInternal());
+        i.Push(n << 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("2/", HelpString = "2/ ( n -- n/2 ) arithmetic right shift by 1")]
+    private static Task Prim_2Slash(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "2/");
+        var n = ToLong(i.PopInternal());
+        i.Push(n >> 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("U<", HelpString = "U< ( u1 u2 -- flag ) unsigned less than")]
+    private static Task Prim_ULess(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "U<");
+        var u2 = ToLong(i.PopInternal());
+        var u1 = ToLong(i.PopInternal());
+        i.Push((ulong)u1 < (ulong)u2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("UM*", HelpString = "UM* ( u1 u2 -- ud ) unsigned multiply producing double-cell")]
+    private static Task Prim_UMStar(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "UM*");
+        var u2 = (ulong)ToLong(i.PopInternal());
+        var u1 = (ulong)ToLong(i.PopInternal());
+        var prod = u1 * u2;
+        var low = (long)(prod & 0xFFFFFFFFFFFFFFFFUL);
+        var high = (long)(prod >> 64);
+        i.Push(low);
+        i.Push(high);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("UM/MOD", HelpString = "UM/MOD ( ud u -- rem quot ) unsigned divide double-cell by single-cell")]
+    private static Task Prim_UMSlashMod(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "UM/MOD");
+        var u = (ulong)ToLong(i.PopInternal());
+        var ud_high = (ulong)ToLong(i.PopInternal());
+        var ud_low = (ulong)ToLong(i.PopInternal());
+        var dividend = (ud_high << 64) | ud_low;
+        var quot = dividend / u;
+        var rem = dividend % u;
+        i.Push((long)rem);
+        i.Push((long)quot);
+        return Task.CompletedTask;
+    }
 }

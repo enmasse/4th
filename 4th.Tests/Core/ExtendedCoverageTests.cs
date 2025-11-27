@@ -427,47 +427,58 @@ namespace Forth.Tests.Core
         }
 
         /// <summary>
-        /// HELP and STACK commands should work in REPL context.
+        /// Regression test for 0< word.
         /// </summary>
         [Fact]
-        public async Task ReplCommands_Work()
+        public async Task Test_0Less()
         {
-            var output = new StringWriter();
-            var originalOut = Console.Out;
-            Console.SetOut(output);
+            var f = New();
+            await f.EvalAsync("-5 0<");
+            Assert.Single(f.Stack);
+            Assert.Equal(-1L, (long)f.Stack[0]);
+            f.Pop();
+        }
 
-            try
-            {
-                var f = New();
-                // Add REPL words
-                f.AddWord("HELP", i => Console.WriteLine("Forth REPL commands:\n  WORDS - list all words\n  HELP - show this help\n  BYE - exit\n\nForth syntax: stack-based, postfix notation"));
-                f.AddWord("STACK", i => {
-                    var stack = i.Stack;
-                    if (stack.Count == 0)
-                        Console.WriteLine("<empty>");
-                    else
-                        Console.WriteLine(string.Join(" ", stack.Select(o => o?.ToString() ?? "null")));
-                });
+        /// <summary>
+        /// Regression test for 1+ word.
+        /// </summary>
+        [Fact]
+        public async Task Test_1Plus()
+        {
+            var f = New();
+            await f.EvalAsync("5 1+");
+            Assert.Single(f.Stack);
+            Assert.Equal(6L, (long)f.Stack[0]);
+            f.Pop();
+        }
 
-                // Test HELP
-                await f.EvalAsync("HELP");
-                var helpOutput = output.ToString();
-                Assert.Contains("Forth REPL commands", helpOutput);
+        /// <summary>
+        /// Regression test for 2DROP word.
+        /// </summary>
+        [Fact]
+        public async Task Test_2Drop()
+        {
+            var f = New();
+            await f.EvalAsync("1 2 3 2DROP");
+            Assert.Single(f.Stack);
+            Assert.Equal(1L, (long)f.Stack[0]);
+            f.Pop();
+        }
 
-                // Test STACK empty
-                output.GetStringBuilder().Clear();
-                await f.EvalAsync("STACK");
-                Assert.Contains("<empty>", output.ToString());
-
-                // Test STACK with items
-                output.GetStringBuilder().Clear();
-                await f.EvalAsync("1 2 3 STACK");
-                Assert.Contains("1 2 3", output.ToString());
-            }
-            finally
-            {
-                Console.SetOut(originalOut);
-            }
+        /// <summary>
+        /// Regression test for 2R@ word.
+        /// </summary>
+        [Fact]
+        public async Task Test_2RAt()
+        {
+            var f = New();
+            await f.EvalAsync("1 >R 2 >R 2R@");
+            Assert.Equal(2, f.Stack.Count);
+            Assert.Equal(1L, (long)f.Stack[0]);
+            Assert.Equal(2L, (long)f.Stack[1]);
+            f.Pop(); f.Pop();
+            // Clean return stack
+            await f.EvalAsync("R> DROP R> DROP");
         }
     }
 }

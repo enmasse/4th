@@ -24,7 +24,10 @@ class Program
         "KEY", "KEY?", "ACCEPT", "EXPECT", "SOURCE", ">IN",
         "OPEN-FILE", "CLOSE-FILE", "FILE-SIZE", "REPOSITION-FILE",
         "BLOCK", "LOAD", "SAVE", "BLK",
-        "D+", "D-", "M*", "*/MOD"
+        "D+", "D-", "M*", "*/MOD",
+        // Newly implemented core words
+        "0<", "0>", "1+", "1-", "ABS", "2*", "2/", "U<", "UM*", "UM/MOD",
+        "2DROP", "NIP", "TUCK", "?DUP", "BL", "2!", "2@", "CELL+", "CELLS", "CHAR+", "CHARS", "ALIGN", "2R@", "C,"
     };
 
     static int Main(string[] args)
@@ -38,6 +41,8 @@ class Program
             repoRoot = Path.GetFullPath(Path.Combine(repoRoot, ".."));
 
         var sb = new StringBuilder();
+
+        Console.WriteLine($"AnsCore has {AnsCore.Length} words");
 
         var csFiles = Directory.EnumerateFiles(repoRoot, "*.cs", SearchOption.AllDirectories)
             .Where(p => !p.Contains(Path.Combine("tools", "ans-diff")))

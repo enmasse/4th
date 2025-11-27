@@ -18,6 +18,17 @@ internal static partial class CorePrimitives
     [Primitive("2R>", HelpString = "2R> ( -- a b ) - pop two items from return stack onto data stack")]
     private static Task Prim_2RFrom(ForthInterpreter i) { if (i.RCount < 2) throw new ForthException(ForthErrorCode.StackUnderflow, "Return stack underflow in 2R>"); var b = i.RPop(); var a = i.RPop(); i.Push(a); i.Push(b); return Task.CompletedTask; }
 
+    [Primitive("2R@", HelpString = "2R@ ( -- a b ) - copy two items from return stack")]
+    private static Task Prim_2RAt(ForthInterpreter i)
+    {
+        if (i.RCount < 2) throw new ForthException(ForthErrorCode.StackUnderflow, "Return stack underflow in 2R@");
+        var b = i.RTop();
+        var a = i.RNth(1);
+        i.Push(a);
+        i.Push(b);
+        return Task.CompletedTask;
+    }
+
     [Primitive("RP@", HelpString = "RP@ - push return stack pointer (depth)")]
     private static Task Prim_RPAt(ForthInterpreter i) { i.Push((long)i.RCount); return Task.CompletedTask; }
 

@@ -98,6 +98,76 @@ internal static partial class CorePrimitives
     [Primitive(",", HelpString = ", ( x -- ) - append cell to dictionary and advance here")]
     private static Task Prim_Comma(ForthInterpreter i) { i.EnsureStack(1, ","); var v = ToLong(i.PopInternal()); i._mem[i._nextAddr++] = v; return Task.CompletedTask; }
 
+    [Primitive("C,", HelpString = "C, ( ch -- ) - append byte to dictionary and advance here")]
+    private static Task Prim_CComma(ForthInterpreter i) { i.EnsureStack(1, "C,"); var v = ToLong(i.PopInternal()); i._mem[i._nextAddr++] = (long)((byte)v); return Task.CompletedTask; }
+
+    [Primitive("2!", HelpString = "2! ( x1 x2 addr -- ) - store two cells at address")]
+    private static Task Prim_2Bang(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "2!");
+        var addr = ToLong(i.PopInternal());
+        var x2 = ToLong(i.PopInternal());
+        var x1 = ToLong(i.PopInternal());
+        i.MemSet(addr, x1);
+        i.MemSet(addr + 1, x2);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("2@", HelpString = "2@ ( addr -- x1 x2 ) - fetch two cells from address")]
+    private static Task Prim_2At(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "2@");
+        var addr = ToLong(i.PopInternal());
+        i.MemTryGet(addr, out var x1);
+        i.MemTryGet(addr + 1, out var x2);
+        i.Push(x1);
+        i.Push(x2);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CELL+", HelpString = "CELL+ ( addr -- addr+1 ) - add cell size to address")]
+    private static Task Prim_CellPlus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CELL+");
+        var addr = ToLong(i.PopInternal());
+        i.Push(addr + 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CELLS", HelpString = "CELLS ( n -- n*cellsize ) - multiply by cell size")]
+    private static Task Prim_Cells(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CELLS");
+        var n = ToLong(i.PopInternal());
+        i.Push(n * 1); // cell size 1
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CHAR+", HelpString = "CHAR+ ( c-addr -- c-addr+1 ) - add char size to address")]
+    private static Task Prim_CharPlus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CHAR+");
+        var addr = ToLong(i.PopInternal());
+        i.Push(addr + 1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CHARS", HelpString = "CHARS ( n -- n*charsize ) - multiply by char size")]
+    private static Task Prim_Chars(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CHARS");
+        var n = ToLong(i.PopInternal());
+        i.Push(n * 1); // char size 1
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ALIGN", HelpString = "ALIGN ( -- ) - align dictionary pointer to cell boundary")]
+    private static Task Prim_Align(ForthInterpreter i)
+    {
+        // Since cell size 1, no-op
+        return Task.CompletedTask;
+    }
+
     [Primitive("ALLOT", HelpString = "ALLOT ( u -- ) - reserve u cells in dictionary")]
     private static Task Prim_ALLOT(ForthInterpreter i) { i.EnsureStack(1, "ALLOT"); var cells = ToLong(i.PopInternal()); if (cells < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size"); for (long k = 0; k < cells; k++) i._mem[i._nextAddr++] = 0; return Task.CompletedTask; }
 
