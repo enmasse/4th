@@ -57,6 +57,8 @@ public partial class ForthInterpreter
     {
         /// <summary>Instructions for the loop body.</summary>
         public List<Func<ForthInterpreter, Task>> Body { get; } = new();
+        /// <summary>Indicates Do loop was started with ?DO (conditional entry).</summary>
+        public bool IsConditional { get; set; }
         /// <inheritdoc />
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => Body;
     }

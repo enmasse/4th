@@ -3,10 +3,10 @@
 _Last updated: 2025-11-27_
 
 Goal
-- Compare the current implementation against the ANS Forth core wordlist and identify words that are missing or partially implemented.
+- Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
 
 Method
-- A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words.
+- A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words. It now supports multiple sets via `--sets=` (e.g. `--sets=core,core-ext,file,block,float` or `--sets=all`) and `--fail-on-missing=` to toggle CI failures.
 
 Status — implemented / obvious support (non-exhaustive)
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
@@ -32,9 +32,10 @@ Status — implemented / obvious support (non-exhaustive)
 
 Recent extensions
 - Implemented missing ANS-tracked words: `."`, `ABORT"`, `>BODY`, `M/MOD`, `S"` with regression tests.
+- Implemented Core-Ext `WITHIN` with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
-- ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably.
+- ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
 - Inline IL: stabilized `IL{ ... }IL`
   - DynamicMethod signature now `(ForthInterpreter intr, ForthStack stack)`; `ldarg.0` is interpreter, `ldarg.1` is stack
   - Local type inference (declare `object` for `Pop()` results, `long` for arithmetic); consistent `LocalBuilder`-based `ldloc/stloc/ldloca`
@@ -119,7 +120,55 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Missing ANS Forth words (tracked by ans-diff):
-- None (for the currently tracked Core subset).
+- Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
+
+Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float):
+- -TRAILING
+- .[S]
+- /STRING
+- ALLOCATE
+- BUFFER
+- CASE
+- COMPARE
+- CREATE-FILE
+- DEFER!
+- DEFER@
+- DELETE-FILE
+- EMPTY-BUFFERS
+- ENDCASE
+- ENDOF
+- F>S
+- FABS
+- FACOS
+- FASIN
+- FATAN2
+- FCOS
+- FEXP
+- FILE-POSITION
+- FILE-STATUS
+- FLOG
+- FLOOR
+- FLUSH
+- FREE
+- FROUND
+- FSIN
+- FTAN
+- INCLUDE-FILE
+- INCLUDED
+- OF
+- REFILL
+- RENAME-FILE
+- RESIZE
+- RESTORE-INPUT
+- S>F
+- SAVE-BUFFERS
+- SAVE-INPUT
+- SCR
+- SEARCH
+- SOURCE-ID
+- UNUSED
+- UPDATE
+- WRITE-LINE
 
 Notes:
-- Consider expanding ans-diff to full Core/Core-Ext sets to auto-track more words.
+- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.

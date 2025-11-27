@@ -494,4 +494,21 @@ internal static partial class CorePrimitives
 
         return Task.CompletedTask;
     }
+
+    // WITHIN ( x low high -- flag ) true if low <= x < high
+    [Primitive("WITHIN", HelpString = "WITHIN ( x low high -- flag ) - true if low <= x < high")]
+    private static Task Prim_WITHIN(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "WITHIN");
+        var highFv = i._stack.PopValue();
+        var lowFv = i._stack.PopValue();
+        var xFv = i._stack.PopValue();
+        if (highFv.Type != VT.Long || lowFv.Type != VT.Long || xFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long high = highFv.LongValue;
+        long low = lowFv.LongValue;
+        long x = xFv.LongValue;
+        bool ok = (x >= low) && (x < high);
+        i._stack.Push(ForthValue.FromLong(ok ? -1L : 0L));
+        return Task.CompletedTask;
+    }
 }

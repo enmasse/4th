@@ -232,6 +232,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("?DO", IsImmediate = true, HelpString = "Begin a conditional counted loop ( limit start -- ) executes body only if start != limit")]
+    private static Task Prim_QDO(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "?DO outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.DoFrame { IsConditional = true });
+        return Task.CompletedTask;
+    }
+
     [Primitive("LOOP", IsImmediate = true, HelpString = "End a counted DO...LOOP")]
     private static Task Prim_LOOP(ForthInterpreter i) => LoopImpl(i);
 
@@ -246,6 +255,7 @@ internal static partial class CorePrimitives
             ii.EnsureStack(2, "DO");
             var start = ToLong(ii.PopInternal());
             var limit = ToLong(ii.PopInternal());
+            if (df.IsConditional && start == limit) { return; }
             long step = start <= limit ? 1L : -1L;
             for (long idx = start; idx != limit; idx += step)
             {
@@ -263,6 +273,52 @@ internal static partial class CorePrimitives
                 {
                     ii.PopLoopIndexMaybe();
                 }
+            }
+        });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("+LOOP", IsImmediate = true, HelpString = "+LOOP - end DO loop with runtime step ( step from stack )")]
+    private static Task Prim_PlusLOOP(ForthInterpreter i)
+    {
+        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.DoFrame df)
+            throw new ForthException(ForthErrorCode.CompileError, "+LOOP without DO");
+        i._controlStack.Pop();
+        var body = df.Body;
+        i.CurrentList().Add(async ii =>
+        {
+            // Setup: consume start and limit once
+            ii.EnsureStack(2, "+LOOP setup");
+            var start = ToLong(ii.PopInternal());
+            var limit = ToLong(ii.PopInternal());
+            if (df.IsConditional && start == limit) { return; }
+            long idx = start;
+            while (true)
+            {
+                // Termination check before executing body with current index
+                if (idx >= limit && start <= limit) break;
+                if (idx <= limit && start > limit) break;
+
+                ii.PushLoopIndex(idx);
+                try
+                {
+                    foreach (var a in body)
+                        await a(ii);
+                }
+                catch (Forth.Core.Interpreter.ForthInterpreter.LoopLeaveException)
+                {
+                    break;
+                }
+                finally
+                {
+                    ii.PopLoopIndexMaybe();
+                }
+
+                // Consume step value provided by body before +LOOP
+                ii.EnsureStack(1, "+LOOP");
+                var step = ToLong(ii.PopInternal());
+                if (step == 0) step = (start <= limit) ? 1 : -1; // avoid infinite loops
+                idx += step;
             }
         });
         return Task.CompletedTask;
