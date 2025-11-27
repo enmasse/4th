@@ -213,20 +213,19 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("S\"", IsImmediate = true, HelpString = "S\" <text> - ANS counted string literal ( -- c-addr ) where c-addr points to length cell")]
+    [Primitive("S\"", IsImmediate = true, HelpString = "S\" ( \"ccc<quote>\" -- c-addr u ) - parse string literal")]
     private static Task Prim_SQUOTE(ForthInterpreter i)
     {
         var next = i.ReadNextTokenOrThrow("Expected text after S\"");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
-        // ANS-style S" should produce a counted string: push length then address
+        // ANS-style S" produces c-addr u
         if (!i._isCompiling)
         {
             var addr = i.AllocateCountedString(str);
-            i.Push((long)str.Length);
-            // push address of first character (addr+1) so consumers can call ReadMemoryString(addr,len)
             i.Push(addr + 1);
+            i.Push((long)str.Length);
         }
         else
         {
@@ -234,8 +233,8 @@ internal static partial class CorePrimitives
             i.CurrentList().Add(ii =>
             {
                 var a = ii.AllocateCountedString(captured);
-                ii.Push((long)captured.Length);
                 ii.Push(a + 1);
+                ii.Push((long)captured.Length);
                 return Task.CompletedTask;
             });
         }

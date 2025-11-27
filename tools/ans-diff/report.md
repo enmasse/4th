@@ -1,7 +1,8 @@
-Found 237 primitives in code:
+Found 238 primitives in code:
 
 -
 -ROT
+-TRAILING
 ,
 ;
 :
@@ -377,9 +378,10 @@ WORDLIST
 WORDS
 WRITE-FILE
 
-Other primitives in code not in tracked sets (102):
+Other primitives in code not in tracked sets (103):
 -
 -ROT
+-TRAILING
 ?DO
 [']
 [CHAR]

@@ -118,4 +118,46 @@ internal static partial class CorePrimitives
         i.Push(addr);
         return Task.CompletedTask;
     }
+
+    [Primitive("-TRAILING", HelpString = "-TRAILING ( c-addr u1 -- c-addr u2 ) - remove trailing spaces from string")]
+    private static Task Prim_Trailing(ForthInterpreter i)
+    {
+        object addr;
+        long u1;
+        if (i.Stack.Count >= 2 && IsNumeric(i.Stack[^1]) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
+        {
+            u1 = ToLong(i.PopInternal());
+            addr = i.PopInternal();
+        }
+        else if (i.Stack.Count >= 1 && i.Stack[^1] is string s)
+        {
+            addr = i.PopInternal();
+            u1 = s.Length;
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, "-TRAILING expects string or (addr len)");
+        }
+        if (u1 < 0) throw new ForthException(ForthErrorCode.TypeError, "-TRAILING negative length");
+        string str;
+        if (addr is string sstr)
+        {
+            str = u1 <= sstr.Length ? sstr.Substring(0, (int)u1) : sstr;
+        }
+        else if (IsNumeric(addr))
+        {
+            var a = ToLong(addr);
+            str = i.ReadMemoryString(a, u1);
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, "-TRAILING expects string or (addr len)");
+        }
+        // Trim trailing spaces
+        var trimmedLen = str.Length;
+        while (trimmedLen > 0 && str[trimmedLen - 1] == ' ') trimmedLen--;
+        i.Push(addr);
+        i.Push((long)trimmedLen);
+        return Task.CompletedTask;
+    }
 }

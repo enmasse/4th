@@ -115,10 +115,10 @@ internal static partial class CorePrimitives
     private static Task Prim_COMPARE(ForthInterpreter i)
     {
         i.EnsureStack(4, "COMPARE");
-        var addr2 = i.PopInternal();
         var u2 = ToLong(i.PopInternal());
-        var addr1 = i.PopInternal();
+        var addr2 = i.PopInternal();
         var u1 = ToLong(i.PopInternal());
+        var addr1 = i.PopInternal();
         if (u1 < 0 || u2 < 0) throw new ForthException(ForthErrorCode.TypeError, "COMPARE negative length");
         string str1, str2;
         if (addr1 is string s1)
