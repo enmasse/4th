@@ -873,4 +873,31 @@ public partial class ForthInterpreter : IForthInterpreter
         _currentInstructions = null;
         _currentDefTokens = null;
     }
+
+    // Unified string reading helpers
+    internal string ReadCountedString(long addr)
+    {
+        MemTryGet(addr, out var len);
+        var l = (int)len;
+        if (l <= 0) return string.Empty;
+        var sb = new StringBuilder(l);
+        for (int k = 0; k < l; k++)
+        {
+            MemTryGet(addr + 1 + k, out var chv);
+            sb.Append((char)chv);
+        }
+        return sb.ToString();
+    }
+
+    internal string ReadMemoryString(long addr, long u)
+    {
+        if (u <= 0) return string.Empty;
+        var sb = new StringBuilder((int)u);
+        for (long k = 0; k < u; k++)
+        {
+            MemTryGet(addr + k, out var chv);
+            sb.Append((char)chv);
+        }
+        return sb.ToString();
+    }
 }

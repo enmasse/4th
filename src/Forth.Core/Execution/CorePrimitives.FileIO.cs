@@ -11,44 +11,6 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    private static string ReadMemString(ForthInterpreter i, long addr, long u)
-    {
-        if (u > 0)
-        {
-            var sb = new StringBuilder();
-            for (long k = 0; k < u; k++)
-            {
-                i._mem.TryGetValue(addr + k, out var chv);
-                sb.Append((char)chv);
-            }
-            return sb.ToString();
-        }
-
-        // Counted string at addr: length stored at addr, chars follow
-        if (!i._mem.TryGetValue(addr, out var len)) return string.Empty;
-        var l = (int)len;
-        var sb2 = new StringBuilder(l);
-        for (int k = 0; k < l; k++)
-        {
-            i._mem.TryGetValue(addr + 1 + k, out var chv);
-            sb2.Append((char)chv);
-        }
-        return sb2.ToString();
-    }
-
-    private static (string Text, long Length) ReadCounted(ForthInterpreter i, long addr)
-    {
-        if (!i._mem.TryGetValue(addr, out var len)) return (string.Empty, 0);
-        var l = (int)len;
-        var sb = new StringBuilder(l);
-        for (int k = 0; k < l; k++)
-        {
-            i._mem.TryGetValue(addr + 1 + k, out var chv);
-            sb.Append((char)chv);
-        }
-        return (sb.ToString(), l);
-    }
-
     [Primitive("WRITE-FILE", HelpString = "WRITE-FILE ( data filename -- ) - write data to file")]
     private static Task Prim_WRITEFILE(ForthInterpreter i)
     {
@@ -64,7 +26,7 @@ internal static partial class CorePrimitives
             }
             else if (data is long addr)
             {
-                text = ReadMemString(i, addr, 0);
+                text = i.ReadCountedString(addr);
             }
             else
             {
@@ -92,7 +54,7 @@ internal static partial class CorePrimitives
         var data = i.PopInternal();
         try
         {
-            string text = data is string sd ? sd : data is long addr ? ReadMemString(i, addr, 0) : data?.ToString() ?? string.Empty;
+            string text = data is string sd ? sd : data is long addr ? i.ReadCountedString(addr) : data?.ToString() ?? string.Empty;
             System.IO.File.AppendAllText(filenameToken, text, Encoding.UTF8);
             i._lastWriteHandle = 0;
             i._lastWriteBuffer = Encoding.UTF8.GetBytes(text);

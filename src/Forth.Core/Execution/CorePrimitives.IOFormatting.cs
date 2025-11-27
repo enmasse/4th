@@ -20,7 +20,7 @@ internal static partial class CorePrimitives
     [Primitive("EMIT", HelpString = "Emit character with given code ( n -- )")]
     private static Task Prim_EMIT(ForthInterpreter i) { i.EnsureStack(1, "EMIT"); var n = ToLong(i.PopInternal()); char ch = (char)(n & 0xFFFF); i.WriteText(ch.ToString()); return Task.CompletedTask; }
 
-    [Primitive("TYPE", HelpString = "TYPE ( c-addr u | counted-addr | string -- ) - write string data to output")]
+    [Primitive("TYPE", HelpString = "TYPE ( c-addr u | string -- ) - write string data to output")]
     private static Task Prim_TYPE(ForthInterpreter i)
     {
         if (i.Stack.Count >= 2 && IsNumeric(i.Stack[^1]) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
@@ -31,15 +31,8 @@ internal static partial class CorePrimitives
             if (addrOrStr is string sstr)
             { var sliceLen = (int)u <= sstr.Length ? (int)u : sstr.Length; i.WriteText(sliceLen == sstr.Length ? sstr : sstr.Substring(0, sliceLen)); return Task.CompletedTask; }
             if (IsNumeric(addrOrStr))
-            { var a = ToLong(addrOrStr); var sb = new StringBuilder(); for (long k = 0; k < u; k++) { i.MemTryGet(a + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); } i.WriteText(sb.ToString()); return Task.CompletedTask; }
+            { var a = ToLong(addrOrStr); i.WriteText(i.ReadMemoryString(a, u)); return Task.CompletedTask; }
             throw new ForthException(ForthErrorCode.TypeError, "TYPE address/string expected before length");
-        }
-        if (i.Stack.Count >= 1 && i.Stack[^1] is long addrLong)
-        {
-            i.MemTryGet(addrLong, out var lenCell);
-            long len = ToLong(lenCell);
-            if (len > 0)
-            { var sb = new StringBuilder(); for (long k = 0; k < len; k++) { i.MemTryGet(addrLong + 1 + k, out var v); char ch = (char)(ToLong(v) & 0xFF); sb.Append(ch); } i.PopInternal(); i.WriteText(sb.ToString()); return Task.CompletedTask; }
         }
         i.EnsureStack(1, "TYPE");
         var obj = i.PopInternal();
