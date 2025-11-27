@@ -8,6 +8,57 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
+    [Primitive("1+", HelpString = "Increment ( n -- n+1 )")]
+    private static Task Prim_OnePlus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "1+");
+        var v = i._stack.PopValue();
+        if (v.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        i._stack.Push(ForthValue.FromLong(v.LongValue + 1));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("1-", HelpString = "Decrement ( n -- n-1 )")]
+    private static Task Prim_OneMinus(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "1-");
+        var v = i._stack.PopValue();
+        if (v.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        i._stack.Push(ForthValue.FromLong(v.LongValue - 1));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("2*", HelpString = "Multiply by two ( n -- 2n )")]
+    private static Task Prim_TwoStar(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "2*");
+        var v = i._stack.PopValue();
+        if (v.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        i._stack.Push(ForthValue.FromLong(v.LongValue * 2));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("2/", HelpString = "Divide by two ( n -- n/2 )")]
+    private static Task Prim_TwoSlash(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "2/");
+        var v = i._stack.PopValue();
+        if (v.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        if (v.LongValue == long.MinValue) { i._stack.Push(ForthValue.FromLong(v.LongValue / 2)); return Task.CompletedTask; }
+        i._stack.Push(ForthValue.FromLong(v.LongValue / 2));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ABS", HelpString = "Absolute value ( n -- |n| )")]
+    private static Task Prim_ABS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "ABS");
+        var v = i._stack.PopValue();
+        if (v.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        var n = v.LongValue;
+        i._stack.Push(ForthValue.FromLong(n < 0 ? -n : n));
+        return Task.CompletedTask;
+    }
     [Primitive("+", HelpString = "Add two numbers ( a b -- sum )")]
     private static Task Prim_Plus(ForthInterpreter i)
     {
@@ -89,6 +140,32 @@ internal static partial class CorePrimitives
         var a = aFv.LongValue;
         if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
         i._stack.Push(ForthValue.FromLong(a % b));
+        return Task.CompletedTask;
+    }
+
+    // FM/MOD - Floored division and modulus for single-cell numbers
+    // Returns remainder then quotient per /MOD convention
+    [Primitive("FM/MOD", HelpString = "Floored division ( n1 n2 -- rem quot ) with remainder having sign of divisor")]
+    private static Task Prim_FM_Slash_MOD(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FM/MOD");
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long b = bFv.LongValue;
+        long a = aFv.LongValue;
+        if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+
+        long q = a / b; // truncates toward zero
+        long r = a % b; // remainder with sign of dividend
+        if (r != 0 && ((a ^ b) < 0)) // signs differ -> need floor adjustment
+        {
+            q -= 1;
+            r += b; // remainder sign follows divisor (floored semantics)
+        }
+
+        i._stack.Push(ForthValue.FromLong(r));
+        i._stack.Push(ForthValue.FromLong(q));
         return Task.CompletedTask;
     }
 
@@ -267,160 +344,93 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("0<", HelpString = "0< ( n -- flag ) true if n < 0")]
-    private static Task Prim_ZeroLess(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "0<");
-        var n = ToLong(i.PopInternal());
-        i.Push(n < 0 ? -1L : 0L);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("0>", HelpString = "0> ( n -- flag ) true if n > 0")]
-    private static Task Prim_ZeroGreater(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "0>");
-        var n = ToLong(i.PopInternal());
-        i.Push(n > 0 ? -1L : 0L);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("1+", HelpString = "1+ ( n -- n+1 ) increment by 1")]
-    private static Task Prim_OnePlus(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "1+");
-        var n = ToLong(i.PopInternal());
-        i.Push(n + 1);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("1-", HelpString = "1- ( n -- n-1 ) decrement by 1")]
-    private static Task Prim_OneMinus(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "1-");
-        var n = ToLong(i.PopInternal());
-        i.Push(n - 1);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("ABS", HelpString = "ABS ( n -- |n| ) absolute value")]
-    private static Task Prim_Abs(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "ABS");
-        var n = ToLong(i.PopInternal());
-        i.Push(n < 0 ? -n : n);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("2*", HelpString = "2* ( n -- n*2 ) arithmetic left shift by 1")]
-    private static Task Prim_2Star(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "2*");
-        var n = ToLong(i.PopInternal());
-        i.Push(n << 1);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("2/", HelpString = "2/ ( n -- n/2 ) arithmetic right shift by 1")]
-    private static Task Prim_2Slash(ForthInterpreter i)
-    {
-        i.EnsureStack(1, "2/");
-        var n = ToLong(i.PopInternal());
-        i.Push(n >> 1);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("U<", HelpString = "U< ( u1 u2 -- flag ) unsigned less than")]
-    private static Task Prim_ULess(ForthInterpreter i)
-    {
-        i.EnsureStack(2, "U<");
-        var u2 = ToLong(i.PopInternal());
-        var u1 = ToLong(i.PopInternal());
-        i.Push((ulong)u1 < (ulong)u2 ? -1L : 0L);
-        return Task.CompletedTask;
-    }
-
-    [Primitive("UM*", HelpString = "UM* ( u1 u2 -- ud ) unsigned multiply producing double-cell")]
+    // UM* ( u1 u2 -- ud ) unsigned multiply producing double-cell result (low then high)
+    [Primitive("UM*", HelpString = "UM* ( u1 u2 -- ud ) - unsigned multiply to double-cell (low then high)")]
     private static Task Prim_UMStar(ForthInterpreter i)
     {
         i.EnsureStack(2, "UM*");
-        var u2 = (ulong)ToLong(i.PopInternal());
-        var u1 = (ulong)ToLong(i.PopInternal());
-        var prod = u1 * u2;
-        var low = (long)(prod & 0xFFFFFFFFFFFFFFFFUL);
-        var high = (long)(prod >> 64);
-        i.Push(low);
-        i.Push(high);
+        var u2Fv = i._stack.PopValue();
+        var u1Fv = i._stack.PopValue();
+        if (u2Fv.Type != VT.Long || u1Fv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        ulong u2 = (ulong)u2Fv.LongValue;
+        ulong u1 = (ulong)u1Fv.LongValue;
+
+        var prod = new BigInteger(u1) * new BigInteger(u2);
+        var mask = (BigInteger.One << 64) - 1;
+        var lowBig = prod & mask;
+        var highBig = prod >> 64;
+
+        long low = (long)(ulong)lowBig;
+        long high = (long)(ulong)highBig;
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
         return Task.CompletedTask;
     }
 
-    [Primitive("UM/MOD", HelpString = "UM/MOD ( ud u -- rem quot ) unsigned divide double-cell by single-cell")]
+    // UM/MOD ( ud u -- urem uquot ) unsigned division returning remainder then quotient
+    [Primitive("UM/MOD", HelpString = "UM/MOD ( ud u -- urem uquot ) - unsigned division of double-cell by single-cell")]
     private static Task Prim_UMSlashMod(ForthInterpreter i)
     {
         i.EnsureStack(3, "UM/MOD");
-        var u = (ulong)ToLong(i.PopInternal());
-        var ud_high = (ulong)ToLong(i.PopInternal());
-        var ud_low = (ulong)ToLong(i.PopInternal());
-        var dividend = (ud_high << 64) | ud_low;
-        var quot = dividend / u;
-        var rem = dividend % u;
-        i.Push((long)rem);
-        i.Push((long)quot);
-        return Task.CompletedTask;
-    }
+        var uFv = i._stack.PopValue();
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (uFv.Type != VT.Long || d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        ulong u = (ulong)uFv.LongValue;
+        ulong hi = (ulong)d_hiFv.LongValue;
+        ulong lo = (ulong)d_loFv.LongValue;
+        if (u == 0UL) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
 
-    [Primitive("SM/REM", HelpString = "SM/REM ( d n -- rem quot ) symmetric divide double-cell by single-cell with floored division")]
-    private static Task Prim_SMSlashRem(ForthInterpreter i)
-    {
-        i.EnsureStack(3, "SM/REM");
-        var n = ToLong(i.PopInternal());
-        var d_high = ToLong(i.PopInternal());
-        var d_low = ToLong(i.PopInternal());
-        if (n == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
-
-        // Reconstruct the double-cell as BigInteger for accurate division
-        var dividend = new BigInteger(d_high) << 64 | new BigInteger(d_low);
-        var divisor = new BigInteger(n);
-
+        var dividend = (new BigInteger(hi) << 64) + new BigInteger(lo);
+        var divisor = new BigInteger(u);
         var quot = BigInteger.Divide(dividend, divisor);
         var rem = BigInteger.Remainder(dividend, divisor);
 
-        // Adjust for floored division
-        if ((rem.Sign < 0 && divisor.Sign > 0) || (rem.Sign > 0 && divisor.Sign < 0))
-        {
-            quot -= 1;
-            rem += divisor;
-        }
-
-        i.Push((long)rem);
-        i.Push((long)quot);
+        i._stack.Push(ForthValue.FromLong((long)(ulong)rem));
+        i._stack.Push(ForthValue.FromLong((long)(ulong)quot));
         return Task.CompletedTask;
     }
 
-    [Primitive("FM/MOD", HelpString = "FM/MOD ( n1 n2 -- rem quot ) floored divide single-cell by single-cell")]
-    private static Task Prim_FMSlashMod(ForthInterpreter i)
+    // SM/REM - Divide double-cell dividend by single-cell divisor using floored semantics
+    // Stack: ( d_low d_high n -- rem quot )
+    [Primitive("SM/REM", HelpString = "SM/REM ( d n -- rem quot ) - floored division of double-cell by single-cell")]
+    private static Task Prim_SM_Slash_REM(ForthInterpreter i)
     {
-        i.EnsureStack(2, "FM/MOD");
-        var n2 = ToLong(i.PopInternal());
-        var n1 = ToLong(i.PopInternal());
-        if (n2 == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+        i.EnsureStack(3, "SM/REM");
+        var nFv = i._stack.PopValue();
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (nFv.Type != VT.Long || d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long)
+            throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long n = nFv.LongValue;
+        long d_hi = d_hiFv.LongValue;
+        long d_lo = d_loFv.LongValue;
+        if (n == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
 
-        var quot = n1 / n2;
-        var rem = n1 % n2;
+        var dividend = (new BigInteger(d_hi) << 64) + new BigInteger((ulong)d_lo);
+        var divisor = new BigInteger(n);
 
-        // Adjust for floored division
-        if ((rem < 0 && n2 > 0) || (rem > 0 && n2 < 0))
+        var q0 = BigInteger.Divide(dividend, divisor);
+        var r0 = BigInteger.Remainder(dividend, divisor);
+
+        if (r0 != 0 && ((divisor.Sign > 0 && r0.Sign < 0) || (divisor.Sign < 0 && r0.Sign > 0)))
         {
-            quot -= 1;
-            rem += n2;
+            q0 -= BigInteger.One;
+            r0 += divisor;
         }
 
-        i.Push(rem);
-        i.Push(quot);
+        if (q0 < long.MinValue || q0 > long.MaxValue || r0 < long.MinValue || r0 > long.MaxValue)
+            throw new ForthException(ForthErrorCode.Unknown, "SM/REM result out of range");
+
+        long quot = (long)q0;
+        long rem = (long)r0;
+        i._stack.Push(ForthValue.FromLong(rem));
+        i._stack.Push(ForthValue.FromLong(quot));
         return Task.CompletedTask;
     }
 
-    [Primitive("S>D", HelpString = "S>D ( n -- d ) - convert single-cell to double-cell")]
+    [Primitive("S>D", HelpString = "S>D ( n -- d ) - convert single-cell to double-cell with sign extension")]
     private static Task Prim_SToD(ForthInterpreter i)
     {
         i.EnsureStack(1, "S>D");
@@ -428,31 +438,40 @@ internal static partial class CorePrimitives
         if (nFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
         var n = nFv.LongValue;
         long high = n < 0 ? -1L : 0L;
-        long low = n;
-        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(n));
         i._stack.Push(ForthValue.FromLong(high));
         return Task.CompletedTask;
     }
 
-    [Primitive("M+", HelpString = "M+ ( d n -- d' ) - add single-cell to double-cell")]
+    [Primitive("M+", HelpString = "M+ ( d n -- d' ) - add single-cell n to double-cell d")]
     private static Task Prim_MPlus(ForthInterpreter i)
     {
         i.EnsureStack(3, "M+");
         var nFv = i._stack.PopValue();
-        var d_hiFv = i._stack.PopValue();
-        var d_loFv = i._stack.PopValue();
-        if (nFv.Type != VT.Long || d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var d_highFv = i._stack.PopValue();
+        var d_lowFv = i._stack.PopValue();
+        if (nFv.Type != VT.Long || d_highFv.Type != VT.Long || d_lowFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
         var n = nFv.LongValue;
-        var d_hi = d_hiFv.LongValue;
-        var d_lo = d_loFv.LongValue;
+        var d_high = d_highFv.LongValue;
+        var d_low = d_lowFv.LongValue;
 
-        var d = new BigInteger(d_hi) << 64 | new BigInteger(d_lo);
-        var sum = d + new BigInteger(n);
-        var low = (long)(sum & ((BigInteger.One << 64) - 1));
-        var high = (long)(sum >> 64);
+        long n_high = n < 0 ? -1L : 0L;
 
-        i._stack.Push(ForthValue.FromLong(low));
-        i._stack.Push(ForthValue.FromLong(high));
+        unchecked
+        {
+            ulong u_d = (ulong)d_low;
+            ulong u_n = (ulong)n;
+            ulong low = u_d + u_n;
+            ulong carry = (low < u_d) ? 1UL : 0UL;
+
+            ulong uh_d = (ulong)d_high;
+            ulong uh_n = (ulong)n_high;
+            ulong high = uh_d + uh_n + carry;
+
+            i._stack.Push(ForthValue.FromLong((long)low));
+            i._stack.Push(ForthValue.FromLong((long)high));
+        }
+
         return Task.CompletedTask;
     }
 }

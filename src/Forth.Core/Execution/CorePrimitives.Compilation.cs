@@ -203,6 +203,26 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("AGAIN", IsImmediate = true, HelpString = "AGAIN - end a BEGIN...AGAIN infinite loop")]
+    private static Task Prim_AGAIN(ForthInterpreter i)
+    {
+        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.BeginFrame bf)
+            throw new ForthException(ForthErrorCode.CompileError, "AGAIN without BEGIN");
+        if (bf.InWhile)
+            throw new ForthException(ForthErrorCode.CompileError, "AGAIN after WHILE use REPEAT");
+        i._controlStack.Pop();
+        var body = bf.PrePart;
+        i.CurrentList().Add(async ii =>
+        {
+            while (true)
+            {
+                foreach (var a in body)
+                    await a(ii);
+            }
+        });
+        return Task.CompletedTask;
+    }
+
     [Primitive("DO", IsImmediate = true, HelpString = "Begin a counted loop ( limit start -- )")]
     private static Task Prim_DO(ForthInterpreter i)
     {

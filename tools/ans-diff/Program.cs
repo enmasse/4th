@@ -24,10 +24,17 @@ class Program
         "KEY", "KEY?", "ACCEPT", "EXPECT", "SOURCE", ">IN", "WORD",
         "OPEN-FILE", "CLOSE-FILE", "FILE-SIZE", "REPOSITION-FILE",
         "BLOCK", "LOAD", "SAVE", "BLK",
-        "D+", "D-", "M*", "*/MOD", "S>D", "S\"", "M+", "SM/REM", "FM/MOD",
+        "D+", "D-", "M*", "*/MOD", "SM/REM", "FM/MOD",
         // Newly implemented core words
         "0<", "0>", "1+", "1-", "ABS", "2*", "2/", "U<", "UM*", "UM/MOD",
         "2DROP", "NIP", "TUCK", "?DUP", "SP!", "SP@", "BL", "2!", "2@", "CELL+", "CELLS", "CHAR+", "CHARS", "ALIGN", "2R@", "C,"
+        , 
+        // Additional ANS core words to track (not all implemented yet)
+        ".\"",        // ."
+        "ABORT\"",    // ABORT"
+        ">BODY",
+        "M/MOD",
+        "S\""         // S"
     };
 
     static int Main(string[] args)
@@ -36,6 +43,9 @@ class Program
         // If executed from tools/ans-diff dir, assume repo root is two levels up
         if (Path.GetFileName(repoRoot).Equals("ans-diff", StringComparison.OrdinalIgnoreCase))
             repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
+        // If executed from 4th dir, assume repo root is current
+        else if (Path.GetFileName(repoRoot).Equals("4th", StringComparison.OrdinalIgnoreCase))
+            repoRoot = Path.GetFullPath(Path.Combine(repoRoot, ".."));
 
         var sb = new StringBuilder();
 
@@ -47,7 +57,7 @@ class Program
 
         var primNames = new HashSet<string>();
         // Match the string literal inside [Primitive("...")], handling escaped quotes
-        var primRegex = new Regex(@"\[Primitive\(\s*""(?<name>(?:\\.|[^""\\])*)""", RegexOptions.Compiled);
+        var primRegex = new Regex(@"\[Primitive\(""(?<name>[^""]*)""", RegexOptions.Compiled);
         foreach (var f in csFiles)
         {
             var txt = File.ReadAllText(f);

@@ -1,11 +1,17 @@
-Found 225 primitives in code:
+Found 228 primitives in code:
 
+1+
+1-
+2*
+2/
+ABS
 +
 -
 *
 /
 /MOD
 MOD
+FM/MOD
 MIN
 MAX
 NEGATE
@@ -14,18 +20,9 @@ NEGATE
 D+
 D-
 M*
-0<
-0>
-1+
-1-
-ABS
-2*
-2/
-U<
 UM*
 UM/MOD
 SM/REM
-FM/MOD
 S>D
 M+
 AND
@@ -41,6 +38,8 @@ OPEN-BLOCK-FILE
 OPEN-BLOCK-DIR
 FLUSH-BLOCK-FILE
 CLOSE-BLOCK-FILE
+0>
+0<
 <
 =
 >
@@ -49,6 +48,7 @@ CLOSE-BLOCK-FILE
 <>
 <=
 >=
+U<
 :
 ;
 IMMEDIATE
@@ -64,6 +64,7 @@ BEGIN
 WHILE
 REPEAT
 UNTIL
+AGAIN
 DO
 LOOP
 LEAVE
@@ -108,15 +109,18 @@ DEFER
 IS
 SEE
 CHAR
-S"
+[CHAR]
+[']
 S
 BIND
-."
+.
 GET-ORDER
 SET-ORDER
 MARKER
 FORGET
 ENVIRONMENT?
+EVALUATE
+FIND
 PREVIOUS
 WRITE-FILE
 APPEND-FILE
@@ -150,7 +154,6 @@ F<
 F=
 HELP
 IL{
-.
 .S
 CR
 BL
@@ -227,7 +230,7 @@ SP!
 ADD-INPUT-LINE
 
 
-ANS core words present (133):
+ANS core words present (130):
 ,
 ;
 :
@@ -319,7 +322,6 @@ LITERAL
 LOAD
 LOOP
 M*
-M+
 MARKER
 MOVE
 NIP
@@ -331,8 +333,6 @@ READ-FILE
 RECURSE
 REPEAT
 REPOSITION-FILE
-S"
-S>D
 SAVE
 SET-ORDER
 SIGN
@@ -362,10 +362,11 @@ WORDLIST
 WORDS
 WRITE-FILE
 
-Other primitives in code not in ANS list (92):
+Other primitives in code not in ANS list (98):
 -
 -ROT
-."
+[']
+[CHAR]
 [ELSE]
 [IF]
 [THEN]
@@ -390,6 +391,7 @@ Other primitives in code not in ANS list (92):
 2R>
 2SWAP
 ADD-INPUT-LINE
+AGAIN
 AND
 BIN
 BIND
@@ -401,6 +403,7 @@ DUMP
 DUP
 END-MODULE
 ENVIRONMENT?
+EVALUATE
 EXECUTE
 F-
 F!
@@ -414,6 +417,7 @@ F=
 F0<
 F0=
 FCONSTANT
+FIND
 FLUSH-BLOCK-FILE
 FNEGATE
 FVARIABLE
@@ -426,6 +430,7 @@ LIST
 LOAD-ASM
 LOAD-ASM-TYPE
 LSHIFT
+M+
 MAX
 MIN
 MOD
@@ -448,6 +453,7 @@ RP@
 RSHIFT
 RUN-NEXT
 S
+S>D
 SEE
 SWAP
 USING

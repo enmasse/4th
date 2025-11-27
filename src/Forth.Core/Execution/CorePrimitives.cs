@@ -1,5 +1,6 @@
 using Forth.Core.Interpreter;
 using System.Collections.Immutable;
+using System.Reflection;
 
 namespace Forth.Core.Execution;
 
@@ -41,4 +42,28 @@ internal static partial class CorePrimitives
         char c => c != '\0',
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
     };
+
+    private static ImmutableDictionary<(string? Module, string Name), Word> CreateWords()
+    {
+        var dict = ImmutableDictionary.CreateBuilder<(string? Module, string Name), Word>(new KeyComparer());
+        var primType = typeof(CorePrimitives);
+        var methods = primType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
+        foreach (var method in methods)
+        {
+            var attr = method.GetCustomAttribute<PrimitiveAttribute>();
+            if (attr is not null)
+            {
+                var name = attr.Name;
+                var module = attr.Module;
+                var func = (Func<ForthInterpreter, Task>)Delegate.CreateDelegate(typeof(Func<ForthInterpreter, Task>), method);
+                var word = new Word(func);
+                word.Name = name;
+                word.Module = module;
+                word.IsImmediate = attr.IsImmediate;
+                word.HelpString = attr.HelpString;
+                dict[(module, name)] = word;
+            }
+        }
+        return dict.ToImmutable();
+    }
 }

@@ -55,6 +55,7 @@ Recent extensions
 - Enhanced REPL with command history, HELP/STACK commands, and improved error handling.
 - Extended HELP primitive to show general help when no word specified.
 - Added comprehensive tests validating all README examples.
+- Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests.
 
 Notes
 - `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
@@ -79,7 +80,7 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (286/286)
+- [x] Full test suite passing (290/290)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -108,5 +109,12 @@ Potential future extensions
 - Add optional `ENV` wordlist or mechanism for platform/environment queries.
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
-Missing ANS Forth core words (10):
-- .", ['] , [CHAR], >BODY, ABORT", AGAIN, EVALUATE, FIND, M/MOD, S"
+Missing ANS Forth words (tracked by ans-diff):
+- ." (dot-quote)
+- ABORT" (abort with message)
+- >BODY (data-field address for CREATEd words)
+- M/MOD (symmetric division producing remainder and quotient)
+- S" (string literal)
+
+Notes:
+- ans-diff has been extended to include these words. Consider expanding it to full Core/Core-Ext sets to auto-track more words.

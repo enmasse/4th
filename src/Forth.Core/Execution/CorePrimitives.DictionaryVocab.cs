@@ -195,6 +195,24 @@ internal static partial class CorePrimitives
     [Primitive("CHAR", IsImmediate = true, HelpString = "CHAR <c> - push character code for character literal")]
     private static Task Prim_CHAR(ForthInterpreter i) { var s = i.ReadNextTokenOrThrow("Expected char after CHAR"); if (!i._isCompiling) i.Push(s.Length > 0 ? (long)s[0] : 0L); else i.CurrentList().Add(ii => { ii.Push(s.Length > 0 ? (long)s[0] : 0L); return Task.CompletedTask; }); return Task.CompletedTask; }
 
+    [Primitive("[CHAR]", IsImmediate = true, HelpString = "[CHAR] <c> - compile character code literal")]
+    private static Task Prim_BRACKETCHAR(ForthInterpreter i)
+    {
+        var s = i.ReadNextTokenOrThrow("Expected char after [CHAR]");
+        var code = s.Length > 0 ? (long)s[0] : 0L;
+        i.CurrentList().Add(ii => { ii.Push(code); return Task.CompletedTask; });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("[']", IsImmediate = true, HelpString = "['] <name> - compile execution token literal")]
+    private static Task Prim_BRACKETTICK(ForthInterpreter i)
+    {
+        var name = i.ReadNextTokenOrThrow("Expected name after [']");
+        if (!i.TryResolveWord(name, out var word)) throw new ForthException(ForthErrorCode.UndefinedWord, $"Word not found: {name}");
+        i.CurrentList().Add(ii => { ii.Push(word); return Task.CompletedTask; });
+        return Task.CompletedTask;
+    }
+
     [Primitive("S\"", IsImmediate = true, HelpString = "S\" <text> - ANS counted string literal ( -- c-addr ) where c-addr points to length cell")]
     private static Task Prim_SQUOTE(ForthInterpreter i)
     {
@@ -273,6 +291,26 @@ internal static partial class CorePrimitives
             i.CurrentList().Add(ii => { ii.WriteText(captured); return Task.CompletedTask; });
             return Task.CompletedTask;
         }
+    }
+
+    [Primitive("ABORT\"", IsImmediate = true, HelpString = "ABORT\" <message> - abort with message if flag true")]
+    private static Task Prim_ABORTQUOTE(ForthInterpreter i)
+    {
+        var next = i.ReadNextTokenOrThrow("Expected text after ABORT\"");
+        if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
+            throw new ForthException(ForthErrorCode.CompileError, "ABORT\" expects quoted token");
+        var str = next[1..^1];
+        var captured = str;
+        i.CurrentList().Add(async ii =>
+        {
+            ii.EnsureStack(1, "ABORT\"");
+            var flag = ii.PopInternal();
+            if (ToBool(flag))
+            {
+                throw new ForthException(ForthErrorCode.Unknown, captured);
+            }
+        });
+        return Task.CompletedTask;
     }
 
     [Primitive("GET-ORDER", HelpString = "GET-ORDER ( -- wid... count ) - push current search order list and count")]
@@ -377,6 +415,45 @@ internal static partial class CorePrimitives
             default:
                 i.Push(0L); // not recognized -> false only
                 break;
+        }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("EVALUATE", IsAsync = true, HelpString = "EVALUATE ( i*x c-addr u -- j*x ) - interpret the string")]
+    private static async Task Prim_EVALUATE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "EVALUATE");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "EVALUATE negative length");
+        var str = i.ReadMemoryString(addr, u);
+        await i.EvalAsync(str);
+        return;
+    }
+
+    [Primitive("FIND", HelpString = "FIND ( c-addr -- c-addr 0 | xt 1 | xt -1 ) - find word in dictionary")]
+    private static Task Prim_FIND(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FIND");
+        var countedAddr = ToLong(i.PopInternal());
+        i.MemTryGet(countedAddr, out var lenObj);
+        int len = (int)ToLong(lenObj);
+        var chars = new char[len];
+        for (int k = 0; k < len; k++)
+        {
+            i.MemTryGet(countedAddr + 1 + k, out var v);
+            chars[k] = (char)(ToLong(v) & 0xFF);
+        }
+        var str = new string(chars);
+        if (i.TryResolveWord(str, out var word))
+        {
+            i.Push(word);
+            i.Push(word.IsImmediate ? 1L : -1L);
+        }
+        else
+        {
+            i.Push(countedAddr);
+            i.Push(0L);
         }
         return Task.CompletedTask;
     }
