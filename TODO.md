@@ -124,20 +124,8 @@ _Last updated: 2025-11-27_
 - [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
 - [x] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
 - [x] Consider unified string allocation helper for counted strings to reduce duplication
-- [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — basic negative checks implemented, expand coverage
-- [x] Add fast path optimization for pictured numeric conversion (#S loops) if profiling indicates hotspot
-- [x] Integrate `tools/ans-diff` execution into CI pipeline (run after build and write report artifact)
-- [x] Add optional `ENV` wordlist or mechanism for platform/environment queries.
-- [x] Add a REPL (Read-Eval-Print Loop) for interactive use.
-- [x] Add tests to ensure that the examples in README works
-- [x] Extend HELP primitive to show general help when no word specified
-- [x] Implement `>BODY` and `M/MOD` primitives in core
-- [x] Add regression tests for `."`, `ABORT"`, `>BODY`, `M/MOD`
-- [x] Fix IDE shading via suppressions for reflection-bound primitives
-- [x] Update ans-diff regex and root resolution
-- [x] Fix APPEND-FILE data disambiguation and behavior
-- [x] Fix LIST formatting to trim null characters
-
+- [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — expanded coverage implemented
+- [x] Implement SEARCH primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -188,11 +176,6 @@ _Last updated: 2025-11-27_
 - SAVE-BUFFERS
 - SAVE-INPUT
 - SCR
-- SEARCH
 - SOURCE-ID
 - UNUSED
 - UPDATE
-- WRITE-LINE
-
-Notes:
-- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.

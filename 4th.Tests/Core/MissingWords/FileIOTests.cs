@@ -689,4 +689,69 @@ public class FileIOTests
         Assert.Equal(4, forth.Stack.Count);
         Assert.Equal(0L, (long)forth.Stack[3]);
     }
+
+    [Fact]
+    public async Task WriteFile_NegativeLength_WritesEmpty()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            // Try WRITE-FILE with negative u
+            Assert.True(await forth.EvalAsync($"0 -1 \"{path}\" WRITE-FILE"));
+            Assert.True(File.Exists(path));
+            var content = File.ReadAllText(path);
+            Assert.Equal("", content);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task AppendFile_NegativeLength_AppendsEmpty()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(path, "initial");
+            // Try APPEND-FILE with negative u
+            Assert.True(await forth.EvalAsync($"0 -1 \"{path}\" APPEND-FILE"));
+            var content = File.ReadAllText(path);
+            Assert.Equal("initial", content);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task WriteFile_InvalidAddr_WritesZeros()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            // Try WRITE-FILE with invalid addr (large number)
+            Assert.True(await forth.EvalAsync($"999999999 5 \"{path}\" WRITE-FILE"));
+            Assert.True(File.Exists(path));
+            var content = File.ReadAllText(path);
+            // Should write 5 null chars
+            Assert.Equal(5, content.Length);
+            foreach (var ch in content)
+            {
+                Assert.Equal('\0', ch);
+            }
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
 }

@@ -164,4 +164,32 @@ internal static partial class CorePrimitives
         i.Push((long)trimmedLen);
         return Task.CompletedTask;
     }
+
+    [Primitive("SEARCH", HelpString = "SEARCH ( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 flag ) - search for substring")]
+    private static Task Prim_Search(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "SEARCH");
+        var u2 = ToLong(i.PopInternal());
+        var addr2 = ToLong(i.PopInternal());
+        var u1 = ToLong(i.PopInternal());
+        var addr1 = ToLong(i.PopInternal());
+        var str1 = i.ReadMemoryString(addr1, u1);
+        var str2 = i.ReadMemoryString(addr2, u2);
+        var index = str1.IndexOf(str2);
+        if (index >= 0)
+        {
+            var addr3 = addr1 + index;
+            var u3 = u1 - index;
+            i.Push(addr3);
+            i.Push(u3);
+            i.Push(-1L); // true
+        }
+        else
+        {
+            i.Push(addr1);
+            i.Push(u1);
+            i.Push(0L); // false
+        }
+        return Task.CompletedTask;
+    }
 }

@@ -1,4 +1,4 @@
-Found 239 primitives in code:
+Found 240 primitives in code:
 
 -
 -ROT
@@ -204,6 +204,7 @@ S
 S"
 S>D
 SAVE
+SEARCH
 SEE
 SET-ORDER
 SIGN
@@ -379,7 +380,7 @@ WORDLIST
 WORDS
 WRITE-FILE
 
-Other primitives in code not in tracked sets (104):
+Other primitives in code not in tracked sets (105):
 -
 -ROT
 -TRAILING
@@ -476,6 +477,7 @@ RSHIFT
 RUN-NEXT
 S
 S>D
+SEARCH
 SEE
 SWAP
 USING
