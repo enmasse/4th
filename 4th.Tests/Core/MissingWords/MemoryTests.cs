@@ -20,4 +20,17 @@ public class MemoryTests
         Assert.True(await forth.EvalAsync("X @"));
         Assert.Equal(new long[] { 123 }, forth.Stack.Select(o => (long)o).ToArray());
     }
+
+    [Fact]
+    public async Task PAD_Address()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("HERE PAD"));
+        var here = (long)forth.Stack[0];
+        var pad = (long)forth.Stack[1];
+        Assert.True(pad > here);
+        // Test storing to PAD
+        Assert.True(await forth.EvalAsync("DROP DROP 42 PAD ! PAD @"));
+        Assert.Equal(new long[] { 42 }, forth.Stack.Select(o => (long)o).ToArray());
+    }
 }

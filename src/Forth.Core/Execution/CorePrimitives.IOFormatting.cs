@@ -95,4 +95,27 @@ internal static partial class CorePrimitives
     // EXPECT alias of ACCEPT
     [Primitive("EXPECT", HelpString = "EXPECT ( addr u -- u ) - alias of ACCEPT")]
     private static Task Prim_EXPECT(ForthInterpreter i) => Prim_ACCEPT(i);
+
+    [Primitive("WORD", HelpString = "WORD ( char \"<chars>ccc<char>\" -- c-addr ) - parse word delimited by char")]
+    private static Task Prim_WORD(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "WORD");
+        var delim = (char)ToLong(i.PopInternal());
+        var source = i.CurrentSource ?? string.Empty;
+        i.MemTryGet(i.InAddr, out var inVal);
+        var inIndex = (int)(long)inVal;
+        // Skip leading delimiters
+        while (inIndex < source.Length && source[inIndex] == delim) inIndex++;
+        var start = inIndex;
+        // Collect until delimiter or end
+        while (inIndex < source.Length && source[inIndex] != delim) inIndex++;
+        var word = source.Substring(start, inIndex - start);
+        // Advance >IN past the delimiter if present
+        var newIn = inIndex < source.Length ? inIndex + 1 : inIndex;
+        i.MemSet(i.InAddr, (long)newIn);
+        // Store as counted string at HERE
+        var addr = i.AllocateCountedString(word);
+        i.Push(addr);
+        return Task.CompletedTask;
+    }
 }

@@ -40,4 +40,13 @@ internal static partial class CorePrimitives
         i.Push(top);
         return Task.CompletedTask;
     }
+
+    [Primitive("J", HelpString = "J ( -- n ) - loop index of outer DO loop")]
+    private static Task Prim_J(ForthInterpreter i)
+    {
+        if (i.RCount < 4) throw new ForthException(ForthErrorCode.StackUnderflow, "Return stack underflow in J (need nested DO)");
+        var j = i.RNth(2);
+        i.Push(j);
+        return Task.CompletedTask;
+    }
 }

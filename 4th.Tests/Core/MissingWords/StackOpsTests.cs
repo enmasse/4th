@@ -40,4 +40,20 @@ public class StackOpsTests
         Assert.True(await forth2.EvalAsync("0 ?DUP"));
         Assert.Equal(new long[] { 0 }, forth2.Stack.Select(o => (long)o).ToArray());
     }
+
+    [Fact]
+    public async Task SP_At_Pushes_Depth()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("1 2 3 SP@"));
+        Assert.Equal(new long[] { 1, 2, 3, 3 }, forth.Stack.Select(o => (long)o).ToArray());
+    }
+
+    [Fact]
+    public async Task SP_Bang_Clears_Stack()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("1 2 3 SP!"));
+        Assert.Empty(forth.Stack);
+    }
 }

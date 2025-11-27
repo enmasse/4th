@@ -86,4 +86,10 @@ internal static partial class CorePrimitives
         if (ToLong(n) != 0) i.Push(n);
         return Task.CompletedTask;
     }
+
+    [Primitive("SP@", HelpString = "SP@ ( -- n ) - push stack pointer (depth)")]
+    private static Task Prim_SPAt(ForthInterpreter i) { i.Push((long)i.Stack.Count); return Task.CompletedTask; }
+
+    [Primitive("SP!", HelpString = "SP! ( ... -- ) - set stack pointer to empty")]
+    private static Task Prim_SPBang(ForthInterpreter i) { i._stack.Clear(); return Task.CompletedTask; }
 }

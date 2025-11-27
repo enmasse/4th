@@ -10,10 +10,10 @@ class Program
     static readonly string[] AnsCore = new[]
     {
         // Core ANS Forth wordlist (subset/common core)
-        ":", ";", "IMMEDIATE", "POSTPONE", "[", "]", "'", "LITERAL",
-        "IF", "ELSE", "THEN", "BEGIN", "WHILE", "REPEAT", "UNTIL", "DO", "LOOP", "LEAVE", "UNLOOP", "I", "RECURSE",
+        ":", ";", "IMMEDIATE", "POSTPONE", "[", "]", "'" ,"LITERAL",
+        "IF", "ELSE", "THEN", "BEGIN", "WHILE", "REPEAT", "UNTIL", "DO", "LOOP", "LEAVE", "UNLOOP", "I", "J", "RECURSE",
         "CREATE", "DOES>", "VARIABLE", "CONSTANT", "VALUE", "TO", "DEFER", "IS", "MARKER", "FORGET",
-        "@", "!", "C@", "C!", ",", "ALLOT", "HERE", "COUNT", "MOVE", "FILL", "ERASE",
+        "@", "!", "C@", "C!", ",", "ALLOT", "HERE", "PAD", "COUNT", "MOVE", "FILL", "ERASE",
         ".", ".S", "CR", "EMIT", "TYPE", "WORDS", "<#", "HOLD", "#", "#S", "SIGN", "#>",
         "READ-FILE", "WRITE-FILE", "APPEND-FILE", "FILE-EXISTS", "INCLUDE",
         "SPAWN", "FUTURE", "TASK", "JOIN", "AWAIT", "TASK?",
@@ -21,13 +21,13 @@ class Program
         "BASE", "HEX", "DECIMAL", ">NUMBER", "STATE",
         // Missing/advanced ones
         "GET-ORDER", "SET-ORDER", "WORDLIST", "DEFINITIONS", "FORTH",
-        "KEY", "KEY?", "ACCEPT", "EXPECT", "SOURCE", ">IN",
+        "KEY", "KEY?", "ACCEPT", "EXPECT", "SOURCE", ">IN", "WORD",
         "OPEN-FILE", "CLOSE-FILE", "FILE-SIZE", "REPOSITION-FILE",
         "BLOCK", "LOAD", "SAVE", "BLK",
-        "D+", "D-", "M*", "*/MOD",
+        "D+", "D-", "M*", "*/MOD", "S>D", "M+", "SM/REM", "FM/MOD",
         // Newly implemented core words
         "0<", "0>", "1+", "1-", "ABS", "2*", "2/", "U<", "UM*", "UM/MOD",
-        "2DROP", "NIP", "TUCK", "?DUP", "BL", "2!", "2@", "CELL+", "CELLS", "CHAR+", "CHARS", "ALIGN", "2R@", "C,"
+        "2DROP", "NIP", "TUCK", "?DUP", "SP!", "SP@", "BL", "2!", "2@", "CELL+", "CELLS", "CHAR+", "CHARS", "ALIGN", "2R@", "C,"
     };
 
     static int Main(string[] args)

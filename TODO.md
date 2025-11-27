@@ -10,9 +10,9 @@ Method
 
 Status — implemented / obvious support (non-exhaustive)
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
-- Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `RECURSE`
+- Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`
 - Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`
-- Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `COUNT`, `MOVE`, `FILL`, `ERASE`
+- Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
 - File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`
   - Stream primitives: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
@@ -24,8 +24,8 @@ Status — implemented / obvious support (non-exhaustive)
 - Numeric base & parsing: `BASE`, `HEX`, `DECIMAL`, `>NUMBER` (extended), `STATE`
 - Introspection: `SEE` (module-qualified + decompile text)
 - Wordlist/search-order: `GET-ORDER`, `SET-ORDER`, `WORDLIST`, `DEFINITIONS`, `FORTH`
-- Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE`
-- Extended arithmetic: `*/MOD` plus double-cell ops `D+`, `D-`, `M*`
+- Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE`, `WORD`
+- Extended arithmetic: `*/MOD` plus double-cell ops `D+`, `D-`, `M*`, `M+`, `SM/REM`, `FM/MOD`
 - Environment queries: `ENV` wordlist with `OS`, `CPU`, `MEMORY`, `MACHINE`, `USER`, `PWD`
 - Help system: `HELP` (general help or word-specific)
 
@@ -107,5 +107,5 @@ Potential future extensions
 - Add optional `ENV` wordlist or mechanism for platform/environment queries.
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
-Missing ANS Forth core words (21):
-- .", ['], [CHAR], >BODY, ABORT", AGAIN, EVALUATE, FIND, FM/MOD, J, M/MOD, M+, PAD, S", S>D, SM/REM, SP!, SP@, WORD
+Missing ANS Forth core words (10):
+- .", ['] , [CHAR], >BODY, ABORT", AGAIN, EVALUATE, FIND, M/MOD, S"

@@ -4,7 +4,7 @@ This repository contains a .NET 9 implementation of a Forth-like interpreter and
 
 ## Features
 
-- **ANS Forth Compatibility**: Implements 99/99 ANS core words with CI checks for conformity
+- **ANS Forth Compatibility**: Implements 130+ ANS core words with CI checks for conformity
 - **Async Support**: Native async/await integration with `SPAWN`, `FUTURE`, `TASK`, `AWAIT`
 - **File I/O**: Complete file operations including `READ-FILE`, `WRITE-FILE`, `OPEN-FILE`, etc.
 - **Modules**: Modular word definitions with search order and namespaces
@@ -16,7 +16,7 @@ This repository contains a .NET 9 implementation of a Forth-like interpreter and
 - **File Access Methods**: ANS-compatible file modes (`R/O`, `W/O`, `R/W`, `BIN`)
 - **Extensible**: Easy to add new primitives and integrate with .NET code
 - **High Performance**: Optimized stack operations and memory management
-- **Comprehensive Testing**: 278 tests covering all features and README examples
+- **Comprehensive Testing**: 285 tests covering all features and README examples
 
 ## Quick Start
 

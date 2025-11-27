@@ -132,4 +132,11 @@ internal sealed class ForthStack : IReadOnlyList<object>
         var second = _head.Next!.Value;
         _head = new Node(second, new Node(first, _head.Next.Next));
     }
+
+    /// <summary>Clears all items from the stack.</summary>
+    public void Clear()
+    {
+        _head = null;
+        _count = 0;
+    }
 }

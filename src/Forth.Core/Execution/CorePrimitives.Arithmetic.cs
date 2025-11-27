@@ -368,4 +368,91 @@ internal static partial class CorePrimitives
         i.Push((long)quot);
         return Task.CompletedTask;
     }
+
+    [Primitive("SM/REM", HelpString = "SM/REM ( d n -- rem quot ) symmetric divide double-cell by single-cell with floored division")]
+    private static Task Prim_SMSlashRem(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "SM/REM");
+        var n = ToLong(i.PopInternal());
+        var d_high = ToLong(i.PopInternal());
+        var d_low = ToLong(i.PopInternal());
+        if (n == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+
+        // Reconstruct the double-cell as BigInteger for accurate division
+        var dividend = new BigInteger(d_high) << 64 | new BigInteger(d_low);
+        var divisor = new BigInteger(n);
+
+        var quot = BigInteger.Divide(dividend, divisor);
+        var rem = BigInteger.Remainder(dividend, divisor);
+
+        // Adjust for floored division
+        if ((rem.Sign < 0 && divisor.Sign > 0) || (rem.Sign > 0 && divisor.Sign < 0))
+        {
+            quot -= 1;
+            rem += divisor;
+        }
+
+        i.Push((long)rem);
+        i.Push((long)quot);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FM/MOD", HelpString = "FM/MOD ( n1 n2 -- rem quot ) floored divide single-cell by single-cell")]
+    private static Task Prim_FMSlashMod(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FM/MOD");
+        var n2 = ToLong(i.PopInternal());
+        var n1 = ToLong(i.PopInternal());
+        if (n2 == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+
+        var quot = n1 / n2;
+        var rem = n1 % n2;
+
+        // Adjust for floored division
+        if ((rem < 0 && n2 > 0) || (rem > 0 && n2 < 0))
+        {
+            quot -= 1;
+            rem += n2;
+        }
+
+        i.Push(rem);
+        i.Push(quot);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("S>D", HelpString = "S>D ( n -- d ) - convert single-cell to double-cell")]
+    private static Task Prim_SToD(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "S>D");
+        var nFv = i._stack.PopValue();
+        if (nFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected long");
+        var n = nFv.LongValue;
+        long high = n < 0 ? -1L : 0L;
+        long low = n;
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("M+", HelpString = "M+ ( d n -- d' ) - add single-cell to double-cell")]
+    private static Task Prim_MPlus(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "M+");
+        var nFv = i._stack.PopValue();
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (nFv.Type != VT.Long || d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        var n = nFv.LongValue;
+        var d_hi = d_hiFv.LongValue;
+        var d_lo = d_loFv.LongValue;
+
+        var d = new BigInteger(d_hi) << 64 | new BigInteger(d_lo);
+        var sum = d + new BigInteger(n);
+        var low = (long)(sum & ((BigInteger.One << 64) - 1));
+        var high = (long)(sum >> 64);
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
 }
