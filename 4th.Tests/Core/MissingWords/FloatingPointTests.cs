@@ -65,6 +65,47 @@ public class FloatingPointTests
         Assert.Contains("2.5", io.Outputs[0]);
     }
 
+    [Fact]
+    public async Task FloatingPoint_Comparisons()
+    {
+        var forth = new ForthInterpreter();
+        // F0=
+        Assert.True(await forth.EvalAsync("0.0 F0="));
+        Assert.Single(forth.Stack);
+        Assert.Equal(-1L, (long)forth.Stack[0]); // true
+
+        Assert.True(await forth.EvalAsync("1.0 F0="));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[1]); // false
+
+        // F0<
+        Assert.True(await forth.EvalAsync("-1.0 F0<"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(-1L, (long)forth.Stack[2]); // true
+
+        Assert.True(await forth.EvalAsync("1.0 F0<"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[3]); // false
+
+        // F<
+        Assert.True(await forth.EvalAsync("1.0 2.0 F<"));
+        Assert.Equal(5, forth.Stack.Count);
+        Assert.Equal(-1L, (long)forth.Stack[4]); // true
+
+        Assert.True(await forth.EvalAsync("2.0 1.0 F<"));
+        Assert.Equal(6, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[5]); // false
+
+        // F=
+        Assert.True(await forth.EvalAsync("1.5 1.5 F="));
+        Assert.Equal(7, forth.Stack.Count);
+        Assert.Equal(-1L, (long)forth.Stack[6]); // true
+
+        Assert.True(await forth.EvalAsync("1.5 2.0 F="));
+        Assert.Equal(8, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[7]); // false
+    }
+
     private sealed class TestIO : IForthIO
     {
         public readonly System.Collections.Generic.List<string> Outputs = new();

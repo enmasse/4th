@@ -11,6 +11,9 @@ This repository contains a .NET 9 implementation of a Forth-like interpreter and
 - **Inline IL**: Direct .NET IL emission with `IL{ ... }IL` syntax
 - **Environment Queries**: `ENV` wordlist for system information (`OS`, `CPU`, `MEMORY`, etc.)
 - **Interactive REPL**: Command history, HELP/STACK commands, error debugging
+- **Block System**: Block-based editing with `BLOCK`, `SAVE`, `LIST`
+- **Floating-Point**: Full arithmetic and comparisons (`F+`, `F-`, `F*`, `F/`, `F0=`, `F0<`, `F<`, `F=`) 
+- **File Access Methods**: ANS-compatible file modes (`R/O`, `W/O`, `R/W`, `BIN`)
 - **Extensible**: Easy to add new primitives and integrate with .NET code
 - **High Performance**: Optimized stack operations and memory management
 - **Comprehensive Testing**: 271 tests covering all features and README examples
@@ -131,6 +134,26 @@ S" hello.txt" S" Hello, World!" WRITE-FILE
 S" hello.txt" READ-FILE TYPE
 ```
 
+### Block System
+
+Blocks provide a traditional Forth editing environment:
+
+```forth
+OPEN-BLOCK-FILE "blocks.dat"    \ Open block file
+S" This is block 0" 14 0 SAVE   \ Save text to block 0
+0 LIST                          \ Display block 0
+```
+
+### Floating-Point
+
+Full floating-point support:
+
+```forth
+3.14 2.71 F+ F.    \ Prints 5.85
+1.0 0.0 F0= .      \ Prints -1 (true)
+2.5 3.0 F< .       \ Prints -1 (true)
+```
+
 ### Async Operations
 
 ```forth
@@ -210,7 +233,7 @@ BIND System.Console WriteLine 1 HELLO
 
 - `src/Forth.Core` - Core interpreter and primitives
 - `4th` - Console REPL application
-- `4th.Tests` - Comprehensive test suite (271 tests)
+- `4th.Tests` - Comprehensive test suite (275 tests)
 - `tools/ans-diff` - ANS conformity checker
 - `4th.Benchmarks` - Performance benchmarks
 - `modules/` - Optional extensions (ProtoActor, etc.)

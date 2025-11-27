@@ -106,3 +106,6 @@ Potential future extensions
 - Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
 - Add optional `ENV` wordlist or mechanism for platform/environment queries.
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
+
+Missing ANS Forth core words (45):
+- ?DUP, .", ['], [CHAR], >BODY, 0<, 0>, 1-, 1+, 2!, 2@, 2*, 2/, 2DROP, 2R@, ABORT", ABS, AGAIN, ALIGN, BL, C,, CELL+, CELLS, CHAR+, CHARS, EVALUATE, FIND, FM/MOD, J, M/MOD, M+, NIP, NOT, PAD, S", S>D, SM/REM, SP!, SP@, TUCK, U., U<, UM*, UM/MOD, WORD

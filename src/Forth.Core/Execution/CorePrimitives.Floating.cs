@@ -139,4 +139,48 @@ internal static partial class CorePrimitives
         i.MemSet(addr, bits);
         return Task.CompletedTask;
     }
+
+    [Primitive("F0=", HelpString = "F0= ( r -- flag ) true if r is zero")]
+    private static Task Prim_FZeroEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F0=");
+        var a = i.PopInternal();
+        var d = ToDoubleFromObj(a);
+        i.Push(d == 0.0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F0<", HelpString = "F0< ( r -- flag ) true if r < 0")]
+    private static Task Prim_FZeroLess(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F0<");
+        var a = i.PopInternal();
+        var d = ToDoubleFromObj(a);
+        i.Push(d < 0.0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F<", HelpString = "F< ( r1 r2 -- flag ) true if r1 < r2")]
+    private static Task Prim_FLess(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F<");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 < d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F=", HelpString = "F= ( r1 r2 -- flag ) true if r1 == r2")]
+    private static Task Prim_FEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F=");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 == d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
 }

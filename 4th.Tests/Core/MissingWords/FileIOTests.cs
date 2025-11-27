@@ -668,4 +668,25 @@ public class FileIOTests
             Assert.Equal(ForthErrorCode.CompileError, ex.Code);
         }
     }
+
+    [Fact]
+    public async Task FileAccessMethods()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("R/O"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0L, (long)forth.Stack[0]);
+
+        Assert.True(await forth.EvalAsync("W/O"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1L, (long)forth.Stack[1]);
+
+        Assert.True(await forth.EvalAsync("R/W"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(2L, (long)forth.Stack[2]);
+
+        Assert.True(await forth.EvalAsync("0 BIN"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[3]);
+    }
 }

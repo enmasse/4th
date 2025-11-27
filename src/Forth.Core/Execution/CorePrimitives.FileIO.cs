@@ -135,6 +135,25 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("R/O", HelpString = "R/O ( -- fam ) read-only file access method")]
+    private static Task Prim_RO(ForthInterpreter i) { i.Push(0L); return Task.CompletedTask; }
+
+    [Primitive("W/O", HelpString = "W/O ( -- fam ) write-only file access method")]
+    private static Task Prim_WO(ForthInterpreter i) { i.Push(1L); return Task.CompletedTask; }
+
+    [Primitive("R/W", HelpString = "R/W ( -- fam ) read-write file access method")]
+    private static Task Prim_RW(ForthInterpreter i) { i.Push(2L); return Task.CompletedTask; }
+
+    [Primitive("BIN", HelpString = "BIN ( fam -- fam' ) modify fam for binary mode")]
+    private static Task Prim_BIN(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "BIN");
+        var fam = (long)i.PopInternal();
+        // For now, just return fam, since binary is default
+        i.Push(fam);
+        return Task.CompletedTask;
+    }
+
     [Primitive("CLOSE-FILE", HelpString = "CLOSE-FILE ( fid -- ior ) - close file handle")]
     private static Task Prim_CLOSEFILE(ForthInterpreter i)
     {

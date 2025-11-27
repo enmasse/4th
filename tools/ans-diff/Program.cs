@@ -44,7 +44,7 @@ class Program
             .ToArray();
 
         var primNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        var primRegex = new Regex(@"Primitive\(\s*""(?<name>[^""]+)""", RegexOptions.Compiled);
+        var primRegex = new Regex(@"\[Primitive\(\s*""(?<name>[^""]+)""", RegexOptions.Compiled);
         foreach (var f in csFiles)
         {
             var txt = File.ReadAllText(f);
@@ -65,9 +65,6 @@ class Program
 
         sb.AppendLine($"\nANS core words present ({found.Length}):");
         foreach (var fnd in found) sb.AppendLine(fnd);
-
-        sb.AppendLine($"\nANS core words missing ({missing.Length}):");
-        foreach (var m in missing) sb.AppendLine(m);
 
         sb.AppendLine($"\nOther primitives in code not in ANS list ({extras.Length}):");
         foreach (var e in extras) sb.AppendLine(e);
