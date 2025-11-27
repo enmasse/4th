@@ -1,35 +1,35 @@
 # TODO: ANS/Forth conformity gap analysis
 
-- Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics:
-  - Fully align skipping and nesting behavior with ANS Forth.
-  - Support mixed composite tokens and separated bracket forms reliably.
-  - Add more tests covering nested, empty branches, and edge tokenization cases.
+## Open Tasks
+- [ ] Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics:
+  - [ ] Fully align skipping and nesting behavior with ANS Forth.
+  - [ ] Support mixed composite tokens and separated bracket forms reliably.
+  - [ ] Add more tests covering nested, empty branches, and edge tokenization cases.
 
-- Correct `>NUMBER` parsing semantics:
-  - Ensure proper accumulation for decimal and hex bases.
-  - Handle remainder and partial conversion per ANS.
-  - Add tests for mixed digits, base changes, and remainder reporting.
+## Resolved Issues
+- ~~Correct `>NUMBER` parsing semantics~~ **[RESOLVED 2025-01-XX]**:
+  - ~~Ensure proper accumulation for decimal and hex bases.~~
+  - ~~Handle remainder and partial conversion per ANS.~~
+  - ~~Add tests for mixed digits, base changes, and remainder reporting.~~
   - Investigate c-addr off-by-one: confirm `S"` pushes `addr+1` and correct `u`; fix first-digit loss (e.g., "123" -> 123 not 23), and verify hex remainder case ("FFZ" in HEX -> 255, rem=1, digits=2).
-
-- Adjust block `LIST` formatting:
-  - Match expected line-number prefix and content formatting.
-  - Avoid stray nulls/control characters in output.
-  - Add tests for typical and empty lines.
-
-- Fix `APPEND-FILE` behavior:
-  - Prevent duplicated content and stray control characters.
-  - Ensure newline handling matches expectations.
-  - Add tests for multiple appends and exact byte content.
+- ~~Adjust block `LIST` formatting~~ **[RESOLVED 2025-11-27]**:
+  - ~~Match expected line-number prefix and content formatting.~~
+  - ~~Avoid stray nulls/control characters in output.~~
+  - ~~Add tests for typical and empty lines.~~
+- ~~Fix `APPEND-FILE` behavior~~ **[RESOLVED 2025-11-27]**:
+  - ~~Prevent duplicated content and stray control characters.~~
+  - ~~Ensure newline handling matches expectations.~~
+  - ~~Add tests for multiple appends and exact byte content.~~
 
 _Last updated: 2025-11-27_
 
-Goal
+## Goal
 - Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
 
-Method
+## Method
 - A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words. It now supports multiple sets via `--sets=` (e.g. `--sets=core,core-ext,file,block,float` or `--sets=all`) and `--fail-on-missing=` to toggle CI failures.
 
-Status — implemented / obvious support (non-exhaustive)
+## Status — implemented / obvious support (non-exhaustive)
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
 - Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`
 - Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`, `>BODY`
@@ -51,7 +51,7 @@ Status — implemented / obvious support (non-exhaustive)
 - Environment queries: `ENV` wordlist with `OS`, `CPU`, `MEMORY`, `MACHINE`, `USER`, `PWD`
 - Help system: `HELP` (general help or word-specific)
 
-Recent extensions
+## Recent extensions
 - Implemented missing ANS-tracked words: `."`, `ABORT"`, `>BODY`, `M/MOD`, `S"` with regression tests.
 - Implemented Core-Ext `WITHIN` with regression tests.
 - Implemented Core-Ext `COMPARE` with regression tests.
@@ -84,8 +84,11 @@ Recent extensions
 - Extended HELP primitive to show general help when no word specified.
 - Added comprehensive tests validating all README examples.
 - Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests.
+- Fixed APPEND-FILE data disambiguation to prevent duplicated content and ensure correct appending behavior.
+- Fixed LIST block formatting to trim null characters, ensuring clean output without control characters.
 
-Notes
+## Notes
+- **Duplicate primitive detection**: `CreateWords()` now validates that each primitive name is unique within its module, preventing silent shadowing issues.
 - `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
 - `ACCEPT`/`EXPECT` currently implement buffer write semantics; review for strict ANS compliance (edge cases like newline handling, partial fills).
 - Awaitable detection centralized in `AwaitableHelper`.
@@ -94,7 +97,8 @@ Notes
 - ENV wordlist provides system environment information.
 - HELP shows general help or word-specific help.
 
-Progress / Repository tasks (current)
+## Progress / Repository tasks (current)
+- [x] Fix `>NUMBER` first-digit loss bug and add duplicate primitive detection
 - [x] Create `tools/ans-diff` and integrate report artifact
 - [x] Implement search-order + wordlist primitives
 - [x] Implement KEY / KEY? / ACCEPT / EXPECT / SOURCE / >IN
@@ -108,7 +112,7 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (312/312)
+- [x] Full test suite passing (341/341)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -133,18 +137,21 @@ Progress / Repository tasks (current)
 - [x] Add regression tests for `."`, `ABORT"`, `>BODY`, `M/MOD`
 - [x] Fix IDE shading via suppressions for reflection-bound primitives
 - [x] Update ans-diff regex and root resolution
+- [x] Fix APPEND-FILE data disambiguation and behavior
+- [x] Fix LIST formatting to trim null characters
 
-Potential future extensions
+
+## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
 - Support for binary file I/O or more advanced block operations.
 - Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
 - Add optional `ENV` wordlist or mechanism for platform/environment queries.
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
-Missing ANS Forth words (tracked by ans-diff):
+## Missing ANS Forth words (tracked by `ans-diff`)
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
 
-Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float):
+## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
 - -TRAILING
 - .[S]
 - /STRING

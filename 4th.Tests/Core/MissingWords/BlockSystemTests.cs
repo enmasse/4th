@@ -39,7 +39,7 @@ public class BlockSystemTests
         var io = new TestIO();
         var f = new ForthInterpreter(io);
         // Save some content to block 0
-        await f.EvalAsync("S\" Line 1 content\" 15 0 SAVE");
+        await f.EvalAsync("S\"Line 1 content\" 0 SAVE");
         // List block 0
         await f.EvalAsync("0 LIST");
         var result = string.Join("", io.Outputs);

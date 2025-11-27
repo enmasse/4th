@@ -95,10 +95,25 @@ internal static partial class CorePrimitives
         {
             var v1 = ToLong(i.PopInternal());
             var v2 = ToLong(i.PopInternal());
-            long addr = v1; long u = v2;
-            bool plausible = addr >= 0 && u >= 0 && addr + u <= i._nextAddr;
-            if (!plausible) { addr = v2; u = v1; }
-            data = i.ReadMemoryString(addr, u);
+            // If v1 points to first char of a counted string, the length cell is at v1-1.
+            // Since MemTryGet has no boolean return, call it separately and compare.
+            if (v1 > 0)
+            {
+                long maybeLen = 0;
+                i.MemTryGet(v1 - 1, out maybeLen);
+                if (ToLong(maybeLen) == v2)
+                {
+                    data = i.ReadMemoryString(v1, v2);
+                }
+                else
+                {
+                    data = i.ReadMemoryString(v2, v1);
+                }
+            }
+            else
+            {
+                data = i.ReadMemoryString(v2, v1);
+            }
         }
         else
         {
