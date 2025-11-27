@@ -136,7 +136,20 @@ public static class Tokenizer
             {
                 if (current.Count > 0)
                 {
-                    list.Add(new string(current.ToArray()));
+                    var pending = new string(current.ToArray());
+                    // Special-case ABORT" to form a single token like ." and S"
+                    if (string.Equals(pending, "ABORT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        list.Add("ABORT\"");
+                        current.Clear();
+                        // begin string accumulation for the following quoted text
+                        current.Add('"');
+                        // Skip any leading whitespace after the opening quote
+                        while (i + 1 < input.Length && char.IsWhiteSpace(input[i + 1])) i++;
+                        inString = true;
+                        continue;
+                    }
+                    list.Add(pending);
                     current.Clear();
                 }
                 current.Add('"');

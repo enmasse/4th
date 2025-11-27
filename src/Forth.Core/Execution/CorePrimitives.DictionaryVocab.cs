@@ -117,7 +117,7 @@ internal static partial class CorePrimitives
         var addr = i._nextAddr;
         i._lastCreatedName = name;
         i._lastCreatedAddr = addr;
-        var created = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+        var created = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr };
         i._dict = i._dict.SetItem((i._currentModule, name), created);
         i.RegisterDefinition(name);
         i._lastDefinedWord = created;
@@ -130,7 +130,7 @@ internal static partial class CorePrimitives
     private static Task Prim_DOES(ForthInterpreter i) { if (string.IsNullOrEmpty(i._lastCreatedName)) throw new ForthException(ForthErrorCode.CompileError, "DOES> without CREATE"); i._doesCollecting = true; i._doesTokens = new List<string>(); return Task.CompletedTask; }
 
     [Primitive("VARIABLE", IsImmediate = true, HelpString = "VARIABLE <name> - define a named storage cell")]
-    private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
+    private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
 
     [Primitive("CONSTANT", IsImmediate = true, HelpString = "CONSTANT <name> - define a constant with top value")]
     private static Task Prim_CONSTANT(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; i._decompile[name] = $": {name} {val} ;"; return Task.CompletedTask; }
@@ -311,6 +311,25 @@ internal static partial class CorePrimitives
             }
         });
         return Task.CompletedTask;
+    }
+
+    [Primitive(">BODY", HelpString = ">BODY ( xt|addr -- a-addr ) - get data-field address for CREATEd word or passthrough addr")]
+    private static Task Prim_TO_BODY(ForthInterpreter i)
+    {
+        i.EnsureStack(1, ">BODY");
+        var top = i.PopInternal();
+        switch (top)
+        {
+            case Word w when w.BodyAddr.HasValue:
+                i.Push(w.BodyAddr.Value);
+                return Task.CompletedTask;
+            case long addr:
+                // If numeric address already, return as-is (common extension behavior)
+                i.Push(addr);
+                return Task.CompletedTask;
+            default:
+                throw new ForthException(ForthErrorCode.TypeError, ">BODY expects a CREATEd word or address");
+        }
     }
 
     [Primitive("GET-ORDER", HelpString = "GET-ORDER ( -- wid... count ) - push current search order list and count")]

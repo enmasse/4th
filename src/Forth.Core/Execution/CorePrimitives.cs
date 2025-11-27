@@ -1,9 +1,18 @@
 using Forth.Core.Interpreter;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Forth.Core.Execution;
 
+[SuppressMessage(
+    category: "Style",
+    checkId: "IDE0051:Remove unused private members",
+    Justification = "Primitives are discovered and invoked via reflection by CreateWords() scanning [Primitive] attributes.")]
+[UnconditionalSuppressMessage(
+    category: "Style",
+    checkId: "IDE0051:Remove unused private members",
+    Justification = "Primitives are discovered and invoked via reflection by CreateWords() scanning [Primitive] attributes.")]
 internal static partial class CorePrimitives
 {
     private sealed class KeyComparer : IEqualityComparer<(string? Module, string Name)>

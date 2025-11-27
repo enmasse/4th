@@ -1,6 +1,7 @@
-Found 228 primitives in code:
+Found 233 primitives in code:
 
 1+
+M/MOD
 1-
 2*
 2/
@@ -111,9 +112,12 @@ SEE
 CHAR
 [CHAR]
 [']
+S"
 S
 BIND
-.
+."
+ABORT"
+>BODY
 GET-ORDER
 SET-ORDER
 MARKER
@@ -154,6 +158,7 @@ F<
 F=
 HELP
 IL{
+.
 .S
 CR
 BL
@@ -230,13 +235,14 @@ SP!
 ADD-INPUT-LINE
 
 
-ANS core words present (130):
+ANS core words present (135):
 ,
 ;
 :
 !
 ?DUP
 .
+."
 .S
 '
 [
@@ -247,6 +253,7 @@ ANS core words present (130):
 #>
 #S
 <#
+>BODY
 >IN
 >NUMBER
 0<
@@ -260,6 +267,7 @@ ANS core words present (130):
 2DROP
 2R@
 ABORT
+ABORT"
 ABS
 ACCEPT
 ALIGN
@@ -322,6 +330,7 @@ LITERAL
 LOAD
 LOOP
 M*
+M/MOD
 MARKER
 MOVE
 NIP
@@ -333,6 +342,7 @@ READ-FILE
 RECURSE
 REPEAT
 REPOSITION-FILE
+S"
 SAVE
 SET-ORDER
 SIGN

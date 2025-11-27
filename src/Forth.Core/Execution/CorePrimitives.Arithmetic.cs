@@ -18,6 +18,26 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    // M/MOD - Symmetric division producing remainder and quotient (remainder has sign of dividend)
+    // Stack effect per /MOD: ( n1 n2 -- rem quot )
+    [Primitive("M/MOD", HelpString = "M/MOD ( n1 n2 -- rem quot ) - symmetric division; remainder sign of dividend")]
+    private static Task Prim_M_Slash_MOD(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "M/MOD");
+        var bFv = i._stack.PopValue();
+        var aFv = i._stack.PopValue();
+        if (bFv.Type != VT.Long || aFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long b = bFv.LongValue;
+        long a = aFv.LongValue;
+        if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
+
+        long q = a / b; // truncates toward zero (symmetric quotient)
+        long r = a % b; // remainder has sign of dividend
+        i._stack.Push(ForthValue.FromLong(r));
+        i._stack.Push(ForthValue.FromLong(q));
+        return Task.CompletedTask;
+    }
+
     [Primitive("1-", HelpString = "Decrement ( n -- n-1 )")]
     private static Task Prim_OneMinus(ForthInterpreter i)
     {

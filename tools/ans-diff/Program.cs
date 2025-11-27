@@ -39,13 +39,20 @@ class Program
 
     static int Main(string[] args)
     {
-        var repoRoot = Directory.GetCurrentDirectory();
-        // If executed from tools/ans-diff dir, assume repo root is two levels up
-        if (Path.GetFileName(repoRoot).Equals("ans-diff", StringComparison.OrdinalIgnoreCase))
-            repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
-        // If executed from 4th dir, assume repo root is current
-        else if (Path.GetFileName(repoRoot).Equals("4th", StringComparison.OrdinalIgnoreCase))
-            repoRoot = Path.GetFullPath(Path.Combine(repoRoot, ".."));
+        static string ResolveRepoRoot(string start)
+        {
+            var dir = new DirectoryInfo(start);
+            while (dir != null)
+            {
+                // Prefer a solution file as an anchor
+                var hasSln = Directory.EnumerateFiles(dir.FullName, "*.sln", SearchOption.TopDirectoryOnly).Any();
+                if (hasSln) return dir.FullName;
+                dir = dir.Parent;
+            }
+            return start;
+        }
+
+        var repoRoot = ResolveRepoRoot(Directory.GetCurrentDirectory());
 
         var sb = new StringBuilder();
 
@@ -57,7 +64,7 @@ class Program
 
         var primNames = new HashSet<string>();
         // Match the string literal inside [Primitive("...")], handling escaped quotes
-        var primRegex = new Regex(@"\[Primitive\(""(?<name>[^""]*)""", RegexOptions.Compiled);
+        var primRegex = new Regex(@"\[Primitive\(""(?<name>(?:\\.|[^""])*?)""", RegexOptions.Compiled);
         foreach (var f in csFiles)
         {
             var txt = File.ReadAllText(f);

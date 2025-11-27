@@ -11,9 +11,10 @@ Method
 Status — implemented / obvious support (non-exhaustive)
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
 - Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`
-- Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`
+- Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`, `>BODY`
 - Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
+- Strings & parsing: `S"`, `S`, `."`, `WORD`
 - File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`
   - Stream primitives: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
   - Byte-level handle ops: `READ-FILE-BYTES`, `WRITE-FILE-BYTES`
@@ -30,6 +31,10 @@ Status — implemented / obvious support (non-exhaustive)
 - Help system: `HELP` (general help or word-specific)
 
 Recent extensions
+- Implemented missing ANS-tracked words: `."`, `ABORT"`, `>BODY`, `M/MOD`, `S"` with regression tests.
+- Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
+- IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
+- ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably.
 - Inline IL: stabilized `IL{ ... }IL`
   - DynamicMethod signature now `(ForthInterpreter intr, ForthStack stack)`; `ldarg.0` is interpreter, `ldarg.1` is stack
   - Local type inference (declare `object` for `Pop()` results, `long` for arithmetic); consistent `LocalBuilder`-based `ldloc/stloc/ldloca`
@@ -80,7 +85,7 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (290/290)
+- [x] Full test suite passing (294/294)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -101,6 +106,10 @@ Progress / Repository tasks (current)
 - [x] Add a REPL (Read-Eval-Print Loop) for interactive use.
 - [x] Add tests to ensure that the examples in README works
 - [x] Extend HELP primitive to show general help when no word specified
+- [x] Implement `>BODY` and `M/MOD` primitives in core
+- [x] Add regression tests for `."`, `ABORT"`, `>BODY`, `M/MOD`
+- [x] Fix IDE shading via suppressions for reflection-bound primitives
+- [x] Update ans-diff regex and root resolution
 
 Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -110,11 +119,7 @@ Potential future extensions
 - Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
 
 Missing ANS Forth words (tracked by ans-diff):
-- ." (dot-quote)
-- ABORT" (abort with message)
-- >BODY (data-field address for CREATEd words)
-- M/MOD (symmetric division producing remainder and quotient)
-- S" (string literal)
+- None (for the currently tracked Core subset).
 
 Notes:
-- ans-diff has been extended to include these words. Consider expanding it to full Core/Core-Ext sets to auto-track more words.
+- Consider expanding ans-diff to full Core/Core-Ext sets to auto-track more words.
