@@ -381,45 +381,45 @@ namespace Forth.Tests.Core
         public async Task EnvWords_ReturnValues()
         {
             var f = New();
-            await f.EvalAsync("\"ENV\" USING");
+            await f.EvalAsync("USING ENV");
 
             // Test OS
-            await f.EvalAsync("ENV:OS");
+            await f.EvalAsync("OS");
             Assert.Single(f.Stack);
             Assert.IsType<string>(f.Stack[0]);
             Assert.NotEmpty((string)f.Stack[0]);
             f.Pop();
 
             // Test CPU
-            await f.EvalAsync("ENV:CPU");
+            await f.EvalAsync("CPU");
             Assert.Single(f.Stack);
             Assert.IsType<long>(f.Stack[0]);
             Assert.True((long)f.Stack[0] > 0);
             f.Pop();
 
             // Test MEMORY
-            await f.EvalAsync("ENV:MEMORY");
+            await f.EvalAsync("MEMORY");
             Assert.Single(f.Stack);
             Assert.IsType<long>(f.Stack[0]);
             Assert.True((long)f.Stack[0] > 0);
             f.Pop();
 
             // Test MACHINE
-            await f.EvalAsync("ENV:MACHINE");
+            await f.EvalAsync("MACHINE");
             Assert.Single(f.Stack);
             Assert.IsType<string>(f.Stack[0]);
             Assert.NotEmpty((string)f.Stack[0]);
             f.Pop();
 
             // Test USER
-            await f.EvalAsync("ENV:USER");
+            await f.EvalAsync("USER");
             Assert.Single(f.Stack);
             Assert.IsType<string>(f.Stack[0]);
             Assert.NotEmpty((string)f.Stack[0]);
             f.Pop();
 
             // Test PWD
-            await f.EvalAsync("ENV:PWD");
+            await f.EvalAsync("PWD");
             Assert.Single(f.Stack);
             Assert.IsType<string>(f.Stack[0]);
             Assert.NotEmpty((string)f.Stack[0]);

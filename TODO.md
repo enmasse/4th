@@ -79,7 +79,6 @@ Progress / Repository tasks (current)
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (257/257)
 - [x] Full test suite passing (261/261)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)

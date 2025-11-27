@@ -90,8 +90,11 @@ public class ReadmeExamplesTests
         await f.EvalAsync("MODULE MATH");
         await f.EvalAsync(": FACTORIAL DUP 2 < IF DROP 1 ELSE DUP 1- RECURSE * THEN ;");
         await f.EvalAsync("END-MODULE");
-        await f.EvalAsync("\"MATH\" USING");
+        await f.EvalAsync("USING MATH");
         await f.EvalAsync("3 FACTORIAL ."); // Should print 6
+        await f.EvalAsync("PREVIOUS");
+        // After PREVIOUS, FACTORIAL should not be found
+        await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("FACTORIAL"));
     }
 
     // [Fact]
@@ -114,13 +117,39 @@ public class ReadmeExamplesTests
     public async Task EnvironmentQueries_Example()
     {
         var f = New();
-        await f.EvalAsync("\"ENV\" USING");
+        await f.EvalAsync("USING ENV");
 
         // Test that ENV words exist and return values
-        await f.EvalAsync("ENV:OS");
+        await f.EvalAsync("OS");
         Assert.IsType<string>(f.Pop());
 
-        await f.EvalAsync("ENV:CPU");
+        await f.EvalAsync("CPU");
         Assert.IsType<long>(f.Pop());
+    }
+
+    [Fact]
+    public async Task Previous_EdgeCases()
+    {
+        var f = New();
+        
+        // PREVIOUS with no modules should do nothing - test by trying to resolve unqualified word
+        await f.EvalAsync("PREVIOUS");
+        // OS should not be found unqualified
+        await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("OS"));
+        
+        // Add ENV module
+        await f.EvalAsync("USING ENV");
+        // Now OS should work
+        await f.EvalAsync("OS");
+        Assert.IsType<string>(f.Pop());
+        
+        // PREVIOUS removes it
+        await f.EvalAsync("PREVIOUS");
+        // OS should fail again
+        await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("OS"));
+        
+        // Extra PREVIOUS does nothing
+        await f.EvalAsync("PREVIOUS");
+        await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("OS"));
     }
 }

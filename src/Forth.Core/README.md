@@ -13,7 +13,7 @@ Minimal async-capable Forth interpreter core library targeting .NET 9.
 - Concurrency helpers: `SPAWN` (alias existing Task), `YIELD`
 - File I/O: `READ-FILE`, `WRITE-FILE`, `OPEN-FILE`, etc.
 - Environment queries: `ENV` wordlist (`OS`, `CPU`, `MEMORY`, etc.)
-- Modules and search order: `MODULE`, `USING`, `WORDLIST`
+- Modules and search order: `MODULE`, `USING`, `PREVIOUS`, `WORDLIST`
 - Comprehensive ANS Forth compliance (99/99 core words) with extensions for modern .NET features
 - Interactive REPL with history and debugging commands
 
@@ -34,7 +34,7 @@ await forth.EvalAsync("BINDASYNC MyNamespace.MyType AddAsync 2 ADDAB 5 7 ADDAB A
 
 Access environment info:
 ```csharp
-await forth.EvalAsync("\"ENV\" USING ENV:OS");
+await forth.EvalAsync("USING ENV OS");
 ```
 
 ## NuGet

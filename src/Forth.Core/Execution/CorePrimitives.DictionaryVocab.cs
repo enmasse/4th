@@ -79,19 +79,10 @@ internal static partial class CorePrimitives
     [Primitive("END-MODULE", IsImmediate = true, HelpString = "END-MODULE - end the current module namespace")]
     private static Task Prim_ENDMODULE(ForthInterpreter i) { i._currentModule = null; return Task.CompletedTask; }
 
-    [Primitive("USING", HelpString = "USING ( \"name\" -- ) - add module to search order")]
+    [Primitive("USING", IsImmediate = true, HelpString = "USING <name> - add module to search order")]
     private static Task Prim_USING(ForthInterpreter i)
     {
-        string module;
-        if (i.Stack.Count > 0 && i.Stack[^1] is string s)
-        {
-            module = s;
-            i.PopInternal();
-        }
-        else
-        {
-            module = i.ReadNextTokenOrThrow("Expected module name for USING");
-        }
+        var module = i.ReadNextTokenOrThrow("Expected module name after USING");
         i._usingModules.Add(module);
         return Task.CompletedTask;
     }
@@ -376,6 +367,16 @@ internal static partial class CorePrimitives
             default:
                 i.Push(0L); // not recognized -> false only
                 break;
+        }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("PREVIOUS", HelpString = "PREVIOUS - remove the most recently added module from the search order")]
+    private static Task Prim_PREVIOUS(ForthInterpreter i)
+    {
+        if (i._usingModules.Count > 0)
+        {
+            i._usingModules.RemoveAt(i._usingModules.Count - 1);
         }
         return Task.CompletedTask;
     }

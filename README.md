@@ -146,8 +146,10 @@ MODULE MATH
 : FACTORIAL DUP 1 > IF DUP 1- RECURSE * ELSE DROP 1 THEN ;
 END-MODULE
 
-MATH USING
-5 FACTORIAL .    \ Prints 120
+USING MATH
+3 FACTORIAL .    \ Prints 6
+
+PREVIOUS         \ Remove MATH from search order
 ```
 
 ### Environment Queries
@@ -155,10 +157,10 @@ MATH USING
 Access environment information via the ENV module:
 
 ```forth
-ENV USING
-ENV:OS .     \ Prints OS name
-ENV:CPU .    \ Prints CPU count
-ENV:MEMORY . \ Prints working set memory
+USING ENV
+OS .     \ Prints OS name
+CPU .    \ Prints CPU count
+MEMORY . \ Prints working set memory
 ```
 
 ## Advanced Features
