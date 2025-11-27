@@ -150,8 +150,6 @@ _Last updated: 2025-11-27_
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
-- -TRAILING
-- .[S]
 - /STRING
 - ALLOCATE
 - BUFFER
@@ -197,4 +195,4 @@ _Last updated: 2025-11-27_
 - WRITE-LINE
 
 Notes:
-- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.
+- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.- ans-diff now tracks multiple sets by default (Core, Core-Ext, File, Block, Float). Use flags to narrow or expand tracking. CI can be configured to fail only on specific sets if desired.

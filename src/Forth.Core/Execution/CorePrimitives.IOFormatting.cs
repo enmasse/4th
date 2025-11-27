@@ -14,6 +14,10 @@ internal static partial class CorePrimitives
     private static Task Prim_DotS(ForthInterpreter i)
     { var items = i.Stack; var sb = new StringBuilder(); sb.Append('<').Append(items.Count).Append("> "); for (int idx = 0; idx < items.Count; idx++) { if (idx > 0) sb.Append(' '); var o = items[idx]; switch (o) { case long l: sb.Append(l); break; case int ii: sb.Append(ii); break; case short s: sb.Append((long)s); break; case byte b: sb.Append((long)b); break; case char ch: sb.Append((int)ch); break; case bool bo: sb.Append(bo ? -1 : 0); break; default: sb.Append(o?.ToString() ?? "null"); break; } } i.WriteText(sb.ToString()); return Task.CompletedTask; }
 
+    [Primitive(".[S]", HelpString = "Print stack contents in square brackets")]
+    private static Task Prim_DotBracketS(ForthInterpreter i)
+    { var items = i.Stack; var sb = new StringBuilder(); sb.Append('[').Append(items.Count).Append("] "); for (int idx = 0; idx < items.Count; idx++) { if (idx > 0) sb.Append(' '); var o = items[idx]; switch (o) { case long l: sb.Append(l); break; case int ii: sb.Append(ii); break; case short s: sb.Append((long)s); break; case byte b: sb.Append((long)b); break; case char ch: sb.Append((int)ch); break; case bool bo: sb.Append(bo ? -1 : 0); break; default: sb.Append(o?.ToString() ?? "null"); break; } } i.WriteText(sb.ToString()); return Task.CompletedTask; }
+
     [Primitive("CR", HelpString = "Emit newline")]
     private static Task Prim_CR(ForthInterpreter i) { i.NewLine(); return Task.CompletedTask; }
 

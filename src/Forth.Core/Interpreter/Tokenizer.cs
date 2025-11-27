@@ -107,6 +107,18 @@ public static class Tokenizer
                 current.Add('"');
                 continue;
             }
+            if (c == '.' && i + 3 < input.Length && input[i + 1] == '[' && input[i + 2] == 'S' && input[i + 3] == ']')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                list.Add(".[S]");
+                i += 3;
+                continue;
+            }
+
             if (c == '(')
             {
                 inComment = true;

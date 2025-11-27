@@ -1,4 +1,4 @@
-Found 238 primitives in code:
+Found 239 primitives in code:
 
 -
 -ROT
@@ -11,6 +11,7 @@ Found 238 primitives in code:
 ?DUP
 .
 ."
+.[S]
 .S
 '
 [
@@ -378,11 +379,12 @@ WORDLIST
 WORDS
 WRITE-FILE
 
-Other primitives in code not in tracked sets (103):
+Other primitives in code not in tracked sets (104):
 -
 -ROT
 -TRAILING
 ?DO
+.[S]
 [']
 [CHAR]
 [ELSE]
