@@ -1,11 +1,5 @@
 # TODO: ANS/Forth conformity gap analysis
 
-## Open Tasks
-- [ ] Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics:
-  - [ ] Fully align skipping and nesting behavior with ANS Forth.
-  - [ ] Support mixed composite tokens and separated bracket forms reliably.
-  - [ ] Add more tests covering nested, empty branches, and edge tokenization cases.
-
 ## Resolved Issues
 - ~~Correct `>NUMBER` parsing semantics~~ **[RESOLVED 2025-01-XX]**:
   - ~~Ensure proper accumulation for decimal and hex bases.~~
@@ -20,6 +14,10 @@
   - ~~Prevent duplicated content and stray control characters.~~
   - ~~Ensure newline handling matches expectations.~~
   - ~~Add tests for multiple appends and exact byte content.~~
+- ~~Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics~~ **[RESOLVED 2025-11-27]**:
+  - ~~Fully align skipping and nesting behavior with ANS Forth.~~
+  - ~~Support mixed composite tokens and separated bracket forms reliably.~~
+  - ~~Add more tests covering nested, empty branches, and edge tokenization cases.~~
 
 _Last updated: 2025-11-27_
 
@@ -112,7 +110,7 @@ _Last updated: 2025-11-27_
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (341/341)
+- [x] Full test suite passing (349/349)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
