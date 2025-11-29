@@ -64,6 +64,34 @@ class Program
                 // Floating point word set (subset)
                 "F.", "F!", "F@", "F+", "F-", "F*", "F/", "F>S", "S>F", "FABS", "FNEGATE",
                 "FLOOR", "FROUND", "FEXP", "FLOG", "FSIN", "FCOS", "FTAN", "FASIN", "FACOS", "FATAN2",
+            },
+            ["double-number"] = new[]
+            {
+                "2ROT", "D2*", "D2/", "D<", "D=", "D>S", "DABS", "DMAX", "DMIN", "DNEGATE", "DU<",
+            },
+            ["facility"] = new[]
+            {
+                "AT-XY", "PAGE", "MS", "TIME&DATE",
+            },
+            ["local"] = new[]
+            {
+                "(LOCAL)", "LOCALS|",
+            },
+            ["memory-allocation"] = new[]
+            {
+                "ALLOCATE", "FREE", "RESIZE",
+            },
+            ["programming-tools"] = new[]
+            {
+                "AHEAD", "CS-PICK", "CS-ROLL", "DUMP", "FORGET", "SEE", "WORDS",
+            },
+            ["search-order"] = new[]
+            {
+                "DEFINITIONS", "FORTH-WORDLIST", "GET-CURRENT", "GET-ORDER", "SEARCH-WORDLIST", "SET-CURRENT", "SET-ORDER", "ALSO", "ONLY", "PREVIOUS",
+            },
+            ["string"] = new[]
+            {
+                "-TRAILING", "/STRING", "BLANK", "CMOVE", "CMOVE>", "COMPARE", "SEARCH", "SLITERAL",
             }
         };
 

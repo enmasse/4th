@@ -128,6 +128,57 @@
 
 ## Missing ANS Forth words (tracked by `ans-diff`)
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
+- The following sets are now tracked: `double-number`, `facility`, `local`, `memory-allocation`, `programming-tools`, `search-order`, `string`.
 
-## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
-- None (all gaps filled)
+## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
+- `(LOCAL)`
+- `2ROT`
+- `AHEAD`
+- `ALSO`
+- `AT-XY`
+- `BLANK`
+- `CMOVE`
+- `CMOVE>`
+- `CS-PICK`
+- `CS-ROLL`
+- `D<`
+- `D=`
+- `D>S`
+- `D2*`
+- `D2/`
+- `DABS`
+- `DMAX`
+- `DMIN`
+- `DNEGATE`
+- `DU<`
+- `FABS`
+- `FACOS`
+- `FASIN`
+- `FATAN2`
+- `FCOS`
+- `FEXP`
+- `FILE-POSITION`
+- `FILE-STATUS`
+- `FLOG`
+- `FLOOR`
+- `FORTH-WORDLIST`
+- `FROUND`
+- `FSIN`
+- `FTAN`
+- `GET-CURRENT`
+- `INCLUDE-FILE`
+- `INCLUDED`
+- `LOCALS|`
+- `MS`
+- `ONLY`
+- `PAGE`
+- `RENAME-FILE`
+- `RESIZE`
+- `RESTORE-INPUT`
+- `S>F`
+- `SAVE-INPUT`
+- `SEARCH-WORDLIST`
+- `SET-CURRENT`
+- `SLITERAL`
+- `SOURCE-ID`
+- `TIME&DATE`
