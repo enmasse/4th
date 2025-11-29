@@ -131,4 +131,35 @@ internal static partial class CorePrimitives
         }
         return Task.CompletedTask;
     }
+
+    [Primitive("RESIZE", HelpString = "RESIZE ( a-addr1 u -- a-addr2 ior ) - resize allocated memory")]
+    private static Task Prim_Resize(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "RESIZE");
+        var u = ToLong(i.PopInternal());
+        var addr1 = ToLong(i.PopInternal());
+        if (u < 0)
+        {
+            i.Push(0L);
+            i.Push(-1L);
+            return Task.CompletedTask;
+        }
+        if (!i._heapAllocations.TryGetValue(addr1, out var oldAlloc))
+        {
+            i.Push(0L);
+            i.Push(-1L);
+            return Task.CompletedTask;
+        }
+        var (oldBytes, oldSize) = oldAlloc;
+        var newBytes = new byte[u];
+        var addr2 = i._heapPtr;
+        i._heapAllocations[addr2] = (newBytes, u);
+        i._heapPtr += u;
+        var copySize = Math.Min(oldSize, u);
+        Array.Copy(oldBytes, newBytes, copySize);
+        i._heapAllocations.Remove(addr1);
+        i.Push(addr2);
+        i.Push(0L);
+        return Task.CompletedTask;
+    }
 }

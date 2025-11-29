@@ -427,7 +427,19 @@ namespace Forth.Core.Interpreter
                 }
                 catch
                 {
-                    // Fall back to in-memory store on any mmf error
+                    // Fall back to in-memory store on any error
+                }
+            }
+
+            // Check heap allocations
+            foreach (var kv in _heapAllocations)
+            {
+                var start = kv.Key;
+                var (bytes, size) = kv.Value;
+                if (addr >= start && addr < start + size)
+                {
+                    bytes[addr - start] = (byte)v;
+                    return;
                 }
             }
 
@@ -461,6 +473,19 @@ namespace Forth.Core.Interpreter
                 }
             }
 
+            // Check heap allocations
+            foreach (var kv in _heapAllocations)
+            {
+                var start = kv.Key;
+                var (bytes, size) = kv.Value;
+                if (addr >= start && addr < start + size)
+                {
+                    v = (long)bytes[addr - start];
+                    return;
+                }
+            }
+
+            // Default behavior: read from interpreter memory cells
             if (!_mem.TryGetValue(addr, out v)) v = 0L;
         }
 

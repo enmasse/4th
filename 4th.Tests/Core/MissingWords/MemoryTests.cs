@@ -88,68 +88,106 @@ public class MemoryTests
     }
 
     [Fact]
-    public async Task Blank()
+    public async Task Resize()
     {
         var forth = new ForthInterpreter();
         // Allocate 10 bytes
-        Assert.True(await forth.EvalAsync("10 ALLOCATE DROP"));
+        Assert.True(await forth.EvalAsync("10 ALLOCATE"));
+        var ior = (long)forth.Pop();
+        var addr1 = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+
+        // Fill with 'A'
+        Assert.True(await forth.EvalAsync($"{addr1} 10 65 FILL"));
+
+        // Resize to 20
+        Assert.True(await forth.EvalAsync($"{addr1} 20 RESIZE"));
+        ior = (long)forth.Pop();
+        var addr2 = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+
+        // Check first 10 are 'A'
+        for (int i = 0; i < 10; i++)
+        {
+            Assert.True(await forth.EvalAsync($"{addr2} {i} + C@"));
+            Assert.Equal(65L, (long)forth.Pop());
+        }
+        // Check next 10 are 0
+        for (int i = 10; i < 20; i++)
+        {
+            Assert.True(await forth.EvalAsync($"{addr2} {i} + C@"));
+            Assert.Equal(0L, (long)forth.Pop());
+        }
+
+        // Free new addr
+        Assert.True(await forth.EvalAsync($"{addr2} FREE"));
+        Assert.Single(forth.Stack);
+        ior = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+    }
+
+    [Fact]
+    public async Task ResizeSmaller()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate 10 bytes
+        Assert.True(await forth.EvalAsync("10 ALLOCATE"));
+        var ior = (long)forth.Pop();
+        var addr1 = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+
+        // Fill with 'A'
+        Assert.True(await forth.EvalAsync($"{addr1} 10 65 FILL"));
+
+        // Resize to 5
+        Assert.True(await forth.EvalAsync($"{addr1} 5 RESIZE"));
+        ior = (long)forth.Pop();
+        var addr2 = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+
+        // Check first 5 are 'A'
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.True(await forth.EvalAsync($"{addr2} {i} + C@"));
+            Assert.Equal(65L, (long)forth.Pop());
+        }
+
+        // Free new addr
+        Assert.True(await forth.EvalAsync($"{addr2} FREE"));
+        Assert.Single(forth.Stack);
+        ior = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+    }
+
+    [Fact]
+    public async Task ResizeInvalid()
+    {
+        var forth = new ForthInterpreter();
+        // Resize invalid address
+        Assert.True(await forth.EvalAsync("123 10 RESIZE"));
+        Assert.Equal(2, forth.Stack.Count);
+        var ior = (long)forth.Pop();
         var addr = (long)forth.Pop();
-        // Fill with 'A' first
-        Assert.True(await forth.EvalAsync($"{addr} 10 65 FILL"));
-        // Then blank
-        Assert.True(await forth.EvalAsync($"{addr} 10 BLANK"));
-        // Check first byte is space
-        Assert.True(await forth.EvalAsync($"{addr} C@"));
-        Assert.Equal(32L, (long)forth.Pop());
-        // Check another byte
-        Assert.True(await forth.EvalAsync($"{addr} 1 + C@"));
-        Assert.Equal(32L, (long)forth.Pop());
+        Assert.Equal(-1L, ior); // error
+        Assert.Equal(0L, addr);
     }
 
     [Fact]
-    public async Task CMOVE()
+    public async Task ResizeNegative()
     {
         var forth = new ForthInterpreter();
-        // Allocate src and dst areas
-        Assert.True(await forth.EvalAsync("10 ALLOCATE DROP 10 ALLOCATE DROP"));
-        var dst = (long)forth.Pop();
-        var src = (long)forth.Pop();
-        // Fill src with 'A' to 'J'
-        for (int i = 0; i < 10; i++)
-        {
-            Assert.True(await forth.EvalAsync($"{src} {i} + {65 + i} SWAP C!"));
-        }
-        // CMOVE 5 bytes from src to dst
-        Assert.True(await forth.EvalAsync($"{src} {dst} 5 CMOVE"));
-        // Check dst has 'A' to 'E'
-        for (int i = 0; i < 5; i++)
-        {
-            Assert.True(await forth.EvalAsync($"{dst} {i} + C@"));
-            Assert.Equal(65L + i, (long)forth.Pop());
-        }
-    }
+        // Allocate first
+        Assert.True(await forth.EvalAsync("10 ALLOCATE"));
+        var ior = (long)forth.Pop();
+        var addr = (long)forth.Pop();
+        Assert.Equal(0L, ior);
 
-    [Fact]
-    public async Task CMOVE_Greater()
-    {
-        var forth = new ForthInterpreter();
-        // Allocate src and dst areas
-        Assert.True(await forth.EvalAsync("10 ALLOCATE DROP 10 ALLOCATE DROP"));
-        var dst = (long)forth.Pop();
-        var src = (long)forth.Pop();
-        // Fill src with 'A' to 'J'
-        for (int i = 0; i < 10; i++)
-        {
-            Assert.True(await forth.EvalAsync($"{src} {i} + {65 + i} SWAP C!"));
-        }
-        // CMOVE> 5 bytes from src to dst
-        Assert.True(await forth.EvalAsync($"{src} {dst} 5 CMOVE>"));
-        // Check dst has 'A' to 'E'
-        for (int i = 0; i < 5; i++)
-        {
-            Assert.True(await forth.EvalAsync($"{dst} {i} + C@"));
-            Assert.Equal(65L + i, (long)forth.Pop());
-        }
+        // Resize to negative
+        Assert.True(await forth.EvalAsync($"{addr} -1 RESIZE"));
+        ior = (long)forth.Pop();
+        addr = (long)forth.Pop();
+        Assert.Equal(-1L, ior); // error
+        Assert.Equal(0L, addr);
     }
 
     [Fact]

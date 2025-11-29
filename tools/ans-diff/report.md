@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 265 primitives in code:
+Found 266 primitives in code:
 
 -
 -ROT
@@ -218,6 +218,7 @@ RECURSE
 REFILL
 REPEAT
 REPOSITION-FILE
+RESIZE
 ROT
 RP@
 RSHIFT
@@ -270,7 +271,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (190):
+ANS words present (191):
 -TRAILING
 ,
 ;
@@ -423,6 +424,7 @@ RECURSE
 REFILL
 REPEAT
 REPOSITION-FILE
+RESIZE
 S"
 S>D
 SAVE
@@ -539,7 +541,7 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (47):
+Missing tracked words (46):
 (LOCAL)
 AHEAD
 ALSO
@@ -578,7 +580,6 @@ MS
 ONLY
 PAGE
 RENAME-FILE
-RESIZE
 RESTORE-INPUT
 S>F
 SAVE-INPUT

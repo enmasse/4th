@@ -69,12 +69,13 @@
 - Fixed generated test dependency on `ttester.4th` by copying it to output directory via project configuration.
 - Added ENV wordlist for environment queries (OS, CPU, MEMORY, MACHINE, USER, PWD).
 - Enhanced REPL with command history, HELP/STACK commands, and improved error handling.
-- Extended HELP primitive to show general help when no word specified.
+- Extended HELP primitive to show general help or word-specific help.
 - Added comprehensive tests validating all README examples.
 - Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests.
 - Fixed APPEND-FILE data disambiguation to prevent duplicated content and ensure correct appending behavior.
 - Fixed LIST block formatting to trim null characters, ensuring clean output without control characters.
 - Implemented `DELETE-FILE` to remove files, with tests for typical and edge cases.
+- Implemented `RESIZE` to change file size, with tests for typical and edge cases.
 
 ## Notes
 - **Duplicate primitive detection**: `CreateWords()` now validates that each primitive name is unique within its module, preventing silent shadowing issues.
@@ -125,6 +126,7 @@
 - [x] Implement BLANK primitive with regression tests
 - [x] Implement CMOVE primitive with regression tests
 - [x] Implement CMOVE> primitive with regression tests
+- [x] Implement RESIZE primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -176,7 +178,6 @@
 - ONLY
 - PAGE
 - RENAME-FILE
-- RESIZE
 - RESTORE-INPUT
 - S>F
 - SAVE-INPUT
@@ -184,4 +185,4 @@
 - SET-CURRENT
 - SLITERAL
 - SOURCE-ID
-- TIME&DATE- TIME&DATE- `TIME&DATE`
+- TIME&DATE
