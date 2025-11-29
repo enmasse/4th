@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 266 primitives in code:
+Found 267 primitives in code:
 
 -
 -ROT
@@ -109,6 +109,7 @@ CREATE
 CREATE-FILE
 D-
 D+
+D<
 DECIMAL
 DEFER
 DEFER!
@@ -271,7 +272,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (191):
+ANS words present (192):
 -TRAILING
 ,
 ;
@@ -351,6 +352,7 @@ CREATE
 CREATE-FILE
 D-
 D+
+D<
 DECIMAL
 DEFER
 DEFER!
@@ -541,14 +543,13 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (46):
+Missing tracked words (45):
 (LOCAL)
 AHEAD
 ALSO
 AT-XY
 CS-PICK
 CS-ROLL
-D<
 D=
 D>S
 D2*

@@ -7,7 +7,7 @@ using System.IO;
 Console.WriteLine("Manual test runner: exercise interpreter");
 var f = new ForthInterpreter(new TestIO());
 
-async Task DumpStack(string label, IForthInterpreter inst)
+void DumpStack(string label, IForthInterpreter inst)
 {
     Console.WriteLine(label + ": [" + string.Join(",", inst.Stack) + "]");
 }
@@ -15,20 +15,20 @@ async Task DumpStack(string label, IForthInterpreter inst)
 await f.EvalAsync("INCLUDE \"tests/forth/framework.4th\"");
 await f.EvalAsync("CREATE BUF 16 ALLOT");
 await f.EvalAsync("123 BUF !");
-await DumpStack("after store", f);
+DumpStack("after store", f);
 #if DEBUG
 await f.EvalAsync("LAST-STORE");
-await DumpStack("after LAST-STORE", f);
+DumpStack("after LAST-STORE", f);
 #endif
 await f.EvalAsync("BUF @");
-await DumpStack("after fetch", f);
+DumpStack("after fetch", f);
 await f.EvalAsync("123 =");
-await DumpStack("after compare", f);
+DumpStack("after compare", f);
 
 Console.WriteLine("Manual test: COUNT sequence");
 var fCount = new ForthInterpreter(new TestIO());
 await fCount.EvalAsync("S\" hello\" COUNT SWAP DROP 5 =");
-await DumpStack("after COUNT compare", fCount);
+DumpStack("after COUNT compare", fCount);
 
 Console.WriteLine("Manual test: memory-tests steps inline");
 var f4 = new ForthInterpreter(new TestIO());
