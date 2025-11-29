@@ -88,6 +88,25 @@ public class MemoryTests
     }
 
     [Fact]
+    public async Task Blank()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate 10 bytes
+        Assert.True(await forth.EvalAsync("10 ALLOCATE DROP"));
+        var addr = (long)forth.Pop();
+        // Fill with 'A' first
+        Assert.True(await forth.EvalAsync($"{addr} 10 65 FILL"));
+        // Then blank
+        Assert.True(await forth.EvalAsync($"{addr} 10 BLANK"));
+        // Check first byte is space
+        Assert.True(await forth.EvalAsync($"{addr} C@"));
+        Assert.Equal(32L, (long)forth.Pop());
+        // Check another byte
+        Assert.True(await forth.EvalAsync($"{addr} 1 + C@"));
+        Assert.Equal(32L, (long)forth.Pop());
+    }
+
+    [Fact]
     public async Task Unused_ReturnsRemainingCells()
     {
         var forth = new ForthInterpreter();

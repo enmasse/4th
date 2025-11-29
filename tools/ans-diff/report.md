@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 262 primitives in code:
+Found 263 primitives in code:
 
 -
 -ROT
@@ -82,6 +82,7 @@ BEGIN
 BIN
 BIND
 BL
+BLANK
 BLK
 BLOCK
 BUFFER
@@ -267,7 +268,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (187):
+ANS words present (188):
 -TRAILING
 ,
 ;
@@ -322,6 +323,7 @@ AWAIT
 BASE
 BEGIN
 BL
+BLANK
 BLK
 BLOCK
 BUFFER
@@ -533,12 +535,11 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (50):
+Missing tracked words (49):
 (LOCAL)
 AHEAD
 ALSO
 AT-XY
-BLANK
 CMOVE
 CMOVE>
 CS-PICK

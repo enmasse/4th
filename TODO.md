@@ -40,6 +40,7 @@
 - Implemented File word DELETE-FILE with regression tests.
 - Implemented File word WRITE-LINE with regression tests.
 - Implemented DEFER! and DEFER@ primitives with regression tests.
+- Implemented BLANK primitive with regression tests.
 
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
@@ -120,6 +121,7 @@
 - [x] Implement WRITE-LINE primitive with regression tests
 - [x] Implement 2ROT primitive with regression tests
 - [x] Remove duplicate Forth definitions from prelude.4th for words now implemented as primitives
+- [x] Implement BLANK primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -137,7 +139,6 @@
 - `AHEAD`
 - `ALSO`
 - `AT-XY`
-- `BLANK`
 - `CMOVE`
 - `CMOVE>`
 - `CS-PICK`
@@ -182,4 +183,4 @@
 - `SET-CURRENT`
 - `SLITERAL`
 - `SOURCE-ID`
-- `TIME&DATE`
+- `TIME&DATE`- `TIME&DATE`

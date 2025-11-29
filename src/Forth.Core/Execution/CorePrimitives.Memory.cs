@@ -51,6 +51,9 @@ internal static partial class CorePrimitives
     [Primitive("FILL", HelpString = "FILL ( addr u ch -- ) - fill u bytes at addr with ch")]
     private static Task Prim_FILL(ForthInterpreter i) { i.EnsureStack(3, "FILL"); var ch = ToLong(i.PopInternal()); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative FILL length"); var b = (long)((byte)ch); for (long k = 0; k < u; k++) i.MemSet(addr + k, b); return Task.CompletedTask; }
 
+    [Primitive("BLANK", HelpString = "BLANK ( addr u -- ) - fill u bytes at addr with space")]
+    private static Task Prim_BLANK(ForthInterpreter i) { i.EnsureStack(2, "BLANK"); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative BLANK length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 32); return Task.CompletedTask; }
+
     [Primitive("ERASE", HelpString = "ERASE ( addr u -- ) - set u bytes at addr to zero")]
     private static Task Prim_ERASE(ForthInterpreter i) { i.EnsureStack(2, "ERASE"); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 0); return Task.CompletedTask; }
 
