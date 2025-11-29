@@ -24,4 +24,6 @@ Write-Host "Running ANS compliance diff..." -ForegroundColor Yellow
 dotnet run --project tools/ans-diff -- --sets=all --fail-on-missing=false
 
 # Generate prompt for next task
-Write-Host "`nHealth check complete!" -ForegroundColor GreenWrite-Host "Suggested next action: run ans-diff, read todo, pick something to do." -ForegroundColor Cyan
+Write-Host "`nHealth check complete!" -ForegroundColor Green
+
+exit 0
