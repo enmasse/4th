@@ -1,5 +1,7 @@
-using Forth.Core.Interpreter;
+using Forth.Core.Binding;
+using Forth.Core.Execution;
 using System.Threading.Tasks;
+using Forth.Core.Interpreter;
 
 namespace Forth.Core.Execution;
 
@@ -440,4 +442,78 @@ internal static partial class CorePrimitives
     }
 
     // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
+
+    [Primitive("CASE", IsImmediate = true, HelpString = "CASE - start a case structure")]
+    private static Task Prim_CASE(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "CASE outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.CaseFrame());
+        return Task.CompletedTask;
+    }
+
+    [Primitive("OF", IsImmediate = true, HelpString = "OF - start a case branch")]
+    private static Task Prim_OF(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "OF outside compilation");
+        var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
+        if (cf is null)
+            throw new ForthException(ForthErrorCode.CompileError, "OF without CASE");
+        var litTok = i.ReadNextTokenOrThrow("OF expects a literal value");
+        long lit;
+        i.MemTryGet(i.BaseAddr, out var baseVal);
+        long baseNum = baseVal <= 0 ? 10 : baseVal;
+        if (!NumberParser.TryParse(litTok, def => baseNum, out lit))
+            throw new ForthException(ForthErrorCode.CompileError, "OF expects a number literal");
+        cf.CurrentLiteral = lit;
+        cf.CurrentBranch = new List<Func<ForthInterpreter, Task>>();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ENDOF", IsImmediate = true, HelpString = "ENDOF - end a case branch")]
+    private static Task Prim_ENDOF(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "ENDOF outside compilation");
+        var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
+        if (cf is null || cf.CurrentBranch is null)
+            throw new ForthException(ForthErrorCode.CompileError, "ENDOF without OF");
+        cf.Branches.Add((cf.CurrentLiteral, cf.CurrentBranch));
+        cf.CurrentBranch = null;
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ENDCASE", IsImmediate = true, HelpString = "ENDCASE - end a case structure")]
+    private static Task Prim_ENDCASE(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "ENDCASE outside compilation");
+        var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
+        if (cf is null)
+            throw new ForthException(ForthErrorCode.CompileError, "ENDCASE without CASE");
+        // Remove the CaseFrame from control stack
+        while (i._controlStack.Count > 0 && i._controlStack.Peek() != cf)
+            i._controlStack.Pop();
+        if (i._controlStack.Count > 0)
+            i._controlStack.Pop();
+        // Compile the case execution
+        var branches = cf.Branches.ToList(); // copy
+        var defaultPart = cf.DefaultPart.ToList();
+        i.CurrentList().Add(async ii =>
+        {
+            ii.EnsureStack(1, "CASE");
+            var caseVal = ToLong(ii.PopInternal());
+            foreach (var (lit, branch) in branches)
+            {
+                if (caseVal == lit)
+                {
+                    foreach (var a in branch) await a(ii);
+                    return;
+                }
+            }
+            foreach (var a in defaultPart) await a(ii);
+        });
+        return Task.CompletedTask;
+    }
 }

@@ -5,7 +5,7 @@ Minimal async-capable Forth interpreter core library targeting .NET 9.
 ## Features
 - High-performance core: typed `ForthValue` structs internally (no boxing) with object-based public API
 - Runtime word definition: `: NAME ... ;`, `IMMEDIATE`, `POSTPONE`, `LITERAL`
-- Control flow: `IF ELSE THEN`, `BEGIN WHILE REPEAT`, `BEGIN UNTIL`, `DO LOOP`, `LEAVE`, `UNLOOP`, `RECURSE`
+- Control flow: `IF ELSE THEN`, `BEGIN WHILE REPEAT`, `BEGIN UNTIL`, `DO LOOP`, `LEAVE`, `UNLOOP`, `RECURSE`, `CASE OF ENDOF ENDCASE`
 - Async interop: bind .NET methods returning `Task`, `Task<T>`, `ValueTask`, `ValueTask<T>` via `BIND` / `BINDASYNC` and await using `AWAIT`
 - Concurrency: `SPAWN`, `TASK`, `JOIN`, `TASK?`, `FUTURE`, `YIELD`
 - Stack & memory: `DUP DROP SWAP OVER ROT -ROT`, `@ ! C@ C!`, `ALLOT HERE PAD`, `MOVE FILL ERASE`, double-cell arithmetic

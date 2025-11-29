@@ -18,8 +18,12 @@
   - ~~Fully align skipping and nesting behavior with ANS Forth.~~
   - ~~Support mixed composite tokens and separated bracket forms reliably.~~
   - ~~Add more tests covering nested, empty branches, and edge tokenization cases.~~
+- ~~Implement CASE control structure~~ **[RESOLVED 2025-11-29]**:
+  - ~~Fix CASE, OF, ENDOF, ENDCASE implementation to properly compile and execute case branches.~~
+  - ~~Replace nested IF-based approach with branch collection and sequential execution.~~
+  - ~~Add comprehensive tests for matching, no-match, and default cases.~~
 
-_Last updated: 2025-11-27_
+_Last updated: 2025-11-29_
 
 ## Goal
 - Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
@@ -29,7 +33,7 @@ _Last updated: 2025-11-27_
 
 ## Status — implemented / obvious support (non-exhaustive)
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
-- Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`
+- Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`, `CASE`, `OF`, `ENDOF`, `ENDCASE`
 - Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`, `>BODY`
 - Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
@@ -55,6 +59,7 @@ _Last updated: 2025-11-27_
 - Implemented Core-Ext `COMPARE` with regression tests.
 - Implemented Core-Ext `/STRING` with regression tests.
 - Implemented Core-Ext `ALLOCATE` and `FREE` with regression tests.
+- Implemented CASE control structure (CASE, OF, ENDOF, ENDCASE) with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -112,7 +117,7 @@ _Last updated: 2025-11-27_
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (349/349)
+- [x] Full test suite passing (362/362)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -128,6 +133,7 @@ _Last updated: 2025-11-27_
 - [x] Consider unified string allocation helper for counted strings to reduce duplication
 - [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — expanded coverage implemented
 - [x] Implement SEARCH primitive with regression tests
+- [x] Implement CASE control structure with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -141,14 +147,11 @@ _Last updated: 2025-11-27_
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
 - BUFFER
-- CASE
 - CREATE-FILE
 - DEFER!
 - DEFER@
 - DELETE-FILE
 - EMPTY-BUFFERS
-- ENDCASE
-- ENDOF
 - F>S
 - FABS
 - FACOS
@@ -166,7 +169,6 @@ _Last updated: 2025-11-27_
 - FTAN
 - INCLUDE-FILE
 - INCLUDED
-- OF
 - REFILL
 - RENAME-FILE
 - RESIZE

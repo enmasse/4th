@@ -40,7 +40,7 @@ namespace FourTh.Tests.Tools
             {
                 var reportPath = Path.Combine(root, "tools", "ans-diff", "report.md");
                 var report = File.Exists(reportPath) ? File.ReadAllText(reportPath) : "<no report>";
-                Assert.True(false, $"ans-diff failed (code {proc.ExitCode}).\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}\nREPORT:\n{report}");
+                Assert.Fail($"ans-diff failed (code {proc.ExitCode}).\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}\nREPORT:\n{report}");
             }
         }
     }

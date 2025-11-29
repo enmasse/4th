@@ -23,7 +23,7 @@ public class DotBracketSTests
         Assert.True(await forth.EvalAsync("1 2 3 .[S]"));
         Assert.Single(io.Outputs);
         Assert.Equal("[3] 1 2 3", io.Outputs[0]);
-        Assert.Equal(3, forth.Stack.Count); // .[S] must not change the stack
+        Assert.True(forth.Stack.Count == 3); // .[S] must not change the stack
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class DotBracketSTests
         Assert.True(await forth.EvalAsync(".[S]"));
         Assert.Single(io.Outputs);
         Assert.Equal("[0] ", io.Outputs[0]);
-        Assert.Equal(0, forth.Stack.Count);
+        Assert.True(forth.Stack.Count == 0);
     }
 
     [Fact]
@@ -45,6 +45,6 @@ public class DotBracketSTests
         Assert.True(await forth.EvalAsync("42 .[S]"));
         Assert.Single(io.Outputs);
         Assert.Equal("[1] 42", io.Outputs[0]);
-        Assert.Equal(1, forth.Stack.Count);
+        Assert.True(forth.Stack.Count == 1);
     }
 }

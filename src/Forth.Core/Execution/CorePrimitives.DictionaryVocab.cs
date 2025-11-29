@@ -207,9 +207,11 @@ internal static partial class CorePrimitives
     [Primitive("[']", IsImmediate = true, HelpString = "['] <name> - compile execution token literal")]
     private static Task Prim_BRACKETTICK(ForthInterpreter i)
     {
+#pragma warning disable CS8604 // word is not null here
         var name = i.ReadNextTokenOrThrow("Expected name after [']");
         if (!i.TryResolveWord(name, out var word)) throw new ForthException(ForthErrorCode.UndefinedWord, $"Word not found: {name}");
-        i.CurrentList().Add(ii => { ii.Push(word); return Task.CompletedTask; });
+        i.CurrentList().Add(ii => { ii.Push(word as object); return Task.CompletedTask; });
+#pragma warning restore CS8604
         return Task.CompletedTask;
     }
 
@@ -300,7 +302,7 @@ internal static partial class CorePrimitives
             throw new ForthException(ForthErrorCode.CompileError, "ABORT\" expects quoted token");
         var str = next[1..^1];
         var captured = str;
-        i.CurrentList().Add(async ii =>
+        i.CurrentList().Add(ii =>
         {
             ii.EnsureStack(1, "ABORT\"");
             var flag = ii.PopInternal();
@@ -308,6 +310,7 @@ internal static partial class CorePrimitives
             {
                 throw new ForthException(ForthErrorCode.Unknown, captured);
             }
+            return Task.CompletedTask;
         });
         return Task.CompletedTask;
     }
@@ -463,6 +466,7 @@ internal static partial class CorePrimitives
             chars[k] = (char)(ToLong(v) & 0xFF);
         }
         var str = new string(chars);
+#pragma warning disable CS8604 // word is not null here
         if (i.TryResolveWord(str, out var word))
         {
             i.Push(word);
@@ -473,6 +477,7 @@ internal static partial class CorePrimitives
             i.Push(countedAddr);
             i.Push(0L);
         }
+#pragma warning restore CS8604
         return Task.CompletedTask;
     }
 

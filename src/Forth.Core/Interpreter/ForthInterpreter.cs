@@ -816,7 +816,16 @@ public partial class ForthInterpreter : IForthInterpreter
         private readonly List<Func<ForthInterpreter, Task>> _list = new();
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => _list;
     }
+    /// <summary>
+    /// Gets the IO implementation used by the interpreter.
+    /// </summary>
     public IForthIO IO => _io;
+    /// <summary>
+    /// Converts an object to a long value, supporting common numeric types.
+    /// </summary>
+    /// <param name="v">The object to convert.</param>
+    /// <returns>The long value.</returns>
+    /// <exception cref="ForthException">Thrown if the object is not a supported numeric type.</exception>
     public static long ToLong(object v) => v switch
     {
         long l => l,

@@ -67,4 +67,21 @@ public partial class ForthInterpreter
     /// Exception thrown internally to signal early termination (LEAVE) from a loop during execution.
     /// </summary>
     internal sealed class LoopLeaveException : Exception { }
+
+    /// <summary>
+    /// Frame representing a CASE ... ENDCASE structure under compilation.
+    /// </summary>
+    internal sealed class CaseFrame : CompileFrame
+    {
+        /// <summary>List of branches: (literal, actions)</summary>
+        public List<(long Literal, List<Func<ForthInterpreter, Task>> Branch)> Branches { get; } = new();
+        /// <summary>Instructions for the default case (after all OF branches).</summary>
+        public List<Func<ForthInterpreter, Task>> DefaultPart { get; } = new();
+        /// <summary>Current branch being compiled.</summary>
+        public List<Func<ForthInterpreter, Task>>? CurrentBranch { get; set; }
+        /// <summary>Literal for current branch.</summary>
+        public long CurrentLiteral { get; set; }
+        /// <inheritdoc />
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => CurrentBranch ?? DefaultPart;
+    }
 }
