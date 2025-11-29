@@ -156,11 +156,33 @@ internal static partial class CorePrimitives
         i.RegisterDefinition(name);
         i._lastDefinedWord = created;
         i._decompile[name] = $": {name} ;";
+        i._lastDeferred = name;
         return Task.CompletedTask;
     }
 
     [Primitive("IS", IsImmediate = true, HelpString = "IS <name> - set a deferred to an execution token")]
     private static Task Prim_IS(ForthInterpreter i) { i.EnsureStack(1, "IS"); var name = i.ReadNextTokenOrThrow("Expected deferred name after IS"); var xtObj = i.PopInternal(); if (xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "IS expects an execution token"); if (!i._deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord, $"No such deferred: {name}"); i._deferred[name] = xt; return Task.CompletedTask; }
+
+    [Primitive("DEFER!", HelpString = "DEFER! ( xt -- ) - set the execution token of the most recently defined deferred word")]
+    private static Task Prim_DEFERSTORE(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "DEFER!");
+        var xtObj = i.PopInternal();
+        if (xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "DEFER! expects an execution token");
+        if (string.IsNullOrEmpty(i._lastDeferred)) throw new ForthException(ForthErrorCode.UndefinedWord, "No deferred word defined yet");
+        i._deferred[i._lastDeferred] = xt;
+        return Task.CompletedTask;
+    }
+
+    [Primitive("DEFER@", HelpString = "DEFER@ ( -- xt ) - get the execution token of the most recently defined deferred word")]
+    private static Task Prim_DEFERFETCH(ForthInterpreter i)
+    {
+        if (string.IsNullOrEmpty(i._lastDeferred)) throw new ForthException(ForthErrorCode.UndefinedWord, "No deferred word defined yet");
+        var xt = i._deferred[i._lastDeferred];
+        if (xt is null) throw new ForthException(ForthErrorCode.UndefinedWord, $"Deferred word not set: {i._lastDeferred}");
+        i.Push(xt);
+        return Task.CompletedTask;
+    }
 
     [Primitive("SEE", IsImmediate = true, HelpString = "SEE <name> - display decompiled definition or placeholder")]
     private static Task Prim_SEE(ForthInterpreter i)

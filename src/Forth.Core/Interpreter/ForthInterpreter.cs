@@ -70,6 +70,8 @@ public partial class ForthInterpreter : IForthInterpreter
     internal bool _doesCollecting; // internal
     internal List<string>? _doesTokens; // internal
 
+    internal string? _lastDeferred; // internal
+
     internal List<string>? _tokens; // internal current token stream
     internal int _tokenIndex;       // internal current token index
 

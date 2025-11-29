@@ -66,6 +66,8 @@ _Last updated: 2025-11-29_
 - Implemented CASE control structure (CASE, OF, ENDOF, ENDCASE) with regression tests.
 - Implemented File word DELETE-FILE with regression tests.
 - Implemented File word WRITE-LINE with regression tests.
+- Implemented DEFER! and DEFER@ primitives with regression tests.
+
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -156,32 +158,4 @@ _Last updated: 2025-11-29_
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
 - BUFFER
-- DEFER!
-- DEFER@
 - EMPTY-BUFFERS- F>S
-- FABS
-- FACOS
-- FASIN
-- FATAN2
-- FCOS
-- FEXP
-- FILE-POSITION
-- FILE-STATUS
-- FLOG
-- FLOOR
-- FLUSH
-- FROUND
-- FSIN
-- FTAN
-- INCLUDE-FILE
-- INCLUDED
-- RENAME-FILE
-- RESIZE
-- RESTORE-INPUT
-- S>F
-- SAVE-BUFFERS
-- SAVE-INPUT
-- SCR
-- SOURCE-ID
-
-- UPDATE

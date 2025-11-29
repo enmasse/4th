@@ -71,6 +71,33 @@ public class DefiningWordsTests
     }
 
     /// <summary>
+    /// Intention: Test DEFER! and DEFER@ for setting and getting the execution token of the most recently defined deferred word.
+    /// Expected: DEFER! sets the xt, DEFER@ retrieves it, and the deferred word executes the set xt.
+    /// </summary>
+    [Fact]
+    public async Task DeferStoreAndFetch()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("DEFER MYDEFER : ADD5 5 + ; ' ADD5 DEFER! 10 MYDEFER"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(15L, (long)forth.Stack[0]);
+        forth.Pop(); // clear stack
+
+        // Fetch the xt
+        Assert.True(await forth.EvalAsync("DEFER@"));
+        Assert.Single(forth.Stack);
+        Assert.IsType<Word>(forth.Stack[0]);
+        var xt = (Word)forth.Stack[0];
+        Assert.Equal("ADD5", xt.Name);
+        forth.Pop(); // clear
+
+        // Change to another xt
+        Assert.True(await forth.EvalAsync(": SUB3 3 - ; ' SUB3 DEFER! 10 MYDEFER"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(7L, (long)forth.Stack[0]); // 10 - 3 = 7
+    }
+
+    /// <summary>
     /// Intention: Confirm CONSTANT captures stack top at definition time and always pushes that value.
     /// Expected: "99 CONSTANT N N" leaves 99 on stack consistently.
     /// </summary>

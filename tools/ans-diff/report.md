@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 252 primitives in code:
+Found 254 primitives in code:
 
 -
 -ROT
@@ -106,6 +106,8 @@ D-
 D+
 DECIMAL
 DEFER
+DEFER!
+DEFER@
 DEFINITIONS
 DELETE-FILE
 DEPTH
@@ -257,7 +259,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float
 
-ANS words present (174):
+ANS words present (176):
 -TRAILING
 ,
 ;
@@ -334,6 +336,8 @@ D-
 D+
 DECIMAL
 DEFER
+DEFER!
+DEFER@
 DEFINITIONS
 DELETE-FILE
 DO
@@ -513,10 +517,8 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (30):
+Missing tracked words (28):
 BUFFER
-DEFER!
-DEFER@
 EMPTY-BUFFERS
 F>S
 FABS
