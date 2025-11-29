@@ -102,6 +102,31 @@ public class FileIOTests
     }
 
     [Fact]
+    public async Task File_Status_Code()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        // ensure missing
+        if (File.Exists(path)) File.Delete(path);
+        Assert.True(await forth.EvalAsync($"S\" {path}\" FILE-STATUS"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-1L, (long)forth.Stack[0]); // x: -1 not exists
+        Assert.Equal(0L, (long)forth.Stack[1]); // ior: 0
+
+        // create
+        File.WriteAllText(path, "x");
+        // clear stack for next eval
+        forth = new ForthInterpreter(io);
+        Assert.True(await forth.EvalAsync($"S\" {path}\" FILE-STATUS"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[0]); // x: 0 exists
+        Assert.Equal(0L, (long)forth.Stack[1]); // ior: 0
+
+        if (File.Exists(path)) File.Delete(path);
+    }
+
+    [Fact]
     public async Task Include_Executes_File_Content()
     {
         var io = new TestIO();
@@ -115,6 +140,28 @@ public class FileIOTests
             // INCLUDE executes lines which cause Print and NewLine
             Assert.True(io.Outputs.Count >= 2);
             Assert.Equal("INCLUDED", io.Outputs[0]);
+            Assert.Equal("\n", io.Outputs[1]);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task IncludeFile_Executes_File_Content()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        try
+        {
+            // Write a tiny forth file that prints text and CR
+            File.WriteAllText(path, ".\" INCLUDE-FILED\" CR\n");
+            Assert.True(await forth.EvalAsync($"S\" {path}\" INCLUDE-FILE"));
+            // INCLUDE-FILE executes lines which cause Print and NewLine
+            Assert.True(io.Outputs.Count >= 2);
+            Assert.Equal("INCLUDE-FILED", io.Outputs[0]);
             Assert.Equal("\n", io.Outputs[1]);
         }
         finally
@@ -198,6 +245,71 @@ public class FileIOTests
             Assert.True(await forth.EvalAsync($"{handle} CLOSE-FILE"));
             Assert.Single(forth.Stack);
             Assert.NotEqual(0L, (long)forth.Stack[^1]);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task FilePosition_AfterOpen()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(path, "ABCDEFG");
+            // Open file for read
+            Assert.True(await forth.EvalAsync($"\"{path}\" OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            var handle = (long)forth.Stack[0];
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Get position: should be 0
+            Assert.True(await forth.EvalAsync($"{handle} FILE-POSITION"));
+            Assert.Equal(3, forth.Stack.Count);
+            Assert.Equal(0L, (long)forth.Stack[0]); // low
+            Assert.Equal(0L, (long)forth.Stack[1]); // high
+            Assert.Equal(0L, (long)forth.Stack[2]); // ior
+
+            // Close
+            Assert.True(await forth.EvalAsync($"{handle} CLOSE-FILE"));
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task FilePosition_AfterReposition()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(path, "ABCDEFG");
+            // Open file
+            Assert.True(await forth.EvalAsync($"\"{path}\" OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            var handle = (long)forth.Stack[0];
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Reposition to 3
+            Assert.True(await forth.EvalAsync($"{handle} 3 REPOSITION-FILE"));
+
+            // Get position: should be 3
+            Assert.True(await forth.EvalAsync($"{handle} FILE-POSITION"));
+            Assert.Equal(3, forth.Stack.Count);
+            Assert.Equal(3L, (long)forth.Stack[0]); // low
+            Assert.Equal(0L, (long)forth.Stack[1]); // high
+            Assert.Equal(0L, (long)forth.Stack[2]); // ior
+
+            // Close
+            Assert.True(await forth.EvalAsync($"{handle} CLOSE-FILE"));
         }
         finally
         {
@@ -434,7 +546,7 @@ public class FileIOTests
     }
 
     [Fact]
-    public async Task Reflection_Read_From_Live_FileStream_AfterWrite()
+    public async Task Reflection_Read_From_Live_FileStream_After_Write()
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
@@ -816,7 +928,7 @@ public class FileIOTests
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
         var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
-        // ensure not exists
+        // ensure old doesn't exist
         if (File.Exists(path)) File.Delete(path);
         Assert.True(await forth.EvalAsync($"S\" {path}\" DELETE-FILE"));
         Assert.Single(forth.Stack);
@@ -853,6 +965,69 @@ public class FileIOTests
         finally
         {
             try { if (h >= 0) await forth.EvalAsync($"{h} CLOSE-FILE"); } catch { }
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task RenameFile_RenamesExistingFile()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var oldPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var newPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(oldPath, "content");
+            Assert.True(File.Exists(oldPath));
+            Assert.False(File.Exists(newPath));
+            // S" old" S" new" RENAME-FILE -> ior
+            Assert.True(await forth.EvalAsync($"S\" {oldPath}\" S\" {newPath}\" RENAME-FILE"));
+            Assert.Single(forth.Stack);
+            Assert.Equal(0L, (long)forth.Stack[0]);
+            Assert.False(File.Exists(oldPath));
+            Assert.True(File.Exists(newPath));
+            Assert.Equal("content", File.ReadAllText(newPath));
+        }
+        finally
+        {
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+            if (File.Exists(newPath)) File.Delete(newPath);
+        }
+    }
+
+    [Fact]
+    public async Task RenameFile_NonExistent_ReturnsError()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var oldPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var newPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        // ensure old doesn't exist
+        if (File.Exists(oldPath)) File.Delete(oldPath);
+        Assert.True(await forth.EvalAsync($"S\" {oldPath}\" S\" {newPath}\" RENAME-FILE"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(-1L, (long)forth.Stack[0]);
+    }
+
+    [Fact]
+    public async Task Included_Executes_File_Content()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        try
+        {
+            // Write a tiny forth file that prints text and CR
+            File.WriteAllText(path, ".\" INCLUDED\" CR\n");
+            Assert.True(await forth.EvalAsync($"S\" {path}\" INCLUDED"));
+            // INCLUDED executes lines which cause Print and NewLine
+            Assert.True(io.Outputs.Count >= 2);
+            Assert.Equal("INCLUDED", io.Outputs[0]);
+            Assert.Equal("\n", io.Outputs[1]);
+        }
+        finally
+        {
             if (File.Exists(path)) File.Delete(path);
         }
     }

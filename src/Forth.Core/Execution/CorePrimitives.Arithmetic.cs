@@ -714,4 +714,33 @@ internal static partial class CorePrimitives
         }
         return Task.CompletedTask;
     }
+
+    // DMIN ( d1 d2 -- d3 ) d3 = min(d1, d2)
+    [Primitive("DMIN", HelpString = "DMIN ( d1 d2 -- d3 ) - return the minimum of two double-cell numbers")]
+    private static Task Prim_DMIN(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "DMIN");
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d2_hi = d2_hiFv.LongValue;
+        long d2_lo = d2_loFv.LongValue;
+        long d1_hi = d1_hiFv.LongValue;
+        long d1_lo = d1_loFv.LongValue;
+
+        bool d1_less = (d1_hi < d2_hi) || (d1_hi == d2_hi && d1_lo < d2_lo);
+        if (d1_less)
+        {
+            i._stack.Push(ForthValue.FromLong(d1_lo));
+            i._stack.Push(ForthValue.FromLong(d1_hi));
+        }
+        else
+        {
+            i._stack.Push(ForthValue.FromLong(d2_lo));
+            i._stack.Push(ForthValue.FromLong(d2_hi));
+        }
+        return Task.CompletedTask;
+    }
 }

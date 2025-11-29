@@ -220,4 +220,45 @@ internal static partial class CorePrimitives
         i.Push(u1 - n);
         return Task.CompletedTask;
     }
+
+    [Primitive("PAGE", HelpString = "PAGE ( -- ) - clear the screen")]
+    private static Task Prim_PAGE(ForthInterpreter i) { try { Console.Clear(); } catch { } return Task.CompletedTask; }
+
+    [Primitive("TIME&DATE", HelpString = "TIME&DATE ( -- sec min hour day month year ) - return the current time and date")]
+    private static Task Prim_TIME_DATE(ForthInterpreter i)
+    {
+        var now = DateTime.Now;
+        i.Push((long)now.Second);
+        i.Push((long)now.Minute);
+        i.Push((long)now.Hour);
+        i.Push((long)now.Day);
+        i.Push((long)now.Month);
+        i.Push((long)now.Year);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("AT-XY", HelpString = "AT-XY ( col row -- ) - position cursor at column and row")]
+    private static Task Prim_AT_XY(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "AT-XY");
+        var row = (int)ToLong(i.PopInternal());
+        var col = (int)ToLong(i.PopInternal());
+        try { Console.SetCursorPosition(col, row); } catch { }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("MS", HelpString = "MS ( u -- ) - wait u milliseconds")]
+    private static async Task Prim_MS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "MS");
+        var u = (int)ToLong(i.PopInternal());
+        await Task.Delay(u);
+    }
+
+    [Primitive("SOURCE-ID", HelpString = "SOURCE-ID ( -- 0 | -1 | fileid ) - return the input source identifier")]
+    private static Task Prim_SOURCE_ID(ForthInterpreter i)
+    {
+        i.Push(i.SourceId);
+        return Task.CompletedTask;
+    }
 }

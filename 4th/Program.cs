@@ -35,6 +35,7 @@ if (args.Length > 0)
 
         try
         {
+            interp.SetSourceId(0); // user input
             var keepGoing = await interp.EvalAsync(line);
             Console.WriteLine(" ok");
             if (!keepGoing) break;
@@ -68,6 +69,7 @@ while (true)
     if (string.IsNullOrWhiteSpace(line)) continue;
     try
     {
+        interp.SetSourceId(0); // user input
         var keepGoing = await interp.EvalAsync(line);
         Console.WriteLine(" ok");
         if (!keepGoing) break;

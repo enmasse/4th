@@ -11,7 +11,7 @@ namespace Forth.Core.Execution;
 internal static partial class CorePrimitives
 {
     // Minimal Wordlist representation for DEFINITIONS/WORDLIST behavior
-    private sealed class Wordlist
+    public sealed class Wordlist
     {
         public string Name { get; }
         public Wordlist(string name) => Name = name;
@@ -387,9 +387,13 @@ internal static partial class CorePrimitives
                 if (string.Equals(s, "FORTH", StringComparison.OrdinalIgnoreCase)) list.Add(null);
                 else list.Add(s);
             }
+            else if (obj is Wordlist wl)
+            {
+                list.Add(wl.Name);
+            }
             else
             {
-                throw new ForthException(ForthErrorCode.TypeError, "SET-ORDER expects string names or FORTH");
+                throw new ForthException(ForthErrorCode.TypeError, "SET-ORDER expects string names, FORTH, or Wordlist");
             }
         }
         // The stack had names pushed in order; we popped them LIFO so reverse to get intended order
@@ -517,6 +521,66 @@ internal static partial class CorePrimitives
     private static Task Prim_FORTH_WORDLIST(ForthInterpreter i)
     {
         i.Push(null!);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("GET-CURRENT", HelpString = "GET-CURRENT ( -- wid ) - get the current compilation wordlist")]
+    private static Task Prim_GETCURRENT(ForthInterpreter i)
+    {
+        i.Push(i._currentModule!);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SET-CURRENT", IsImmediate = true, HelpString = "SET-CURRENT ( wid -- ) - set the current compilation wordlist")]
+    private static Task Prim_SETCURRENT(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "SET-CURRENT");
+        var obj = i.PopInternal();
+        string? s = null;
+        if (obj is string ss) s = ss.Trim();
+        else if (obj is Word w && !string.IsNullOrEmpty(w.Name)) s = w.Name.Trim();
+        else if (obj is Wordlist wl) s = wl.Name;
+        else if (obj == null) s = null;
+        if (s is not null || obj == null)
+        {
+            if (s == null || string.Equals(s, "FORTH", StringComparison.OrdinalIgnoreCase))
+                i._currentModule = null;
+            else
+                i._currentModule = s;
+            return Task.CompletedTask;
+        }
+        throw new ForthException(ForthErrorCode.TypeError, "SET-CURRENT expects a wordlist id (string, Word, or Wordlist)");
+    }
+
+    [Primitive("SEARCH-WORDLIST", HelpString = "SEARCH-WORDLIST ( c-addr u wid -- 0 | xt 1 | xt -1 ) - search wordlist for word")]
+    private static Task Prim_SEARCHWORDLIST(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "SEARCH-WORDLIST");
+        var wid = i.PopInternal();
+        var u = ToLong(i.PopInternal());
+        var caddr = ToLong(i.PopInternal());
+        var name = i.ReadMemoryString(caddr, u);
+        string? module = null;
+        if (wid is string s) module = s;
+        else if (wid is Wordlist wl) module = wl.Name;
+        else if (wid == null) module = null;
+        else throw new ForthException(ForthErrorCode.TypeError, "SEARCH-WORDLIST expects wid as string, Wordlist, or null");
+        if (i._dict.TryGetValue((module, name), out var word))
+        {
+            i.Push(word);
+            i.Push(word.IsImmediate ? 1L : -1L);
+        }
+        else
+        {
+            i.Push(0L);
+        }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("ONLY", HelpString = "ONLY ( -- ) - set the search order to the minimum wordlist (FORTH only)")]
+    private static Task Prim_ONLY(ForthInterpreter i)
+    {
+        i.SetOrder(new List<string?> { null });
         return Task.CompletedTask;
     }
 }

@@ -46,10 +46,15 @@
 - Implemented D< primitive with regression tests.
 - Implemented D= primitive with regression tests.
 - Implemented D>S primitive with regression tests.
+- Implemented SOURCE-ID primitive with regression tests.
 - Implemented D2* primitive with regression tests.
 - Implemented D2/ primitive with regression tests.
 - Implemented DABS primitive with regression tests.
 - Implemented AHEAD primitive with regression tests.
+- Implemented Facility PAGE with regression tests.
+- Implemented Facility TIME&DATE with regression tests.
+- Implemented Facility AT-XY with regression tests.
+- Implemented Facility MS with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -146,23 +151,35 @@
 ## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
 - (LOCAL)
 - ALSO
-- AT-XY
 - CS-PICK
 - CS-ROLL
 - GET-CURRENT
 - INCLUDE-FILE
 - INCLUDED
 - LOCALS|
-- MS
+- (LOCAL)
+- ALSO
+- CS-PICK
+- CS-ROLL
+- DMIN
+- FILE-POSITION
+- FILE-STATUS
+- GET-CURRENT
+- INCLUDED
+- LOCALS|
 - ONLY
-- PAGE
-- RENAME-FILE
 - RESTORE-INPUT
 - S>F
 - SAVE-INPUT
-- SEARCH-WORDLIST
 - SET-CURRENT
-- SLITERAL
-- SOURCE-ID
-- TIME&DATE
+- SLITERAL
+
+
+
+
+
+
+
+
+
 

@@ -114,6 +114,19 @@ public partial class ForthInterpreter
     }
 
     /// <summary>
+    /// Gets the current position in an open file stream.
+    /// </summary>
+    /// <param name="handle">File handle.</param>
+    /// <returns>Current position in bytes.</returns>
+    /// <exception cref="ForthException">Thrown if handle invalid.</exception>
+    internal long GetFilePosition(int handle)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+        return fs.Position;
+    }
+
+    /// <summary>
     /// Reads up to <paramref name="count"/> bytes from the file into interpreter linear memory starting at <paramref name="addr"/>.
     /// Diagnostics for last read are stored for tooling.
     /// </summary>

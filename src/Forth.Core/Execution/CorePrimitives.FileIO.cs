@@ -160,6 +160,27 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("FILE-STATUS", HelpString = "FILE-STATUS ( c-addr u -- x ior ) - get file status")]
+    private static Task Prim_FILESTATUS(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FILE-STATUS");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var filename = i.ReadMemoryString(addr, u);
+        try
+        {
+            var exists = System.IO.File.Exists(filename);
+            i.Push(exists ? 0L : -1L); // x: 0 if exists, -1 if not
+            i.Push(0L); // ior success
+        }
+        catch (Exception)
+        {
+            i.Push(0L); // x undefined
+            i.Push(-1L); // ior error
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("FILE-SIZE", HelpString = "FILE-SIZE ( filename -- size | -1 ) - file size in bytes or -1 if error")]
     private static Task Prim_FILESIZE(ForthInterpreter i)
     {
@@ -293,6 +314,27 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("FILE-POSITION", HelpString = "FILE-POSITION ( fileid -- ud ior ) - get current file position")]
+    private static Task Prim_FILEPOSITION(ForthInterpreter i)
+    {
+        var fid = (int)ToLong(i.PopInternal());
+        try
+        {
+            var pos = i.GetFilePosition(fid);
+            // pos is long, for ud (unsigned double), low = pos, high = 0 (assuming pos >= 0)
+            i.Push(pos);
+            i.Push(0L);
+            i.Push(0L); // ior success
+        }
+        catch (Exception)
+        {
+            i.Push(0L);
+            i.Push(0L);
+            i.Push(-1L); // ior error
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("READ-FILE-BYTES", HelpString = "READ-FILE-BYTES ( fid addr u -- cnt ) - read up to u bytes into addr from file")]
     private static Task Prim_READFILEBYTES(ForthInterpreter i)
     {
@@ -376,5 +418,57 @@ internal static partial class CorePrimitives
 
         var text = await System.IO.File.ReadAllTextAsync(pathToken).ConfigureAwait(false);
         await i.EvalAsync(text).ConfigureAwait(false);
+    }
+
+    [Primitive("INCLUDE-FILE", IsImmediate = true, IsAsync = true, HelpString = "INCLUDE-FILE ( i*x c-addr u -- j*x ) - interpret file")]
+    private static async Task Prim_INCLUDEFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "INCLUDE-FILE");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var filename = i.ReadMemoryString(addr, u);
+        if (!System.IO.Path.IsPathRooted(filename))
+        {
+            filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
+        }
+        var text = await System.IO.File.ReadAllTextAsync(filename).ConfigureAwait(false);
+        await i.EvalAsync(text).ConfigureAwait(false);
+    }
+
+    [Primitive("INCLUDED", IsImmediate = true, IsAsync = true, HelpString = "INCLUDED ( i*x c-addr u -- j*x ) - interpret file")]
+    private static async Task Prim_INCLUDED(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "INCLUDED");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var filename = i.ReadMemoryString(addr, u);
+        if (!System.IO.Path.IsPathRooted(filename))
+        {
+            filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
+        }
+        var text = await System.IO.File.ReadAllTextAsync(filename).ConfigureAwait(false);
+        await i.EvalAsync(text).ConfigureAwait(false);
+    }
+
+    [Primitive("RENAME-FILE", HelpString = "RENAME-FILE ( c-addr1 u1 c-addr2 u2 -- ior ) - rename file")]
+    private static Task Prim_RENAMEFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "RENAME-FILE");
+        var u2 = ToLong(i.PopInternal());
+        var addr2 = ToLong(i.PopInternal());
+        var u1 = ToLong(i.PopInternal());
+        var addr1 = ToLong(i.PopInternal());
+        var oldName = i.ReadMemoryString(addr1, u1);
+        var newName = i.ReadMemoryString(addr2, u2);
+        try
+        {
+            File.Move(oldName, newName);
+            i.Push(0L);
+        }
+        catch (Exception)
+        {
+            i.Push(-1L);
+        }
+        return Task.CompletedTask;
     }
 }

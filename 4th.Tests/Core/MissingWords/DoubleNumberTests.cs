@@ -502,4 +502,59 @@ public class DoubleNumberTests
         Assert.Equal(long.MaxValue, (long)f.Stack[0]);
         Assert.Equal(0L, (long)f.Stack[1]);
     }
+
+    [Fact]
+    public async Task DMIN_FirstSmaller()
+    {
+        var f = new ForthInterpreter();
+        // 4 0 5 0 DMIN should return 4 0
+        Assert.True(await f.EvalAsync("4 0 5 0 DMIN"));
+        Assert.Equal(2, f.Stack.Count);
+        Assert.Equal(4L, (long)f.Stack[0]);
+        Assert.Equal(0L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task DMIN_SecondSmaller()
+    {
+        var f = new ForthInterpreter();
+        // 6 0 5 0 DMIN should return 5 0
+        Assert.True(await f.EvalAsync("6 0 5 0 DMIN"));
+        Assert.Equal(2, f.Stack.Count);
+        Assert.Equal(5L, (long)f.Stack[0]);
+        Assert.Equal(0L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task DMIN_Equal()
+    {
+        var f = new ForthInterpreter();
+        // 5 0 5 0 DMIN should return 5 0
+        Assert.True(await f.EvalAsync("5 0 5 0 DMIN"));
+        Assert.Equal(2, f.Stack.Count);
+        Assert.Equal(5L, (long)f.Stack[0]);
+        Assert.Equal(0L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task DMIN_NegativeNumbers()
+    {
+        var f = new ForthInterpreter();
+        // -4 -1 -5 -1 DMIN should return -5 -1 (-5 < -4)
+        Assert.True(await f.EvalAsync("-4 -1 -5 -1 DMIN"));
+        Assert.Equal(2, f.Stack.Count);
+        Assert.Equal(-5L, (long)f.Stack[0]);
+        Assert.Equal(-1L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task DMIN_LargeNumbers()
+    {
+        var f = new ForthInterpreter();
+        // long.MaxValue 0 long.MaxValue-1 0 DMIN should return long.MaxValue-1 0
+        Assert.True(await f.EvalAsync($"{long.MaxValue} 0 {long.MaxValue - 1} 0 DMIN"));
+        Assert.Equal(2, f.Stack.Count);
+        Assert.Equal(long.MaxValue - 1, (long)f.Stack[0]);
+        Assert.Equal(0L, (long)f.Stack[1]);
+    }
 }

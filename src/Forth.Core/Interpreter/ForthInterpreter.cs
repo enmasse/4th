@@ -61,6 +61,15 @@ public partial class ForthInterpreter : IForthInterpreter
     internal string? CurrentSource => _currentSource;
     internal int CurrentIn => _currentIn;
 
+    private long _currentSourceId = 0; // 0 for console, -1 for string evaluation
+    internal long SourceId => _currentSourceId;
+
+    /// <summary>
+    /// Sets the current input source identifier for SOURCE-ID.
+    /// </summary>
+    /// <param name="id">The source ID: 0 for user input, -1 for string evaluation, or file handle for files.</param>
+    public void SetSourceId(long id) => _currentSourceId = id;
+
     private StringBuilder? _picBuf;
     internal readonly Dictionary<string, Word?> _deferred = new(StringComparer.OrdinalIgnoreCase); // internal
     internal readonly Dictionary<string, string> _decompile = new(StringComparer.OrdinalIgnoreCase); // internal
@@ -117,6 +126,7 @@ public partial class ForthInterpreter : IForthInterpreter
     private readonly List<DefinitionRecord> _definitions = new();
     private int _baselineCount; // protect core/compiler words
     private readonly Task _loadPrelude;
+    private bool _preludeLoaded = false;
 
     // LRU cache size configuration (new)
     private int _maxCachedBlocks;
@@ -218,6 +228,7 @@ public partial class ForthInterpreter : IForthInterpreter
             var prelude = await System.IO.File.ReadAllTextAsync(preludePath);
             await LoadPreludeText(prelude);
         }
+        _preludeLoaded = true;
     }
 
     private async Task LoadPreludeText(string prelude)
@@ -525,13 +536,15 @@ public partial class ForthInterpreter : IForthInterpreter
     /// <returns>True if interpreter continues running; false if exit requested.</returns>
     public async Task<bool> EvalAsync(string line)
     {
-        await _loadPrelude;
+        if (!_preludeLoaded) await _loadPrelude;
         return await EvalInternalAsync(line);
     }
 
     private async Task<bool> EvalInternalAsync(string line)
     {
+        _currentSourceId = -1; // string evaluation
         ArgumentNullException.ThrowIfNull(line);
+
         // Track current source and reset input index for this evaluation
         _currentSource = line;
         _currentIn = 0;
