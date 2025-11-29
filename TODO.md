@@ -39,7 +39,7 @@ _Last updated: 2025-11-29_
 - Definitions / compilation words: `:`, `;`, `IMMEDIATE`, `POSTPONE`, `[`, `]`, `'`, `LITERAL`
 - Control flow: `IF`, `ELSE`, `THEN`, `BEGIN`, `WHILE`, `REPEAT`, `UNTIL`, `DO`, `LOOP`, `LEAVE`, `UNLOOP`, `I`, `J`, `RECURSE`, `CASE`, `OF`, `ENDOF`, `ENDCASE`
 - Defining words: `CREATE`, `DOES>`, `VARIABLE`, `CONSTANT`, `VALUE`, `TO`, `DEFER`, `IS`, `MARKER`, `FORGET`, `>BODY`
-- Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
+- Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`, `UNUSED`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
 - Strings & parsing: `S"`, `S`, `."`, `WORD`
 - File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `DELETE-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`, `WRITE-LINE`
@@ -184,5 +184,5 @@ _Last updated: 2025-11-29_
 - SAVE-INPUT
 - SCR
 - SOURCE-ID
-- UNUSED
+
 - UPDATE

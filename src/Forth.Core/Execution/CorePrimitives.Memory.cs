@@ -175,6 +175,9 @@ internal static partial class CorePrimitives
     [Primitive("HERE", HelpString = "HERE ( -- addr ) - push current dictionary allocation pointer")]
     private static Task Prim_HERE(ForthInterpreter i) { i.Push(i._nextAddr); return Task.CompletedTask; }
 
+    [Primitive("UNUSED", HelpString = "UNUSED ( -- u ) - return the number of cells remaining in the data space")]
+    private static Task Prim_UNUSED(ForthInterpreter i) { i.Push(1000000L - i._nextAddr); return Task.CompletedTask; }
+
     [Primitive("PAD", HelpString = "PAD ( -- addr ) - push address of scratch pad buffer")]
     private static Task Prim_PAD(ForthInterpreter i) { i.Push(i._nextAddr + 256); return Task.CompletedTask; }
 

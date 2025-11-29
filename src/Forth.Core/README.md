@@ -8,7 +8,7 @@ Minimal async-capable Forth interpreter core library targeting .NET 9.
 - Control flow: `IF ELSE THEN`, `BEGIN WHILE REPEAT`, `BEGIN UNTIL`, `DO LOOP`, `LEAVE`, `UNLOOP`, `RECURSE`, `CASE OF ENDOF ENDCASE`
 - Async interop: bind .NET methods returning `Task`, `Task<T>`, `ValueTask`, `ValueTask<T>` via `BIND` / `BINDASYNC` and await using `AWAIT`
 - Concurrency: `SPAWN`, `TASK`, `JOIN`, `TASK?`, `FUTURE`, `YIELD`
-- Stack & memory: `DUP DROP SWAP OVER ROT -ROT`, `@ ! C@ C!`, `ALLOT HERE PAD`, `MOVE FILL ERASE`, double-cell arithmetic
+- Stack & memory: `DUP DROP SWAP OVER ROT -ROT`, `@ ! C@ C!`, `ALLOT HERE PAD UNUSED`, `MOVE FILL ERASE`, double-cell arithmetic
 - File & streams: `OPEN-FILE CLOSE-FILE READ-FILE WRITE-FILE APPEND-FILE DELETE-FILE FILE-SIZE REPOSITION-FILE WRITE-LINE`, byte ops `READ-FILE-BYTES WRITE-FILE-BYTES`
 - Blocks: `BLOCK SAVE BLK` with LRU cache
 - Strings & I/O: `S"`, `."`, `TYPE`, `WORD`, pictured numeric `<# # #S HOLD SIGN #>`

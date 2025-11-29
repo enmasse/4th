@@ -86,4 +86,14 @@ public class MemoryTests
         var ior = (long)forth.Pop();
         Assert.Equal(-1L, ior); // error
     }
+
+    [Fact]
+    public async Task Unused_ReturnsRemainingCells()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("UNUSED"));
+        Assert.Single(forth.Stack);
+        var unused = (long)forth.Stack[0];
+        Assert.True(unused > 0); // should have remaining space
+    }
 }
