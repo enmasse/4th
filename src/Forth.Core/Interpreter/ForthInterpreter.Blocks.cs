@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Forth.Core.Interpreter
 {
@@ -536,6 +537,19 @@ namespace Forth.Core.Interpreter
                 var a = addr + k;
                 if (_mem.ContainsKey(a)) _mem.Remove(a);
             }
+        }
+
+        internal void ClearBlockBuffers()
+        {
+            // Evict all currently mapped blocks
+            var blocksToEvict = _blockAddrMap.Keys.ToArray();
+            foreach (var n in blocksToEvict)
+            {
+                EvictBlock(n);
+            }
+            // Clear LRU tracking
+            _blockLru.Clear();
+            _blockLruNodes.Clear();
         }
     }
 }

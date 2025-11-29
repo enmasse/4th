@@ -50,4 +50,32 @@ public class BlockSystemTests
             Assert.Contains($"{i:D2} ", result);
         }
     }
+
+    [Fact]
+    public async Task BufferAssignsBlockBuffer()
+    {
+        var f = new ForthInterpreter();
+        // BUFFER should assign a buffer for block 5 and return address
+        Assert.True(await f.EvalAsync("5 BUFFER"));
+        Assert.True(f.Stack.Count == 1);
+        var addr = (long)f.Stack[0];
+        Assert.True(addr > 0);
+        // Contents should be undefined, but in this impl, initialized to zero
+        f.MemTryGet(addr, out var val);
+        Assert.Equal(0, val);
+    }
+
+    [Fact]
+    public async Task EmptyBuffersClearsAllBuffers()
+    {
+        var f = new ForthInterpreter();
+        // Assign buffers for a few blocks
+        await f.EvalAsync("1 BUFFER DROP");
+        await f.EvalAsync("2 BUFFER DROP");
+        await f.EvalAsync("3 BUFFER DROP");
+        Assert.Equal(3, f.BlockMappingCount);
+        // Empty buffers
+        await f.EvalAsync("EMPTY-BUFFERS");
+        Assert.Equal(0, f.BlockMappingCount);
+    }
 }

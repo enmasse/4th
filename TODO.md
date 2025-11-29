@@ -157,5 +157,8 @@ _Last updated: 2025-11-29_
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
-- BUFFER
-- EMPTY-BUFFERS- F>S
+- FLUSH
+- SAVE-BUFFERS
+- SCR
+- UPDATE
+- F>S

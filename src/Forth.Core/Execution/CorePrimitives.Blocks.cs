@@ -72,6 +72,23 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("BUFFER", HelpString = "BUFFER ( u -- a-addr ) assign a block buffer to block u")]
+    private static Task Prim_BUFFER(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "BUFFER");
+        var n = (int)ToLong(i.PopInternal());
+        var addr = i.GetOrAllocateBlockAddr(n);
+        i.Push((long)addr);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("EMPTY-BUFFERS", HelpString = "EMPTY-BUFFERS ( -- ) unassign all block buffers")]
+    private static Task Prim_EMPTYBUFFERS(ForthInterpreter i)
+    {
+        i.ClearBlockBuffers();
+        return Task.CompletedTask;
+    }
+
     [Primitive("OPEN-BLOCK-FILE", HelpString = "OPEN-BLOCK-FILE <path> open/create block file backing")]
     private static Task Prim_OPENBLOCKFILE(ForthInterpreter i)
     {
