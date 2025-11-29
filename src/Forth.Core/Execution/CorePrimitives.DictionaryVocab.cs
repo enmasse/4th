@@ -253,14 +253,9 @@ internal static partial class CorePrimitives
         }
         else
         {
-            var captured = str;
-            i.CurrentList().Add(ii =>
-            {
-                var a = ii.AllocateCountedString(captured);
-                ii.Push(a + 1);
-                ii.Push((long)captured.Length);
-                return Task.CompletedTask;
-            });
+            var addr = i.AllocateCountedString(str);
+            i.Push(addr + 1);
+            i.Push((long)str.Length);
         }
         return Task.CompletedTask;
     }

@@ -261,4 +261,62 @@ internal static partial class CorePrimitives
         i.Push(i.SourceId);
         return Task.CompletedTask;
     }
+
+    [Primitive("SLITERAL", IsImmediate = true, HelpString = "SLITERAL ( c-addr1 u -- ) ( compiling: -- c-addr2 u ) - compile string literal")]
+    private static Task Prim_SLITERAL(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "SLITERAL can only be used in definitions");
+        i.EnsureStack(2, "SLITERAL");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var str = i.ReadMemoryString(addr, u);
+        i.CurrentList().Add(ii =>
+        {
+            var a = ii.AllocateCountedString(str);
+            ii.Push(a + 1);
+            ii.Push((long)str.Length);
+            return Task.CompletedTask;
+        });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SAVE-INPUT", HelpString = "SAVE-INPUT ( -- xn ... x1 n ) - save current input source state")]
+    private static Task Prim_SAVE_INPUT(ForthInterpreter i)
+    {
+        i.MemTryGet(i.InAddr, out var inVal);
+        i.Push(i.SourceId);
+        i.Push(inVal);
+        i.Push((long)i._tokenIndex);
+        i.Push(i._currentSource ?? "");
+        i.Push(4L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("RESTORE-INPUT", HelpString = "RESTORE-INPUT ( xn ... x1 n -- flag ) - restore input source state")]
+    private static Task Prim_RESTORE_INPUT(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "RESTORE-INPUT");
+        var n = ToLong(i.PopInternal());
+        if (n != 4)
+        {
+            i.Push(-1L);
+            return Task.CompletedTask;
+        }
+        var source = (string)i.PopInternal();
+        var index = (int)ToLong(i.PopInternal());
+        var inVal = i.PopInternal();
+        var id = ToLong(i.PopInternal());
+        if (id != i.SourceId)
+        {
+            i.Push(-1L);
+            return Task.CompletedTask;
+        }
+        i._currentSource = source;
+        i._tokenIndex = index;
+        i._tokens = Tokenizer.Tokenize(source);
+        i._mem[i.InAddr] = ToLong(inVal);
+        i.Push(0L);
+        return Task.CompletedTask;
+    }
 }

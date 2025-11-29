@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 304 primitives in code:
+Found 307 primitives in code:
 
 -
 -ROT
@@ -253,6 +253,7 @@ RENAME-FILE
 REPEAT
 REPOSITION-FILE
 RESIZE
+RESTORE-INPUT
 ROT
 RP@
 RSHIFT
@@ -262,6 +263,7 @@ S"
 S>D
 SAVE
 SAVE-BUFFERS
+SAVE-INPUT
 SCR
 SEARCH
 SEARCH-WORDLIST
@@ -269,6 +271,7 @@ SEE
 SET-CURRENT
 SET-ORDER
 SIGN
+SLITERAL
 SM/REM
 SOURCE
 SOURCE-ID
@@ -309,7 +312,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (229):
+ANS words present (232):
 -TRAILING
 ,
 ;
@@ -497,10 +500,12 @@ RENAME-FILE
 REPEAT
 REPOSITION-FILE
 RESIZE
+RESTORE-INPUT
 S"
 S>D
 SAVE
 SAVE-BUFFERS
+SAVE-INPUT
 SCR
 SEARCH
 SEARCH-WORDLIST
@@ -508,6 +513,7 @@ SEE
 SET-CURRENT
 SET-ORDER
 SIGN
+SLITERAL
 SM/REM
 SOURCE
 SOURCE-ID
@@ -617,12 +623,9 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (8):
+Missing tracked words (5):
 (LOCAL)
 CS-PICK
 CS-ROLL
 LOCALS|
-RESTORE-INPUT
 S>F
-SAVE-INPUT
-SLITERAL

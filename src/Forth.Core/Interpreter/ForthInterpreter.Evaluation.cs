@@ -1,0 +1,294 @@
+using System.Collections.Immutable;
+using System.Text;
+using System.Globalization;
+using System.IO;
+using Forth.Core.Binding;
+
+namespace Forth.Core.Interpreter;
+
+// Partial: evaluation, parsing, and token handling
+public partial class ForthInterpreter
+{
+    // Current source tracking (line and index within it)
+    internal string? _currentSource;
+    internal string? CurrentSource => _currentSource;
+
+    internal long _currentSourceId;
+    internal long SourceId => _currentSourceId;
+
+    /// <summary>
+    /// Sets the current source ID.
+    /// </summary>
+    /// <param name="id">The source ID.</param>
+    public void SetSourceId(long id) => _currentSourceId = id;
+
+    internal List<string>? _tokens; // internal current token stream
+    internal int _tokenIndex;       // internal current token index
+
+    // Token reading helpers used by primitives and source-level operations
+    internal bool TryReadNextToken(out string token)
+    {
+        if (_tokens is null || _tokenIndex >= _tokens.Count)
+        {
+            token = string.Empty;
+            return false;
+        }
+        token = _tokens[_tokenIndex++];
+        return true;
+    }
+
+    internal string ReadNextTokenOrThrow(string message)
+    {
+        if (!TryReadNextToken(out var t) || string.IsNullOrEmpty(t))
+            throw new ForthException(ForthErrorCode.CompileError, message);
+        return t;
+    }
+
+    // Public method for REFILL to set the current source
+    /// <summary>
+    /// Refills the current input source with the specified line, resetting the input index.
+    /// </summary>
+    /// <param name="line">The new input line.</param>
+    public void RefillSource(string line)
+    {
+        _currentSource = line;
+        _mem[_inAddr] = 0;
+    }
+
+    /// <summary>
+    /// Evaluates a single line of Forth source text, loading prelude first if not yet loaded.
+    /// </summary>
+    /// <param name="line">Source line to evaluate.</param>
+    /// <returns>True if interpreter continues running; false if exit requested.</returns>
+    public async Task<bool> EvalAsync(string line)
+    {
+        if (!_preludeLoaded) await _loadPrelude;
+        return await EvalInternalAsync(line);
+    }
+
+    private async Task<bool> EvalInternalAsync(string line)
+    {
+        _currentSourceId = -1; // string evaluation
+        ArgumentNullException.ThrowIfNull(line);
+
+        // Track current source and reset input index for this evaluation
+        _currentSource = line;
+        // reset memory >IN cell
+        _mem[_inAddr] = 0;
+        _tokens = Tokenizer.Tokenize(line);
+
+        // Preprocess idiomatic compound tokens like "['] name" or "[']name" into
+        // the equivalent sequence: "[" "'" name "]" so existing primitives
+        // ([, ', ]) handle the compile-time behaviour without adding new words.
+        if (_tokens is not null && _tokens.Count > 0)
+        {
+            var processed = new List<string>();
+            for (int ti = 0; ti < _tokens.Count; ti++)
+            {
+                var t = _tokens[ti];
+                if (t == "[']")
+                {
+                    // If a following token exists, consume it as the target name.
+                    if (ti + 1 < _tokens.Count)
+                    {
+                        processed.Add("[");
+                        processed.Add("'");
+                        processed.Add(_tokens[ti + 1]);
+                        processed.Add("]");
+                        ti++; // skip the consumed name
+                        continue;
+                    }
+                    // Fallback: expand to [ and ' tokens and continue
+                    processed.Add("[");
+                    processed.Add("'");
+                    continue;
+                }
+
+                // Handle generic bracketed composite like: [ IF ] -> "[IF]"
+                if (t == "[" && ti + 2 < _tokens.Count && _tokens[ti + 2] == "]")
+                {
+                    var inner = _tokens[ti + 1];
+                    // Only synthesize known bracketed forms to avoid changing other uses
+                    var upper = inner.ToUpperInvariant();
+                    if (upper == "IF" || upper == "ELSE" || upper == "THEN")
+                    {
+                        processed.Add("[" + upper + "]");
+                        ti += 2; // consume inner and closing bracket
+                        continue;
+                    }
+                }
+
+                processed.Add(t);
+            }
+            _tokens = processed;
+        }
+
+        _tokenIndex = 0;
+
+        while (TryReadNextToken(out var tok))
+        {
+            if (tok.Length == 0)
+            {
+                continue;
+            }
+
+            if (_doesCollecting)
+            {
+                _doesTokens?.Add(tok);
+                continue;
+            }
+
+            if (!_isCompiling)
+            {
+                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
+                    {
+                        throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
+                    }
+
+                    throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+                }
+
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    Push(tok[1..^1]);
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dnum))
+                {
+                    Push(dnum);
+                    continue;
+                }
+
+                if (TryParseNumber(tok, out var num))
+                {
+                    Push(num);
+                    continue;
+                }
+
+                if (TryResolveWord(tok, out var word) && word is not null)
+                {
+                    await word.ExecuteAsync(this);
+                    continue;
+                }
+
+                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
+            }
+            else
+            {
+                if (tok != ";")
+                {
+                    _currentDefTokens?.Add(tok);
+                }
+
+                if (tok == ";")
+                {
+                    FinishDefinition();
+                    continue;
+                }
+
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(tok[1..^1]);
+                        return Task.CompletedTask;
+                    });
+
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dlit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(dlit);
+                        return Task.CompletedTask;
+                    });
+
+                    continue;
+                }
+
+                if (TryParseNumber(tok, out var lit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(lit);
+                        return Task.CompletedTask;
+                    });
+
+                    continue;
+                }
+
+                if (TryResolveWord(tok, out var cw) && cw is not null)
+                {
+                    if (cw.IsImmediate)
+                    {
+                        if (cw.BodyTokens is { Count: > 0 })
+                        {
+                            _tokens!.InsertRange(_tokenIndex, cw.BodyTokens);
+                            continue;
+                        }
+
+                        await cw.ExecuteAsync(this);
+                        continue;
+                    }
+
+                    CurrentList().Add(async intr => await cw.ExecuteAsync(intr));
+                    continue;
+                }
+
+                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
+            }
+        }
+
+        if (_doesCollecting && !string.IsNullOrEmpty(_lastCreatedName) && _doesTokens is { Count: > 0 })
+        {
+            var bodyLine = string.Join(' ', _doesTokens);
+            var addr = _lastCreatedAddr;
+
+            var newWord = new Word(async intr =>
+            {
+                intr.MemTryGet(addr, out var cur);
+                intr.Push(addr);
+                intr.Push(cur);
+                await intr.EvalAsync(bodyLine).ConfigureAwait(false);
+            })
+            {
+                Name = _lastCreatedName,
+                Module = _currentModule
+            };
+
+            _dict = _dict.SetItem((_currentModule, _lastCreatedName), newWord);
+            RegisterDefinition(_lastCreatedName);
+            _lastDefinedWord = newWord;
+            _doesCollecting = false;
+            _doesTokens = null;
+            _lastCreatedName = null;
+        }
+
+        _tokens = null; // clear stream
+        return !_exitRequested;
+    }
+
+    private bool TryParseNumber(string token, out long value)
+    {
+        long GetBase(long def)
+        {
+            MemTryGet(_baseAddr, out var b);
+            return b <= 0 ? def : b;
+        }
+
+        return NumberParser.TryParse(token, GetBase, out value);
+    }
+
+    private bool TryParseDouble(string token, out double value)
+    {
+        value = 0.0;
+        if (string.IsNullOrEmpty(token)) return false;
+        if (!token.Contains('.') && !token.Contains('e') && !token.Contains('E')) return false;
+        return double.TryParse(token, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
+    }
+}

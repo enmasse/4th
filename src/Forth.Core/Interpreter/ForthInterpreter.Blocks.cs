@@ -7,6 +7,10 @@ using System.Linq;
 
 namespace Forth.Core.Interpreter
 {
+    // Partial: block device simulation and file backing
+    /// <summary>
+    /// Partial class for block device simulation and file backing.
+    /// </summary>
     public partial class ForthInterpreter
     {
         // Block device simulation
