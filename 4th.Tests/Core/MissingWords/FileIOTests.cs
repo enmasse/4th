@@ -787,4 +787,39 @@ public class FileIOTests
         Assert.True(File.Exists(path));
         Assert.Equal(0L, new FileInfo(path).Length); // truncated
     }
+
+    [Fact]
+    public async Task DeleteFile_DeletesExistingFile()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(path, "content");
+            Assert.True(File.Exists(path));
+            // S" path" DELETE-FILE -> ior
+            Assert.True(await forth.EvalAsync($"S\" {path}\" DELETE-FILE"));
+            Assert.Single(forth.Stack);
+            Assert.Equal(0L, (long)forth.Stack[0]);
+            Assert.False(File.Exists(path));
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteFile_NonExistent_ReturnsError()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        // ensure not exists
+        if (File.Exists(path)) File.Delete(path);
+        Assert.True(await forth.EvalAsync($"S\" {path}\" DELETE-FILE"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(-1L, (long)forth.Stack[0]);
+    }
 }

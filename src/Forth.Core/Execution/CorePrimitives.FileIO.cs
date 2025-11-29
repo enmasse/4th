@@ -222,6 +222,32 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("DELETE-FILE", HelpString = "DELETE-FILE ( c-addr u -- ior ) - delete file")]
+    private static Task Prim_DELETEFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "DELETE-FILE");
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var filename = i.ReadMemoryString(addr, u);
+        if (!File.Exists(filename))
+        {
+            i.Push(-1L);
+        }
+        else
+        {
+            try
+            {
+                File.Delete(filename);
+                i.Push(0L);
+            }
+            catch (Exception)
+            {
+                i.Push(-1L);
+            }
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("R/O", HelpString = "R/O ( -- fam ) read-only file access method")]
     private static Task Prim_RO(ForthInterpreter i) { i.Push(0L); return Task.CompletedTask; }
 

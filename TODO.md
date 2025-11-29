@@ -42,7 +42,7 @@ _Last updated: 2025-12-01_
 - Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
 - Strings & parsing: `S"`, `S`, `."`, `WORD`
-- File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`
+- File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `DELETE-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`
   - Stream primitives: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
   - Byte-level handle ops: `READ-FILE-BYTES`, `WRITE-FILE-BYTES`
   - Diagnostics (DEBUG): `LAST-WRITE-BYTES`, `LAST-READ-BYTES`
@@ -64,6 +64,7 @@ _Last updated: 2025-12-01_
 - Implemented Core-Ext `/STRING` with regression tests.
 - Implemented Core-Ext `ALLOCATE` and `FREE` with regression tests.
 - Implemented CASE control structure (CASE, OF, ENDOF, ENDCASE) with regression tests.
+- Implemented File word DELETE-FILE with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -95,6 +96,7 @@ _Last updated: 2025-12-01_
 - Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests.
 - Fixed APPEND-FILE data disambiguation to prevent duplicated content and ensure correct appending behavior.
 - Fixed LIST block formatting to trim null characters, ensuring clean output without control characters.
+- Implemented `DELETE-FILE` to remove files, with tests for typical and edge cases.
 
 ## Notes
 - **Duplicate primitive detection**: `CreateWords()` now validates that each primitive name is unique within its module, preventing silent shadowing issues.
@@ -129,7 +131,7 @@ _Last updated: 2025-12-01_
 - [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
 - [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
 - [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group, grouped by file (nested classes for multi-test files)
-- [x] Build/run generator and validate generated tests (rebuild + `dotnet test`)
+- [x] Build/run generator and validate generated tests (rebuild + `dotext test`)
 - [x] Mark the unified string allocation helper as completed.
 - [x] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
 - [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
@@ -138,6 +140,7 @@ _Last updated: 2025-12-01_
 - [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — expanded coverage implemented
 - [x] Implement SEARCH primitive with regression tests
 - [x] Implement CASE control structure with regression tests
+- [x] Implement DELETE-FILE primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -153,9 +156,7 @@ _Last updated: 2025-12-01_
 - BUFFER
 - DEFER!
 - DEFER@
-- DELETE-FILE
-- EMPTY-BUFFERS
-- F>S
+- EMPTY-BUFFERS- F>S
 - FABS
 - FACOS
 - FASIN
