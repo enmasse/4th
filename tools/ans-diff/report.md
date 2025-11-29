@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 267 primitives in code:
+Found 268 primitives in code:
 
 -
 -ROT
@@ -71,6 +71,7 @@ ABS
 ACCEPT
 ADD-INPUT-LINE
 AGAIN
+AHEAD
 ALIGN
 ALLOCATE
 ALLOT
@@ -272,7 +273,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (192):
+ANS words present (193):
 -TRAILING
 ,
 ;
@@ -319,6 +320,7 @@ ABORT
 ABORT"
 ABS
 ACCEPT
+AHEAD
 ALIGN
 ALLOCATE
 ALLOT
@@ -543,9 +545,8 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (45):
+Missing tracked words (44):
 (LOCAL)
-AHEAD
 ALSO
 AT-XY
 CS-PICK

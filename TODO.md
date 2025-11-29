@@ -44,6 +44,7 @@
 - Implemented CMOVE primitive with regression tests.
 - Implemented CMOVE> primitive with regression tests.
 - Implemented D< primitive with regression tests.
+- Implemented AHEAD primitive with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -137,7 +138,6 @@
 
 ## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
 - (LOCAL)
-- AHEAD
 - ALSO
 - AT-XY
 - CS-PICK

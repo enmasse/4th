@@ -84,4 +84,15 @@ public partial class ForthInterpreter
         /// <inheritdoc />
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => CurrentBranch ?? DefaultPart;
     }
+
+    /// <summary>
+    /// Frame representing an AHEAD ... THEN unconditional forward branch under compilation.
+    /// </summary>
+    internal sealed class AheadFrame : CompileFrame
+    {
+        /// <summary>Instructions for the skipped part (not executed).</summary>
+        public List<Func<ForthInterpreter, Task>> SkipPart { get; } = new();
+        /// <inheritdoc />
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => SkipPart;
+    }
 }

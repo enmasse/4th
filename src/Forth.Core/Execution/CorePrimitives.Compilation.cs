@@ -44,6 +44,7 @@ internal static partial class CorePrimitives
         {
             case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
             case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'": case "RECURSE":
+            case "AHEAD":
                 i._tokens!.Insert(i._tokenIndex, name);
                 return;
         }
@@ -94,6 +95,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("AHEAD", IsImmediate = true, HelpString = "AHEAD - compile unconditional forward branch")]
+    private static Task Prim_AHEAD(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "AHEAD outside compilation");
+        i._controlStack.Push(new Forth.Core.Interpreter.ForthInterpreter.AheadFrame());
+        return Task.CompletedTask;
+    }
+
     [Primitive("ELSE", IsImmediate = true, HelpString = "Begin else-part of an if construct")]
     private static Task Prim_ELSE(ForthInterpreter i)
     {
@@ -111,25 +121,39 @@ internal static partial class CorePrimitives
     {
         if (!i._isCompiling)
             throw new ForthException(ForthErrorCode.CompileError, "THEN outside compilation");
-        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
-            throw new ForthException(ForthErrorCode.CompileError, "THEN without IF");
-        i._controlStack.Pop();
-        var thenPart = ifr.ThenPart;
-        var elsePart = ifr.ElsePart;
-        i.CurrentList().Add(async ii =>
+        if (i._controlStack.Count == 0)
+            throw new ForthException(ForthErrorCode.CompileError, "THEN without matching control structure");
+        var frame = i._controlStack.Peek();
+        if (frame is Forth.Core.Interpreter.ForthInterpreter.IfFrame ifr)
         {
-            ii.EnsureStack(1, "IF");
-            var flag = ii.PopInternal();
-            if (ToBool(flag))
+            i._controlStack.Pop();
+            var thenPart = ifr.ThenPart;
+            var elsePart = ifr.ElsePart;
+            i.CurrentList().Add(async ii =>
             {
-                foreach (var a in thenPart) await a(ii);
-            }
-            else if (elsePart is not null)
-            {
-                foreach (var a in elsePart) await a(ii);
-            }
-        });
-        return Task.CompletedTask;
+                ii.EnsureStack(1, "IF");
+                var flag = ii.PopInternal();
+                if (ToBool(flag))
+                {
+                    foreach (var a in thenPart) await a(ii);
+                }
+                else if (elsePart is not null)
+                {
+                    foreach (var a in elsePart) await a(ii);
+                }
+            });
+            return Task.CompletedTask;
+        }
+        else if (frame is Forth.Core.Interpreter.ForthInterpreter.AheadFrame afr)
+        {
+            i._controlStack.Pop();
+            // For AHEAD, the SkipPart is not executed, so no compilation needed.
+            return Task.CompletedTask;
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.CompileError, "THEN without IF or AHEAD");
+        }
     }
 
     [Primitive("BEGIN", IsImmediate = true, HelpString = "Begin a loop construct")]
