@@ -48,6 +48,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\tests\ttester.4th" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\tests\ttester.4th" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

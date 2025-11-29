@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 261 primitives in code:
+Found 262 primitives in code:
 
 -
 -ROT
@@ -63,6 +63,7 @@ Found 261 primitives in code:
 2OVER
 2R@
 2R>
+2ROT
 2SWAP
 ABORT
 ABORT"
@@ -266,7 +267,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (186):
+ANS words present (187):
 -TRAILING
 ,
 ;
@@ -308,6 +309,7 @@ ANS words present (186):
 2DROP
 2R@
 2R>
+2ROT
 ABORT
 ABORT"
 ABS
@@ -531,9 +533,8 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (51):
+Missing tracked words (50):
 (LOCAL)
-2ROT
 AHEAD
 ALSO
 AT-XY

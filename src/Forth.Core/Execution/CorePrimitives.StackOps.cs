@@ -29,6 +29,25 @@ internal static partial class CorePrimitives
     [Primitive("-ROT", HelpString = "Reverse rotate ( a b c -- c a b )")]
     private static Task Prim_NEGROT(ForthInterpreter i) { i.EnsureStack(3, "-ROT"); var c = i.PopInternal(); var b = i.PopInternal(); var a = i.PopInternal(); i.Push(c); i.Push(a); i.Push(b); return Task.CompletedTask; }
 
+    [Primitive("2ROT", HelpString = "2ROT ( x1 x2 x3 x4 x5 x6 -- x3 x4 x5 x6 x1 x2 ) - rotate three pairs")]
+    private static Task Prim_2ROT(ForthInterpreter i)
+    {
+        i.EnsureStack(6, "2ROT");
+        var x6 = i.PopInternal();
+        var x5 = i.PopInternal();
+        var x4 = i.PopInternal();
+        var x3 = i.PopInternal();
+        var x2 = i.PopInternal();
+        var x1 = i.PopInternal();
+        i.Push(x3);
+        i.Push(x4);
+        i.Push(x5);
+        i.Push(x6);
+        i.Push(x1);
+        i.Push(x2);
+        return Task.CompletedTask;
+    }
+
     [Primitive("PICK", HelpString = "Copy Nth item from top ( n -- ) \nPICK expects index n and pushes the item at that depth")]
     private static Task Prim_PICK(ForthInterpreter i) { i.EnsureStack(1, "PICK"); var n = ToLong(i.PopInternal()); if (n < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: negative index {n}"); if (n >= i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: index {n} exceeds stack depth {i.Stack.Count}"); i.Push(i.StackNthFromTop((int)n + 1)); return Task.CompletedTask; }
 

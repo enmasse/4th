@@ -39,6 +39,17 @@ public sealed class ForthTestGenerator : ISourceGenerator
             }
             if (includeIndex == -1) continue; // No INCLUDE, skip
             var common = string.Join("\n", lines.Take(includeIndex + 1)) + "\n"; // Include the INCLUDE line
+            // Resolve the INCLUDE path to full path
+            var includeLine = lines[includeIndex];
+            var match = Regex.Match(includeLine, @"INCLUDE\s+""([^""]+)""");
+            if (match.Success)
+            {
+                var relPath = match.Groups[1].Value;
+                var fileDir = System.IO.Path.GetDirectoryName(af.Path)!;
+                var fullPath = System.IO.Path.GetFullPath(relPath, fileDir);
+                var newInclude = "INCLUDE \"" + fullPath.Replace("\\", "\\\\") + "\"";
+                common = common.Replace(includeLine, newInclude);
+            }
             var rest = string.Join("\n", lines.Skip(includeIndex + 1)) + "\n";
             var testGroups = ParseTestGroups(rest);
             var fileName = System.IO.Path.GetFileNameWithoutExtension(af.Path);

@@ -3,7 +3,7 @@
 ## Resolved Issues
 
 ## Goal
-- Achieved full ANS-Forth conformity for the targeted word sets (Core, Core-Ext, File, Block, Float). Maintain conformity and consider implementing additional word sets (e.g., Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String) as future extensions.
+- Achieve full ANS-Forth conformity for all word sets (Core, Core-Ext, File, Block, Float, Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String).
 
 ## Method
 - A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words. It now supports multiple sets via `--sets=` (e.g. `--sets=core,core-ext,file,block,float` or `--sets=all`) and `--fail-on-missing=` to toggle CI failures.
@@ -118,6 +118,8 @@
 - [x] Implement CASE control structure with regression tests
 - [x] Implement DELETE-FILE primitive with regression tests
 - [x] Implement WRITE-LINE primitive with regression tests
+- [x] Implement 2ROT primitive with regression tests
+- [x] Remove duplicate Forth definitions from prelude.4th for words now implemented as primitives
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -132,7 +134,6 @@
 
 ## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
 - `(LOCAL)`
-- `2ROT`
 - `AHEAD`
 - `ALSO`
 - `AT-XY`
