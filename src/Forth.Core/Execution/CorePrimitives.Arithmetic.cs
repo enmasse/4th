@@ -434,19 +434,13 @@ internal static partial class CorePrimitives
         var q0 = BigInteger.Divide(dividend, divisor);
         var r0 = BigInteger.Remainder(dividend, divisor);
 
-        if (r0 != 0 && ((divisor.Sign > 0 && r0.Sign < 0) || (divisor.Sign < 0 && r0.Sign > 0)))
-        {
-            q0 -= BigInteger.One;
-            r0 += divisor;
-        }
-
         if (q0 < long.MinValue || q0 > long.MaxValue || r0 < long.MinValue || r0 > long.MaxValue)
             throw new ForthException(ForthErrorCode.Unknown, "SM/REM result out of range");
 
         long quot = (long)q0;
         long rem = (long)r0;
-        i._stack.Push(ForthValue.FromLong(rem));
         i._stack.Push(ForthValue.FromLong(quot));
+        i._stack.Push(ForthValue.FromLong(rem));
         return Task.CompletedTask;
     }
 
@@ -528,6 +522,196 @@ internal static partial class CorePrimitives
         long d1_lo = d1_loFv.LongValue;
         bool less = (d1_hi < d2_hi) || (d1_hi == d2_hi && d1_lo < d2_lo);
         i._stack.Push(ForthValue.FromLong(less ? -1L : 0L));
+        return Task.CompletedTask;
+    }
+
+    // D= ( d1 d2 -- flag ) true if d1 == d2
+    [Primitive("D=", HelpString = "D= ( d1 d2 -- flag ) - true if d1 == d2")]
+    private static Task Prim_DEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "D=");
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d2_hi = d2_hiFv.LongValue;
+        long d2_lo = d2_loFv.LongValue;
+        long d1_hi = d1_hiFv.LongValue;
+        long d1_lo = d1_loFv.LongValue;
+        bool equal = (d1_hi == d2_hi) && (d1_lo == d2_lo);
+        i._stack.Push(ForthValue.FromLong(equal ? -1L : 0L));
+        return Task.CompletedTask;
+    }
+
+    // D>S ( d -- n ) convert double to single by taking the high cell
+    [Primitive("D>S", HelpString = "D>S ( d -- n ) - convert double-cell to single-cell by taking the high cell")]
+    private static Task Prim_DToS(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "D>S");
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d_hi = d_hiFv.LongValue;
+        i._stack.Push(ForthValue.FromLong(d_hi));
+        return Task.CompletedTask;
+    }
+
+    // D2* ( d -- d*2 ) multiply double-cell by 2
+    [Primitive("D2*", HelpString = "D2* ( d -- d*2 ) - multiply double-cell by 2")]
+    private static Task Prim_DTwoStar(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "D2*");
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d_hi = d_hiFv.LongValue;
+        long d_lo = d_loFv.LongValue;
+
+        long low = d_lo << 1;
+        long high = d_hi << 1;
+        if ((d_lo & (1L << 63)) != 0)
+        {
+            high |= 1;
+        }
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
+
+    // D2/ ( d -- d/2 ) divide double-cell by 2
+    [Primitive("D2/", HelpString = "D2/ ( d -- d/2 ) - divide double-cell by 2")]
+    private static Task Prim_DTwoSlash(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "D2/");
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d_hi = d_hiFv.LongValue;
+        long d_lo = d_loFv.LongValue;
+
+        long low = (d_lo >> 1) | ((d_hi & 1) << 63);
+        long high = d_hi >> 1;
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
+
+    // DABS ( d -- |d| ) absolute value of double-cell
+    [Primitive("DABS", HelpString = "DABS ( d -- |d| ) - absolute value of double-cell")]
+    private static Task Prim_DABS(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "DABS");
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d_hi = d_hiFv.LongValue;
+        long d_lo = d_loFv.LongValue;
+
+        var d = (new BigInteger(d_hi) << 64) + new BigInteger(d_lo);
+        var abs = BigInteger.Abs(d);
+        var mask = (BigInteger.One << 64) - 1;
+        var lowBig = abs & mask;
+        var highBig = abs >> 64;
+
+        long low = (long)(ulong)lowBig;
+        long high = (long)highBig;
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
+
+
+    // DNEGATE ( d -- -d ) negate double-cell
+    [Primitive("DNEGATE", HelpString = "DNEGATE ( d -- -d ) - negate double-cell")]
+    private static Task Prim_DNEGATE(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "DNEGATE");
+        var d_hiFv = i._stack.PopValue();
+        var d_loFv = i._stack.PopValue();
+        if (d_hiFv.Type != VT.Long || d_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d_hi = d_hiFv.LongValue;
+        long d_lo = d_loFv.LongValue;
+
+        var d = (new BigInteger(d_hi) << 64) + new BigInteger(d_lo);
+        var neg = -d;
+        var mask = (BigInteger.One << 64) - 1;
+        var lowBig = neg & mask;
+        var highBig = neg >> 64;
+
+        long low = (long)(ulong)lowBig;
+        long high = (long)highBig;
+
+        i._stack.Push(ForthValue.FromLong(low));
+        i._stack.Push(ForthValue.FromLong(high));
+        return Task.CompletedTask;
+    }
+
+    // DU< ( ud1 ud2 -- flag ) true if ud1 < ud2 unsigned
+    [Primitive("DU<", HelpString = "DU< ( ud1 ud2 -- flag ) - true if ud1 < ud2 unsigned")]
+    private static Task Prim_DULess(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "DU<");
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d2_hi = d2_hiFv.LongValue;
+        long d2_lo = d2_loFv.LongValue;
+        long d1_hi = d1_hiFv.LongValue;
+        long d1_lo = d1_loFv.LongValue;
+
+        ulong uh1 = (ulong)d1_hi;
+        ulong uh2 = (ulong)d2_hi;
+        bool less;
+        if (uh1 < uh2)
+        {
+            less = true;
+        }
+        else if (uh1 > uh2)
+        {
+            less = false;
+        }
+        else
+        {
+            ulong ul1 = (ulong)d1_lo;
+            ulong ul2 = (ulong)d2_lo;
+            less = ul1 < ul2;
+        }
+        i._stack.Push(ForthValue.FromLong(less ? -1L : 0L));
+        return Task.CompletedTask;
+    }
+
+    // DMAX ( d1 d2 -- d3 ) d3 = max(d1, d2)
+    [Primitive("DMAX", HelpString = "DMAX ( d1 d2 -- d3 ) - return the maximum of two double-cell numbers")]
+    private static Task Prim_DMAX(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "DMAX");
+        var d2_hiFv = i._stack.PopValue();
+        var d2_loFv = i._stack.PopValue();
+        var d1_hiFv = i._stack.PopValue();
+        var d1_loFv = i._stack.PopValue();
+        if (d2_hiFv.Type != VT.Long || d2_loFv.Type != VT.Long || d1_hiFv.Type != VT.Long || d1_loFv.Type != VT.Long) throw new ForthException(ForthErrorCode.TypeError, "Expected longs");
+        long d2_hi = d2_hiFv.LongValue;
+        long d2_lo = d2_loFv.LongValue;
+        long d1_hi = d1_hiFv.LongValue;
+        long d1_lo = d1_loFv.LongValue;
+
+        bool d1_greater = (d1_hi > d2_hi) || (d1_hi == d2_hi && d1_lo > d2_lo);
+        if (d1_greater)
+        {
+            i._stack.Push(ForthValue.FromLong(d1_lo));
+            i._stack.Push(ForthValue.FromLong(d1_hi));
+        }
+        else
+        {
+            i._stack.Push(ForthValue.FromLong(d2_lo));
+            i._stack.Push(ForthValue.FromLong(d2_hi));
+        }
         return Task.CompletedTask;
     }
 }

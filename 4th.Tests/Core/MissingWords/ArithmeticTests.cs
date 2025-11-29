@@ -74,11 +74,11 @@ public class ArithmeticTests
     {
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("7 0 3 SM/REM"));
-        Assert.Equal(new long[] { 1, 2 }, forth.Stack.Select(o => (long)o).ToArray()); // 7 / 3 = 2 rem 1
+        Assert.Equal(new long[] { 2, 1 }, forth.Stack.Select(o => (long)o).ToArray()); // 7 / 3 = 2 rem 1
 
         var forth2 = new ForthInterpreter();
         Assert.True(await forth2.EvalAsync("-7 -1 3 SM/REM"));
-        Assert.Equal(new long[] { 2, -3 }, forth2.Stack.Select(o => (long)o).ToArray()); // floored: -7 / 3 = -3 rem 2
+        Assert.Equal(new long[] { -2, -1 }, forth2.Stack.Select(o => (long)o).ToArray()); // symmetric: -7 / 3 = -2 rem -1
     }
 
     [Fact]

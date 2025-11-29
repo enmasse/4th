@@ -512,4 +512,11 @@ internal static partial class CorePrimitives
         }
         return Task.CompletedTask;
     }
+
+    [Primitive("FORTH-WORDLIST", HelpString = "FORTH-WORDLIST ( -- wid ) - push the wordlist id for the FORTH wordlist")]
+    private static Task Prim_FORTH_WORDLIST(ForthInterpreter i)
+    {
+        i.Push(null!);
+        return Task.CompletedTask;
+    }
 }

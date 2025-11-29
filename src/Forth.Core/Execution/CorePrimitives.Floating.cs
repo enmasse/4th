@@ -194,4 +194,117 @@ internal static partial class CorePrimitives
         i.Push(n);
         return Task.CompletedTask;
     }
+
+    [Primitive("FABS", HelpString = "FABS ( r -- |r| ) - floating-point absolute value")]
+    private static Task Prim_FABS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FABS");
+        var a = i.PopInternal();
+        var res = Math.Abs(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FLOOR", HelpString = "FLOOR ( r -- n ) - convert floating-point number to integer by flooring")]
+    private static Task Prim_FLOOR(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FLOOR");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        var n = (long)Math.Floor(d);
+        i.Push(n);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FROUND", HelpString = "FROUND ( r -- n ) - convert floating-point number to integer by rounding")]
+    private static Task Prim_FROUND(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FROUND");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        var n = (long)Math.Round(d);
+        i.Push(n);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FSIN", HelpString = "FSIN ( r -- r ) - floating-point sine")]
+    private static Task Prim_FSIN(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FSIN");
+        var a = i.PopInternal();
+        var res = Math.Sin(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FTAN", HelpString = "FTAN ( r -- r ) - floating-point tangent")]
+    private static Task Prim_FTAN(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FTAN");
+        var a = i.PopInternal();
+        var res = Math.Tan(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FCOS", HelpString = "FCOS ( r -- r ) - floating-point cosine")]
+    private static Task Prim_FCOS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FCOS");
+        var a = i.PopInternal();
+        var res = Math.Cos(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FEXP", HelpString = "FEXP ( r -- r ) - floating-point exponential (e^r)")]
+    private static Task Prim_FEXP(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FEXP");
+        var a = i.PopInternal();
+        var res = Math.Exp(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FLOG", HelpString = "FLOG ( r -- r ) - floating-point natural logarithm")]
+    private static Task Prim_FLOG(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FLOG");
+        var a = i.PopInternal();
+        var res = Math.Log(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FACOS", HelpString = "FACOS ( r -- r ) - floating-point arccosine")]
+    private static Task Prim_FACOS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FACOS");
+        var a = i.PopInternal();
+        var res = Math.Acos(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FASIN", HelpString = "FASIN ( r -- r ) - floating-point arcsine")]
+    private static Task Prim_FASIN(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FASIN");
+        var a = i.PopInternal();
+        var res = Math.Asin(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FATAN2", HelpString = "FATAN2 ( y x -- r ) - floating-point arctangent of y/x")]
+    private static Task Prim_FATAN2(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FATAN2");
+        var x = i.PopInternal();
+        var y = i.PopInternal();
+        var res = Math.Atan2(ToDoubleFromObj(y), ToDoubleFromObj(x));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
 }

@@ -126,6 +126,196 @@ public class FloatingPointTests
         Assert.Equal(0L, (long)forth.Stack[2]);
     }
 
+    [Fact]
+    public async Task FABS_AbsoluteValue()
+    {
+        var forth = new ForthInterpreter();
+        // Positive float
+        Assert.True(await forth.EvalAsync("3.5 FABS"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(3.5, (double)forth.Stack[0], 10);
+
+        // Negative float
+        Assert.True(await forth.EvalAsync("-2.5 FABS"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(2.5, (double)forth.Stack[1], 10);
+
+        // Zero
+        Assert.True(await forth.EvalAsync("0.0 FABS"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(0.0, (double)forth.Stack[2], 10);
+    }
+
+    [Fact]
+    public async Task FLOOR_Flooring()
+    {
+        var forth = new ForthInterpreter();
+        // Positive float
+        Assert.True(await forth.EvalAsync("3.7 FLOOR"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(3L, (long)forth.Stack[0]);
+
+        // Negative float
+        Assert.True(await forth.EvalAsync("-2.1 FLOOR"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-3L, (long)forth.Stack[1]);
+
+        // Integer
+        Assert.True(await forth.EvalAsync("5.0 FLOOR"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(5L, (long)forth.Stack[2]);
+    }
+
+    [Fact]
+    public async Task FROUND_Rounding()
+    {
+        var forth = new ForthInterpreter();
+        // Positive float
+        Assert.True(await forth.EvalAsync("3.7 FROUND"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(4L, (long)forth.Stack[0]);
+
+        // Negative float
+        Assert.True(await forth.EvalAsync("-2.3 FROUND"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-2L, (long)forth.Stack[1]);
+
+        // Integer
+        Assert.True(await forth.EvalAsync("5.0 FROUND"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(5L, (long)forth.Stack[2]);
+
+        // Tie to even
+        Assert.True(await forth.EvalAsync("2.5 FROUND"));
+        Assert.Equal(4, forth.Stack.Count);
+        Assert.Equal(2L, (long)forth.Stack[3]);
+    }
+
+    [Fact]
+    public async Task FSIN_Sine()
+    {
+        var forth = new ForthInterpreter();
+        // sin(0) = 0
+        Assert.True(await forth.EvalAsync("0.0 FSIN"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // sin(pi/2) ? 1
+        Assert.True(await forth.EvalAsync("1.5707963267948966 FSIN"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1.0, (double)forth.Stack[1], 5);
+
+        // sin(pi) ? 0
+        Assert.True(await forth.EvalAsync("3.141592653589793 FSIN"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(0.0, (double)forth.Stack[2], 10);
+    }
+
+    [Fact]
+    public async Task FTAN_Tangent()
+    {
+        var forth = new ForthInterpreter();
+        // tan(0) = 0
+        Assert.True(await forth.EvalAsync("0.0 FTAN"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // tan(pi/4) ? 1
+        Assert.True(await forth.EvalAsync("0.7853981633974483 FTAN"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1.0, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FCOS_Cosine()
+    {
+        var forth = new ForthInterpreter();
+        // cos(0) = 1
+        Assert.True(await forth.EvalAsync("0.0 FCOS"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(1.0, (double)forth.Stack[0], 10);
+
+        // cos(pi) ? -1
+        Assert.True(await forth.EvalAsync("3.141592653589793 FCOS"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-1.0, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FEXP_Exponential()
+    {
+        var forth = new ForthInterpreter();
+        // exp(0) = 1
+        Assert.True(await forth.EvalAsync("0.0 FEXP"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(1.0, (double)forth.Stack[0], 10);
+
+        // exp(1) ? e ? 2.718
+        Assert.True(await forth.EvalAsync("1.0 FEXP"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(2.718281828459045, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FLOG_Logarithm()
+    {
+        var forth = new ForthInterpreter();
+        // log(1) = 0
+        Assert.True(await forth.EvalAsync("1.0 FLOG"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // log(e) = 1
+        Assert.True(await forth.EvalAsync("2.718281828459045 FLOG"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1.0, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FACOS_Arccosine()
+    {
+        var forth = new ForthInterpreter();
+        // acos(1) = 0
+        Assert.True(await forth.EvalAsync("1.0 FACOS"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // acos(0) = pi/2
+        Assert.True(await forth.EvalAsync("0.0 FACOS"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1.5707963267948966, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FASIN_Arcsine()
+    {
+        var forth = new ForthInterpreter();
+        // asin(0) = 0
+        Assert.True(await forth.EvalAsync("0.0 FASIN"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // asin(1) = pi/2
+        Assert.True(await forth.EvalAsync("1.0 FASIN"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(1.5707963267948966, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FATAN2_Arctangent2()
+    {
+        var forth = new ForthInterpreter();
+        // atan2(0, 1) = 0
+        Assert.True(await forth.EvalAsync("0.0 1.0 FATAN2"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(0.0, (double)forth.Stack[0], 10);
+
+        // atan2(1, 1) = pi/4
+        Assert.True(await forth.EvalAsync("1.0 1.0 FATAN2"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(0.7853981633974483, (double)forth.Stack[1], 5);
+    }
+
     private sealed class TestIO : IForthIO
     {
         public readonly System.Collections.Generic.List<string> Outputs = new();

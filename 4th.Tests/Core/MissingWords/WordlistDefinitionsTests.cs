@@ -20,4 +20,13 @@ public class WordlistDefinitionsTests
         // Words in core should not include X
         Assert.True(await f.EvalAsync("WORDS"));
     }
+
+    [Fact]
+    public async Task ForthWordlist_ReturnsNull()
+    {
+        var f = new ForthInterpreter();
+        Assert.True(await f.EvalAsync("FORTH-WORDLIST"));
+        Assert.Single(f.Stack);
+        Assert.Null(f.Stack[0]);
+    }
 }

@@ -44,6 +44,11 @@
 - Implemented CMOVE primitive with regression tests.
 - Implemented CMOVE> primitive with regression tests.
 - Implemented D< primitive with regression tests.
+- Implemented D= primitive with regression tests.
+- Implemented D>S primitive with regression tests.
+- Implemented D2* primitive with regression tests.
+- Implemented D2/ primitive with regression tests.
+- Implemented DABS primitive with regression tests.
 - Implemented AHEAD primitive with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
@@ -124,6 +129,8 @@
 - [x] Implement CMOVE> primitive with regression tests
 - [x] Implement RESIZE primitive with regression tests
 - [x] Implement D< primitive with regression tests
+- [x] Implement D= primitive with regression tests
+- [x] Implement D>S primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -142,29 +149,6 @@
 - AT-XY
 - CS-PICK
 - CS-ROLL
-- D=
-- D>S
-- D2*
-- D2/
-- DABS
-- DMAX
-- DMIN
-- DNEGATE
-- DU<
-- FABS
-- FACOS
-- FASIN
-- FATAN2
-- FCOS
-- FEXP
-- FILE-POSITION
-- FILE-STATUS
-- FLOG
-- FLOOR
-- FORTH-WORDLIST
-- FROUND
-- FSIN
-- FTAN
 - GET-CURRENT
 - INCLUDE-FILE
 - INCLUDED
