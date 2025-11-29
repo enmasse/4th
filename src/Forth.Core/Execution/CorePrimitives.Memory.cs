@@ -48,6 +48,22 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("CMOVE", HelpString = "CMOVE ( c-addr1 c-addr2 u -- ) - copy u bytes from c-addr1 to c-addr2")]
+    private static Task Prim_CMOVE(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "CMOVE");
+        var u = ToLong(i.PopInternal());
+        var dst = ToLong(i.PopInternal());
+        var src = ToLong(i.PopInternal());
+        if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative CMOVE length");
+        for (long k = 0; k < u; k++)
+        {
+            i.MemTryGet(src + k, out var v);
+            i.MemSet(dst + k, (long)((byte)v));
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("FILL", HelpString = "FILL ( addr u ch -- ) - fill u bytes at addr with ch")]
     private static Task Prim_FILL(ForthInterpreter i) { i.EnsureStack(3, "FILL"); var ch = ToLong(i.PopInternal()); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative FILL length"); var b = (long)((byte)ch); for (long k = 0; k < u; k++) i.MemSet(addr + k, b); return Task.CompletedTask; }
 

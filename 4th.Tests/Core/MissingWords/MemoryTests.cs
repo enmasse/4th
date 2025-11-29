@@ -107,6 +107,29 @@ public class MemoryTests
     }
 
     [Fact]
+    public async Task CMOVE()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate src and dst areas
+        Assert.True(await forth.EvalAsync("10 ALLOCATE DROP 10 ALLOCATE DROP"));
+        var dst = (long)forth.Pop();
+        var src = (long)forth.Pop();
+        // Fill src with 'A' to 'J'
+        for (int i = 0; i < 10; i++)
+        {
+            Assert.True(await forth.EvalAsync($"{src} {i} + {65 + i} SWAP C!"));
+        }
+        // CMOVE 5 bytes from src to dst
+        Assert.True(await forth.EvalAsync($"{src} {dst} 5 CMOVE"));
+        // Check dst has 'A' to 'E'
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.True(await forth.EvalAsync($"{dst} {i} + C@"));
+            Assert.Equal(65L + i, (long)forth.Pop());
+        }
+    }
+
+    [Fact]
     public async Task Unused_ReturnsRemainingCells()
     {
         var forth = new ForthInterpreter();

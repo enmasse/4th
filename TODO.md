@@ -41,7 +41,7 @@
 - Implemented File word WRITE-LINE with regression tests.
 - Implemented DEFER! and DEFER@ primitives with regression tests.
 - Implemented BLANK primitive with regression tests.
-
+- Implemented CMOVE primitive with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -122,6 +122,7 @@
 - [x] Implement 2ROT primitive with regression tests
 - [x] Remove duplicate Forth definitions from prelude.4th for words now implemented as primitives
 - [x] Implement BLANK primitive with regression tests
+- [x] Implement CMOVE primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -135,52 +136,51 @@
 - The following sets are now tracked: `double-number`, `facility`, `local`, `memory-allocation`, `programming-tools`, `search-order`, `string`.
 
 ## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
-- `(LOCAL)`
-- `AHEAD`
-- `ALSO`
-- `AT-XY`
-- `CMOVE`
-- `CMOVE>`
-- `CS-PICK`
-- `CS-ROLL`
-- `D<`
-- `D=`
-- `D>S`
-- `D2*`
-- `D2/`
-- `DABS`
-- `DMAX`
-- `DMIN`
-- `DNEGATE`
-- `DU<`
-- `FABS`
-- `FACOS`
-- `FASIN`
-- `FATAN2`
-- `FCOS`
-- `FEXP`
-- `FILE-POSITION`
-- `FILE-STATUS`
-- `FLOG`
-- `FLOOR`
-- `FORTH-WORDLIST`
-- `FROUND`
-- `FSIN`
-- `FTAN`
-- `GET-CURRENT`
-- `INCLUDE-FILE`
-- `INCLUDED`
-- `LOCALS|`
-- `MS`
-- `ONLY`
-- `PAGE`
-- `RENAME-FILE`
-- `RESIZE`
-- `RESTORE-INPUT`
-- `S>F`
-- `SAVE-INPUT`
-- `SEARCH-WORDLIST`
-- `SET-CURRENT`
-- `SLITERAL`
-- `SOURCE-ID`
-- `TIME&DATE`- `TIME&DATE`
+- (LOCAL)
+- AHEAD
+- ALSO
+- AT-XY
+- CMOVE>
+- CS-PICK
+- CS-ROLL
+- D<
+- D=
+- D>S
+- D2*
+- D2/
+- DABS
+- DMAX
+- DMIN
+- DNEGATE
+- DU<
+- FABS
+- FACOS
+- FASIN
+- FATAN2
+- FCOS
+- FEXP
+- FILE-POSITION
+- FILE-STATUS
+- FLOG
+- FLOOR
+- FORTH-WORDLIST
+- FROUND
+- FSIN
+- FTAN
+- GET-CURRENT
+- INCLUDE-FILE
+- INCLUDED
+- LOCALS|
+- MS
+- ONLY
+- PAGE
+- RENAME-FILE
+- RESIZE
+- RESTORE-INPUT
+- S>F
+- SAVE-INPUT
+- SEARCH-WORDLIST
+- SET-CURRENT
+- SLITERAL
+- SOURCE-ID
+- TIME&DATE- `TIME&DATE`
