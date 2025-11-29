@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 264 primitives in code:
+Found 265 primitives in code:
 
 -
 -ROT
@@ -100,6 +100,7 @@ CHARS
 CLOSE-BLOCK-FILE
 CLOSE-FILE
 CMOVE
+CMOVE>
 COMPARE
 CONSTANT
 COUNT
@@ -269,7 +270,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string
 
-ANS words present (189):
+ANS words present (190):
 -TRAILING
 ,
 ;
@@ -340,6 +341,7 @@ CHAR+
 CHARS
 CLOSE-FILE
 CMOVE
+CMOVE>
 COMPARE
 CONSTANT
 COUNT
@@ -537,12 +539,11 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (48):
+Missing tracked words (47):
 (LOCAL)
 AHEAD
 ALSO
 AT-XY
-CMOVE>
 CS-PICK
 CS-ROLL
 D<

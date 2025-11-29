@@ -42,6 +42,7 @@
 - Implemented DEFER! and DEFER@ primitives with regression tests.
 - Implemented BLANK primitive with regression tests.
 - Implemented CMOVE primitive with regression tests.
+- Implemented CMOVE> primitive with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -123,6 +124,7 @@
 - [x] Remove duplicate Forth definitions from prelude.4th for words now implemented as primitives
 - [x] Implement BLANK primitive with regression tests
 - [x] Implement CMOVE primitive with regression tests
+- [x] Implement CMOVE> primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -140,7 +142,6 @@
 - AHEAD
 - ALSO
 - AT-XY
-- CMOVE>
 - CS-PICK
 - CS-ROLL
 - D<
@@ -183,4 +184,4 @@
 - SET-CURRENT
 - SLITERAL
 - SOURCE-ID
-- TIME&DATE- `TIME&DATE`
+- TIME&DATE- TIME&DATE- `TIME&DATE`
