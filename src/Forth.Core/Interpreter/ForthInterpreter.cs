@@ -92,6 +92,18 @@ public partial class ForthInterpreter : IForthInterpreter
         return t;
     }
 
+    // Public method for REFILL to set the current source
+    /// <summary>
+    /// Refills the current input source with the specified line, resetting the input index.
+    /// </summary>
+    /// <param name="line">The new input line.</param>
+    public void RefillSource(string line)
+    {
+        _currentSource = line;
+        _currentIn = 0;
+        _mem[_inAddr] = 0;
+    }
+
     // Diagnostics for cell stores (debug)
     internal long _lastStoreAddr;
     internal long _lastStoreValue;

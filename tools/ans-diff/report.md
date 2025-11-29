@@ -1,6 +1,6 @@
 Report generated on 2025-11-29
 
-Found 251 primitives in code:
+Found 252 primitives in code:
 
 -
 -ROT
@@ -205,6 +205,7 @@ READ-FILE
 READ-FILE-BYTES
 READ-LINE
 RECURSE
+REFILL
 REPEAT
 REPOSITION-FILE
 ROT
@@ -256,7 +257,7 @@ YIELD
 
 Tracked sets: core, core-ext, block, file, float
 
-ANS words present (173):
+ANS words present (174):
 -TRAILING
 ,
 ;
@@ -394,6 +395,7 @@ R>
 READ-FILE
 READ-LINE
 RECURSE
+REFILL
 REPEAT
 REPOSITION-FILE
 S"
@@ -511,7 +513,7 @@ WRITE-FILE-BYTES
 XOR
 YIELD
 
-Missing tracked words (31):
+Missing tracked words (30):
 BUFFER
 DEFER!
 DEFER@
@@ -533,7 +535,6 @@ FSIN
 FTAN
 INCLUDE-FILE
 INCLUDED
-REFILL
 RENAME-FILE
 RESIZE
 RESTORE-INPUT

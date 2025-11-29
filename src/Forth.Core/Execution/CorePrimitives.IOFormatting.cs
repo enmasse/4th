@@ -193,6 +193,22 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("REFILL", HelpString = "REFILL ( -- flag ) - refill the input buffer from the input source")]
+    private static Task Prim_REFILL(ForthInterpreter i)
+    {
+        var line = i.ReadLineFromIO();
+        if (line == null)
+        {
+            i.Push(0L);
+        }
+        else
+        {
+            i.RefillSource(line);
+            i.Push(-1L);
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("/STRING", HelpString = "/STRING ( c-addr1 u1 n -- c-addr2 u2 ) - adjust string by n characters")]
     private static Task Prim_SlashString(ForthInterpreter i)
     {

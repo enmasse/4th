@@ -23,6 +23,10 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Running ANS compliance diff..." -ForegroundColor Yellow
 dotnet run --project tools/ans-diff -- --sets=all --fail-on-missing=false
 
+# List TODO.md contents
+Write-Host "Listing TODO.md contents..." -ForegroundColor Yellow
+Get-Content TODO.md
+
 # Generate prompt for next task
 Write-Host "`nHealth check complete!" -ForegroundColor Green
 
