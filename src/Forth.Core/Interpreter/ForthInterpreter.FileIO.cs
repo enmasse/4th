@@ -2,6 +2,7 @@ using System.IO;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using System;
+using System.Text;
 
 namespace Forth.Core.Interpreter;
 
@@ -164,5 +165,25 @@ public partial class ForthInterpreter
         _lastWriteBuffer = buffer;
         _lastWritePositionAfter = fs.Position;
         return count;
+    }
+
+    /// <summary>
+    /// Writes a string to an open file handle.
+    /// Diagnostics for last write are captured.
+    /// </summary>
+    /// <param name="handle">File handle.</param>
+    /// <param name="s">String to write.</param>
+    /// <exception cref="ForthException">Thrown for invalid handle or non-writable file.</exception>
+    internal void WriteStringToFile(int handle, string s)
+    {
+        if (!_openFiles.TryGetValue(handle, out var fs))
+            throw new ForthException(ForthErrorCode.CompileError, $"Invalid file handle: {handle}");
+        if (!fs.CanWrite) throw new ForthException(ForthErrorCode.CompileError, "File not open for writing");
+        var bytes = Encoding.UTF8.GetBytes(s);
+        fs.Write(bytes, 0, bytes.Length);
+        try { fs.Flush(true); } catch { fs.Flush(); }
+        _lastWriteHandle = handle;
+        _lastWriteBuffer = bytes;
+        _lastWritePositionAfter = fs.Position;
     }
 }

@@ -822,4 +822,38 @@ public class FileIOTests
         Assert.Single(forth.Stack);
         Assert.Equal(-1L, (long)forth.Stack[0]);
     }
+
+    [Fact]
+    public async Task WriteLine_WritesStringWithNewline()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        long h = -1;
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+            // Open for write
+            Assert.True(await forth.EvalAsync($"\"{path}\" 1 OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            h = (long)forth.Stack[^1];
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Write "Hello" followed by newline
+            Assert.True(await forth.EvalAsync($"S\" Hello\" {h} WRITE-LINE"));
+
+            // Close
+            Assert.True(await forth.EvalAsync($"{h} CLOSE-FILE"));
+            Assert.True(await forth.EvalAsync("DROP"));
+
+            // Read file and check content
+            var content = File.ReadAllText(path);
+            Assert.Equal("Hello\n", content);
+        }
+        finally
+        {
+            try { if (h >= 0) await forth.EvalAsync($"{h} CLOSE-FILE"); } catch { }
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
 }

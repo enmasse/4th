@@ -27,7 +27,7 @@
   - ~~Update OpenFileHandle to support create mode.~~
   - ~~Add unit tests and Forth tester tests.~~
 
-_Last updated: 2025-12-01_
+_Last updated: 2025-11-29_
 
 ## Goal
 - Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
@@ -42,7 +42,7 @@ _Last updated: 2025-12-01_
 - Stack / memory: `@`, `!`, `C@`, `C!`, `,`, `ALLOT`, `HERE`, `PAD`, `COUNT`, `MOVE`, `FILL`, `ERASE`, `S>D`, `SP!`, `SP@`
 - I/O: `.`, `.S`, `CR`, `EMIT`, `TYPE`, `WORDS`, pictured numeric (`<#`, `HOLD`, `#`, `#S`, `SIGN`, `#>`)
 - Strings & parsing: `S"`, `S`, `."`, `WORD`
-- File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `DELETE-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`
+- File I/O (subset): `READ-FILE`, `WRITE-FILE`, `APPEND-FILE`, `DELETE-FILE`, `FILE-EXISTS`, `INCLUDE`, `LOAD`, `WRITE-LINE`
   - Stream primitives: `OPEN-FILE`, `CLOSE-FILE`, `FILE-SIZE`, `REPOSITION-FILE`
   - Byte-level handle ops: `READ-FILE-BYTES`, `WRITE-FILE-BYTES`
   - Diagnostics (DEBUG): `LAST-WRITE-BYTES`, `LAST-READ-BYTES`
@@ -65,6 +65,7 @@ _Last updated: 2025-12-01_
 - Implemented Core-Ext `ALLOCATE` and `FREE` with regression tests.
 - Implemented CASE control structure (CASE, OF, ENDOF, ENDCASE) with regression tests.
 - Implemented File word DELETE-FILE with regression tests.
+- Implemented File word WRITE-LINE with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -141,6 +142,7 @@ _Last updated: 2025-12-01_
 - [x] Implement SEARCH primitive with regression tests
 - [x] Implement CASE control structure with regression tests
 - [x] Implement DELETE-FILE primitive with regression tests
+- [x] Implement WRITE-LINE primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -184,4 +186,3 @@ _Last updated: 2025-12-01_
 - SOURCE-ID
 - UNUSED
 - UPDATE
-- WRITE-LINE

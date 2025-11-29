@@ -115,7 +115,11 @@ class Program
 
         var sb = new StringBuilder();
 
+        sb.AppendLine($"Report generated on {DateTime.Now:yyyy-MM-dd}");
+        sb.AppendLine();
+
         Console.WriteLine($"Tracking sets: {string.Join(", ", selectedSets)} (total words: {ansSet.Count})");
+        Console.WriteLine($"Report generated on {DateTime.Now:yyyy-MM-dd}"); // Include date for reference
 
         var csFiles = Directory.EnumerateFiles(repoRoot, "*.cs", SearchOption.AllDirectories)
             .Where(p => !p.Contains(Path.Combine("tools", "ans-diff"), StringComparison.OrdinalIgnoreCase))

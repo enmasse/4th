@@ -319,6 +319,17 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("WRITE-LINE", HelpString = "WRITE-LINE ( c-addr u fileid -- ) - write u chars from c-addr to file, followed by newline")]
+    private static Task Prim_WRITELINE(ForthInterpreter i)
+    {
+        var fid = (int)ToLong(i.PopInternal());
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var content = i.ReadMemoryString(addr, u);
+        i.WriteStringToFile(fid, content + "\n");
+        return Task.CompletedTask;
+    }
+
     [Primitive("INCLUDE", IsImmediate = true, IsAsync = true, HelpString = "INCLUDE <filename> interpret file contents")]
     private static async Task Prim_INCLUDE(ForthInterpreter i)
     {
