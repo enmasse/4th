@@ -183,4 +183,15 @@ internal static partial class CorePrimitives
         i.Push(d1 == d2 ? -1L : 0L);
         return Task.CompletedTask;
     }
+
+    [Primitive("F>S", HelpString = "F>S ( r -- n ) - convert floating-point number to single-cell integer")]
+    private static Task Prim_FToS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F>S");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        var n = (long)d;
+        i.Push(n);
+        return Task.CompletedTask;
+    }
 }

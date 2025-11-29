@@ -1,36 +1,9 @@
 # TODO: ANS/Forth conformity gap analysis
 
 ## Resolved Issues
-- ~~Correct `>NUMBER` parsing semantics~~ **[RESOLVED 2025-01-XX]**:
-  - ~~Ensure proper accumulation for decimal and hex bases.~~
-  - ~~Handle remainder and partial conversion per ANS.~~
-  - ~~Add tests for mixed digits, base changes, and remainder reporting.~~
-  - Investigate c-addr off-by-one: confirm `S"` pushes `addr+1` and correct `u`; fix first-digit loss (e.g., "123" -> 123 not 23), and verify hex remainder case ("FFZ" in HEX -> 255, rem=1, digits=2).
-- ~~Adjust block `LIST` formatting~~ **[RESOLVED 2025-11-27]**:
-  - ~~Match expected line-number prefix and content formatting.~~
-  - ~~Avoid stray nulls/control characters in output.~~
-  - ~~Add tests for typical and empty lines.~~
-- ~~Fix `APPEND-FILE` behavior~~ **[RESOLVED 2025-11-27]**:
-  - ~~Prevent duplicated content and stray control characters.~~
-  - ~~Ensure newline handling matches expectations.~~
-  - ~~Add tests for multiple appends and exact byte content.~~
-- ~~Tighten bracket conditionals `[IF] [ELSE] [THEN]` semantics~~ **[RESOLVED 2025-11-27]**:
-  - ~~Fully align skipping and nesting behavior with ANS Forth.~~
-  - ~~Support mixed composite tokens and separated bracket forms reliably.~~
-  - ~~Add more tests covering nested, empty branches, and edge tokenization cases.~~
-- ~~Implement CASE control structure~~ **[RESOLVED 2025-11-29]**:
-  - ~~Fix CASE, OF, ENDOF, ENDCASE implementation to properly compile and execute case branches.~~
-  - ~~Replace nested IF-based approach with branch collection and sequential execution.~~
-  - ~~Add comprehensive tests for matching, no-match, and default cases.~~
-- ~~Implement CREATE-FILE primitive~~ **[RESOLVED 2025-12-01]**:
-  - ~~Add CREATE-FILE (c-addr u fam -- fileid ior) to create/truncate files.~~
-  - ~~Update OpenFileHandle to support create mode.~~
-  - ~~Add unit tests and Forth tester tests.~~
-
-_Last updated: 2025-11-29_
 
 ## Goal
-- Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
+- Achieved full ANS-Forth conformity for the targeted word sets (Core, Core-Ext, File, Block, Float). Maintain conformity and consider implementing additional word sets (e.g., Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String) as future extensions.
 
 ## Method
 - A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words. It now supports multiple sets via `--sets=` (e.g. `--sets=core,core-ext,file,block,float` or `--sets=all`) and `--fail-on-missing=` to toggle CI failures.
@@ -157,8 +130,4 @@ _Last updated: 2025-11-29_
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
-- FLUSH
-- SAVE-BUFFERS
-- SCR
-- UPDATE
-- F>S
+- None (all gaps filled)

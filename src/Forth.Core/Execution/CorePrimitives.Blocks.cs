@@ -54,6 +54,7 @@ internal static partial class CorePrimitives
         var addr = i.GetOrAllocateBlockAddr(n);
         i.LoadBlockFromBacking(n, addr);
         i.SetCurrentBlockNumber(n);
+        i._mem[i.ScrAddr] = n;
         var sb = new StringBuilder(ForthInterpreter.BlockSize);
         for (int k = 0; k < ForthInterpreter.BlockSize; k++)
         {
@@ -116,6 +117,42 @@ internal static partial class CorePrimitives
     private static Task Prim_CLOSEBLOCKFILE(ForthInterpreter i)
     {
         i.CloseBlockFile();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SCR", HelpString = "SCR ( -- addr ) - variable containing the block number most recently listed")]
+    private static Task Prim_SCR(ForthInterpreter i)
+    {
+        i.Push(i.ScrAddr);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("UPDATE", HelpString = "UPDATE ( -- ) - mark the current block as updated")]
+    private static Task Prim_UPDATE(ForthInterpreter i)
+    {
+        i._dirtyBlocks.Add(i._currentBlock);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SAVE-BUFFERS", HelpString = "SAVE-BUFFERS ( -- ) - transfer the contents of each updated block buffer to mass storage")]
+    private static Task Prim_SAVEBUFFERS(ForthInterpreter i)
+    {
+        foreach (var n in i._dirtyBlocks.ToArray())
+        {
+            if (i._blockAddrMap.TryGetValue(n, out var addr))
+            {
+                i.SaveBlockToBacking(n, addr, ForthInterpreter.BlockSize);
+            }
+        }
+        i._dirtyBlocks.Clear();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FLUSH", HelpString = "FLUSH ( -- ) - perform SAVE-BUFFERS then unassign all block buffers")]
+    private static Task Prim_FLUSH(ForthInterpreter i)
+    {
+        Prim_SAVEBUFFERS(i);
+        Prim_EMPTYBUFFERS(i);
         return Task.CompletedTask;
     }
 }

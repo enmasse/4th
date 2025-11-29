@@ -106,6 +106,26 @@ public class FloatingPointTests
         Assert.Equal(0L, (long)forth.Stack[7]); // false
     }
 
+    [Fact]
+    public async Task FToS_ConvertsFloatToInt()
+    {
+        var forth = new ForthInterpreter();
+        // Positive float
+        Assert.True(await forth.EvalAsync("3.7 F>S"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(3L, (long)forth.Stack[0]);
+
+        // Negative float
+        Assert.True(await forth.EvalAsync("-2.9 F>S"));
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-2L, (long)forth.Stack[1]);
+
+        // Zero
+        Assert.True(await forth.EvalAsync("0.0 F>S"));
+        Assert.Equal(3, forth.Stack.Count);
+        Assert.Equal(0L, (long)forth.Stack[2]);
+    }
+
     private sealed class TestIO : IForthIO
     {
         public readonly System.Collections.Generic.List<string> Outputs = new();

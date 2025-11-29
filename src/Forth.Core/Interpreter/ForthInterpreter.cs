@@ -52,6 +52,9 @@ public partial class ForthInterpreter : IForthInterpreter
     internal long SourceAddr => _sourceAddr;
     internal long InAddr => _inAddr;
 
+    private readonly long _scrAddr;
+    internal long ScrAddr => _scrAddr;
+
     // Current source tracking (line and index within it)
     private string? _currentSource;
     private int _currentIn;
@@ -166,6 +169,9 @@ public partial class ForthInterpreter : IForthInterpreter
         _mem[_sourceAddr] = 0; // not storing string; reserved
         _inAddr = _nextAddr++;
         _mem[_inAddr] = 0; // >IN initial value
+
+        _scrAddr = _nextAddr++;
+        _mem[_scrAddr] = 0; // SCR initial value
 
         _currentSource = null;
         _currentIn = 0;

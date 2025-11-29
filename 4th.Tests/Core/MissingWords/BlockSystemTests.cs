@@ -78,4 +78,60 @@ public class BlockSystemTests
         await f.EvalAsync("EMPTY-BUFFERS");
         Assert.Equal(0, f.BlockMappingCount);
     }
+
+    [Fact]
+    public async Task ScrVariableHoldsLastListedBlock()
+    {
+        var f = new ForthInterpreter();
+        // Save content to block 5
+        await f.EvalAsync("S\" test content\" 5 SAVE");
+        // List block 5
+        await f.EvalAsync("5 LIST");
+        // SCR should hold 5
+        await f.EvalAsync("SCR @");
+        Assert.Single(f.Stack);
+        Assert.Equal(5L, (long)f.Stack[0]);
+    }
+
+    [Fact]
+    public async Task UpdateMarksCurrentBlockDirty()
+    {
+        var f = new ForthInterpreter();
+        // Set current block to 10
+        await f.EvalAsync("10 BLOCK DROP");
+        // Update should mark it dirty
+        await f.EvalAsync("UPDATE");
+        // Dirty blocks should contain 10
+        Assert.Contains(10, f._dirtyBlocks);
+    }
+
+    [Fact]
+    public async Task SaveBuffersSavesDirtyBlocks()
+    {
+        var f = new ForthInterpreter();
+        // Set current block to 20
+        await f.EvalAsync("20 BLOCK DROP");
+        // Update to mark dirty
+        await f.EvalAsync("UPDATE");
+        Assert.Contains(20, f._dirtyBlocks);
+        // SAVE-BUFFERS should clear dirty
+        await f.EvalAsync("SAVE-BUFFERS");
+        Assert.DoesNotContain(20, f._dirtyBlocks);
+    }
+
+    [Fact]
+    public async Task FlushSavesAndClearsBuffers()
+    {
+        var f = new ForthInterpreter();
+        // Assign buffer for block 30
+        await f.EvalAsync("30 BUFFER DROP");
+        Assert.Equal(1, f.BlockMappingCount);
+        // Set current to 30, update
+        await f.EvalAsync("30 BLOCK DROP UPDATE");
+        Assert.Contains(30, f._dirtyBlocks);
+        // FLUSH should save and clear buffers
+        await f.EvalAsync("FLUSH");
+        Assert.DoesNotContain(30, f._dirtyBlocks);
+        Assert.Equal(0, f.BlockMappingCount);
+    }
 }
