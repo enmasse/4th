@@ -38,28 +38,36 @@ public partial class ForthInterpreter
     /// </summary>
     /// <param name="path">File system path.</param>
     /// <param name="mode">Open mode (defaults to <see cref="FileOpenMode.Read"/>).</param>
+    /// <param name="create">If true, creates the file (truncating if exists); otherwise opens existing.</param>
     /// <returns>Allocated file handle.</returns>
     /// <exception cref="IOException">Propagated if the underlying file cannot be opened.</exception>
-    internal int OpenFileHandle(string path, FileOpenMode mode = FileOpenMode.Read)
+    internal int OpenFileHandle(string path, FileOpenMode mode = FileOpenMode.Read, bool create = false)
     {
         FileStream fs;
+        FileMode fm;
+        FileAccess fa;
         switch (mode)
         {
             case FileOpenMode.Read:
-                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                fm = create ? FileMode.Create : FileMode.Open;
+                fa = FileAccess.Read;
                 break;
             case FileOpenMode.Write:
-                fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
-                fs.Seek(0, SeekOrigin.Begin);
+                fm = FileMode.Create;
+                fa = FileAccess.ReadWrite;
                 break;
             case FileOpenMode.Append:
-                fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
-                fs.Seek(0, SeekOrigin.End);
+                fm = create ? FileMode.Create : FileMode.OpenOrCreate;
+                fa = FileAccess.ReadWrite;
                 break;
             default:
-                fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                fm = create ? FileMode.Create : FileMode.Open;
+                fa = FileAccess.Read;
                 break;
         }
+        fs = new FileStream(path, fm, fa, FileShare.ReadWrite, 4096, FileOptions.WriteThrough);
+        if (mode == FileOpenMode.Append)
+            fs.Seek(0, SeekOrigin.End);
         var h = _nextFileHandle++;
         _openFiles[h] = fs;
         return h;
@@ -84,7 +92,7 @@ public partial class ForthInterpreter
     {
         if (!_openFiles.TryGetValue(handle, out var fs))
             return false;
-        try { fs.Flush(); fs.Dispose(); } catch { }
+        try { fs.Close(); } catch { }
         _openFiles.Remove(handle);
         return true;
     }

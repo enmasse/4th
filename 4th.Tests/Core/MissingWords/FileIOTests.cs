@@ -754,4 +754,37 @@ public class FileIOTests
             if (File.Exists(path)) File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task CreateFile_CreatesFile()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = "create_test.txt";
+        // S" path" 1 CREATE-FILE -> fid ior
+        Assert.True(await forth.EvalAsync($"S\" {path}\" 1 CREATE-FILE"));
+        Assert.Equal(2, forth.Stack.Count);
+        var fid = (long)forth.Stack[0];
+        var ior = (long)forth.Stack[1];
+        Assert.Equal(0L, ior);
+        Assert.True(fid > 0);
+        // Close
+        Assert.True(await forth.EvalAsync($"{fid} CLOSE-FILE"));
+        Assert.True(File.Exists(path));
+    }
+
+    [Fact]
+    public async Task CreateFile_TruncatesExistingFile()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = "truncate_test.txt";
+        File.WriteAllText(path, "existing content");
+        Assert.True(await forth.EvalAsync($"S\" {path}\" 1 CREATE-FILE"));
+        Assert.True(await forth.EvalAsync("DROP")); // drop ior, keep fid
+        var fid = (long)forth.Stack[0];
+        Assert.True(await forth.EvalAsync($"{fid} CLOSE-FILE"));
+        Assert.True(File.Exists(path));
+        Assert.Equal(0L, new FileInfo(path).Length); // truncated
+    }
 }

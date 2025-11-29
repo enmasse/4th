@@ -199,6 +199,29 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("CREATE-FILE", HelpString = "CREATE-FILE ( c-addr u fam -- fileid ior ) - create file")]
+    private static Task Prim_CREATEFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "CREATE-FILE");
+        var fam = ToLong(i.PopInternal());
+        var u = ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
+        var filename = i.ReadMemoryString(addr, u);
+        try
+        {
+            var h = i.OpenFileHandle(filename, (ForthInterpreter.FileOpenMode)fam, create: true);
+            i.Push((long)h);
+            i.Push(0L);
+        }
+        catch (Exception)
+        {
+            i.Push(0L);
+            i.Push(-1L);
+        }
+
+        return Task.CompletedTask;
+    }
+
     [Primitive("R/O", HelpString = "R/O ( -- fam ) read-only file access method")]
     private static Task Prim_RO(ForthInterpreter i) { i.Push(0L); return Task.CompletedTask; }
 

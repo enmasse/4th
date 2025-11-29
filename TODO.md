@@ -22,8 +22,12 @@
   - ~~Fix CASE, OF, ENDOF, ENDCASE implementation to properly compile and execute case branches.~~
   - ~~Replace nested IF-based approach with branch collection and sequential execution.~~
   - ~~Add comprehensive tests for matching, no-match, and default cases.~~
+- ~~Implement CREATE-FILE primitive~~ **[RESOLVED 2025-12-01]**:
+  - ~~Add CREATE-FILE (c-addr u fam -- fileid ior) to create/truncate files.~~
+  - ~~Update OpenFileHandle to support create mode.~~
+  - ~~Add unit tests and Forth tester tests.~~
 
-_Last updated: 2025-11-29_
+_Last updated: 2025-12-01_
 
 ## Goal
 - Compare the current implementation against ANS Forth word sets (Core, Core-Ext, File, Block, optional Float) and identify words that are missing or partially implemented.
@@ -147,7 +151,6 @@ _Last updated: 2025-11-29_
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
 - BUFFER
-- CREATE-FILE
 - DEFER!
 - DEFER@
 - DELETE-FILE
@@ -180,3 +183,4 @@ _Last updated: 2025-11-29_
 - SOURCE-ID
 - UNUSED
 - UPDATE
+- WRITE-LINE
