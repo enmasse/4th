@@ -95,4 +95,40 @@ internal static partial class CorePrimitives
         }
         return dict.ToImmutable();
     }
+
+    [Primitive("ALLOCATE", HelpString = "ALLOCATE ( u -- a-addr ior ) - allocate u bytes of memory")]
+    private static Task Prim_Allocate(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "ALLOCATE");
+        var u = ToLong(i.PopInternal());
+        if (u < 0)
+        {
+            i.Push(0L); // undefined addr
+            i.Push(-1L); // error
+            return Task.CompletedTask;
+        }
+        var bytes = new byte[u];
+        var addr = i._heapPtr;
+        i._heapAllocations[addr] = (bytes, u);
+        i._heapPtr += u;
+        i.Push(addr);
+        i.Push(0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FREE", HelpString = "FREE ( a-addr -- ior ) - deallocate memory at a-addr")]
+    private static Task Prim_Free(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FREE");
+        var addr = ToLong(i.PopInternal());
+        if (i._heapAllocations.Remove(addr))
+        {
+            i.Push(0L);
+        }
+        else
+        {
+            i.Push(-1L); // not allocated
+        }
+        return Task.CompletedTask;
+    }
 }

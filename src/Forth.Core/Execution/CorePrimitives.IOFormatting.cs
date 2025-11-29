@@ -192,4 +192,16 @@ internal static partial class CorePrimitives
         }
         return Task.CompletedTask;
     }
+
+    [Primitive("/STRING", HelpString = "/STRING ( c-addr1 u1 n -- c-addr2 u2 ) - adjust string by n characters")]
+    private static Task Prim_SlashString(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "/STRING");
+        var n = ToLong(i.PopInternal());
+        var u1 = ToLong(i.PopInternal());
+        var addr1 = ToLong(i.PopInternal());
+        i.Push(addr1 + n);
+        i.Push(u1 - n);
+        return Task.CompletedTask;
+    }
 }

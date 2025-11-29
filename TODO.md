@@ -53,6 +53,8 @@ _Last updated: 2025-11-27_
 - Implemented missing ANS-tracked words: `."`, `ABORT"`, `>BODY`, `M/MOD`, `S"` with regression tests.
 - Implemented Core-Ext `WITHIN` with regression tests.
 - Implemented Core-Ext `COMPARE` with regression tests.
+- Implemented Core-Ext `/STRING` with regression tests.
+- Implemented Core-Ext `ALLOCATE` and `FREE` with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -138,8 +140,6 @@ _Last updated: 2025-11-27_
 - Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
 
 ## Current gaps (from latest ans-diff for sets: Core, Core-Ext, File, Block, Float)
-- /STRING
-- ALLOCATE
 - BUFFER
 - CASE
 - CREATE-FILE
@@ -161,7 +161,6 @@ _Last updated: 2025-11-27_
 - FLOG
 - FLOOR
 - FLUSH
-- FREE
 - FROUND
 - FSIN
 - FTAN

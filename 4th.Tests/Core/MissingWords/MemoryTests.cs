@@ -33,4 +33,57 @@ public class MemoryTests
         Assert.True(await forth.EvalAsync("DROP DROP 42 PAD ! PAD @"));
         Assert.Equal(new long[] { 42 }, forth.Stack.Select(o => (long)o).ToArray());
     }
+
+    [Fact]
+    public async Task Allocate()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate 10 bytes
+        Assert.True(await forth.EvalAsync("10 ALLOCATE"));
+        Assert.Equal(2, forth.Stack.Count);
+        var ior = (long)forth.Pop();
+        var addr = (long)forth.Pop();
+        Assert.Equal(0L, ior); // success
+        Assert.True(addr >= 1000000L); // in heap range
+    }
+
+    [Fact]
+    public async Task AllocateNegative()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate negative size
+        Assert.True(await forth.EvalAsync("-1 ALLOCATE"));
+        Assert.Equal(2, forth.Stack.Count);
+        var ior = (long)forth.Pop();
+        var addr = (long)forth.Pop();
+        Assert.Equal(-1L, ior); // error
+        Assert.Equal(0L, addr); // undefined
+    }
+
+    [Fact]
+    public async Task Free()
+    {
+        var forth = new ForthInterpreter();
+        // Allocate then free
+        Assert.True(await forth.EvalAsync("10 ALLOCATE"));
+        var ior = (long)forth.Pop();
+        var addr = (long)forth.Pop();
+        Assert.Equal(0L, ior);
+
+        Assert.True(await forth.EvalAsync($"{addr} FREE"));
+        Assert.Single(forth.Stack);
+        ior = (long)forth.Pop();
+        Assert.Equal(0L, ior); // success
+    }
+
+    [Fact]
+    public async Task FreeInvalid()
+    {
+        var forth = new ForthInterpreter();
+        // Free invalid address
+        Assert.True(await forth.EvalAsync("123 FREE"));
+        Assert.Single(forth.Stack);
+        var ior = (long)forth.Pop();
+        Assert.Equal(-1L, ior); // error
+    }
 }

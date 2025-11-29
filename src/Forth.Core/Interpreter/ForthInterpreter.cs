@@ -31,6 +31,9 @@ public partial class ForthInterpreter : IForthInterpreter
     internal readonly Dictionary<long,long> _mem = new(); // internal
     internal long _nextAddr = 1; // internal
 
+    internal long _heapPtr = 1000000L;
+    internal Dictionary<long, (byte[] bytes, long size)> _heapAllocations = new();
+
     internal readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase); // internal
     internal readonly List<string> _usingModules = new(); // internal
     internal string? _currentModule; // internal
