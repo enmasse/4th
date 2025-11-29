@@ -24,7 +24,7 @@
 - Exceptions / control: `CATCH`, `THROW`, `ABORT`, `EXIT`, `BYE`, `QUIT`
 - Numeric base & parsing: `BASE`, `HEX`, `DECIMAL`, `>NUMBER` (extended), `STATE`
 - Introspection: `SEE` (module-qualified + decompile text)
-- Wordlist/search-order: `GET-ORDER`, `SET-ORDER`, `WORDLIST`, `DEFINITIONS`, `FORTH`
+- Wordlist/search-order: `GET-ORDER`, `SET-ORDER`, `WORDLIST`, `DEFINITIONS`, `FORTH`, `ALSO`, `ONLY`
 - Interactive input: `KEY`, `KEY?`, `ACCEPT`, `EXPECT`, `SOURCE`, `>IN`, `READ-LINE`, `WORD`
 - Extended arithmetic: `*/MOD` plus double-cell ops `D+`, `D-`, `M*`, `M+`, `SM/REM`, `FM/MOD`
 - Environment queries: `ENV` wordlist with `OS`, `CPU`, `MEMORY`, `MACHINE`, `USER`, `PWD`
@@ -55,6 +55,8 @@
 - Implemented Facility TIME&DATE with regression tests.
 - Implemented Facility AT-XY with regression tests.
 - Implemented Facility MS with regression tests.
+- Implemented ONLY primitive with regression tests.
+- Implemented ALSO primitive with regression tests.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
 - ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
@@ -108,7 +110,7 @@
 - [x] Extend >NUMBER for counted and memory forms
 - [x] Improve S" tokenizer handling (leading space rule)
 - [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (362/362)
+- [x] Full test suite passing (466/466)
 - [x] ans-diff report updated (CI ready to fail on missing words)
 - [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
 - [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
@@ -136,6 +138,8 @@
 - [x] Implement D< primitive with regression tests
 - [x] Implement D= primitive with regression tests
 - [x] Implement D>S primitive with regression tests
+- [x] Implement ONLY primitive with regression tests
+- [x] Implement ALSO primitive with regression tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
@@ -150,29 +154,134 @@
 
 ## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
 - (LOCAL)
-- ALSO
 - CS-PICK
 - CS-ROLL
-- GET-CURRENT
-- INCLUDE-FILE
-- INCLUDED
 - LOCALS|
-- (LOCAL)
-- ALSO
-- CS-PICK
-- CS-ROLL
-- DMIN
-- FILE-POSITION
-- FILE-STATUS
-- GET-CURRENT
-- INCLUDED
-- LOCALS|
-- ONLY
 - RESTORE-INPUT
 - S>F
 - SAVE-INPUT
-- SET-CURRENT
-- SLITERAL
+- SLITERAL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -107,4 +107,31 @@ public class WordlistDefinitionsTests
         Assert.Equal("FORTH", wid); // FORTH
         Assert.True(await f.EvalAsync("DROP DROP"));
     }
+
+    [Fact]
+    public async Task Also_DuplicatesTopWordlist()
+    {
+        var f = new ForthInterpreter();
+        // Set search order to a wordlist and FORTH
+        Assert.True(await f.EvalAsync("WORDLIST 1 SET-ORDER"));
+        Assert.True(await f.EvalAsync("GET-ORDER"));
+        Assert.Equal(3, f.Stack.Count);
+        var count = (long)f.Stack[2];
+        Assert.Equal(2L, count);
+        Assert.True(await f.EvalAsync("DROP DROP DROP"));
+
+        // Call ALSO
+        Assert.True(await f.EvalAsync("ALSO"));
+        Assert.True(await f.EvalAsync("GET-ORDER"));
+        Assert.Equal(4, f.Stack.Count);
+        count = (long)f.Stack[3];
+        Assert.Equal(3L, count);
+        // Top should be the duplicated wordlist
+        var topWid = f.Stack[0];
+        var secondWid = f.Stack[1];
+        Assert.Equal(topWid, secondWid); // duplicated
+        var bottomWid = f.Stack[2];
+        Assert.Equal("FORTH", bottomWid);
+        Assert.True(await f.EvalAsync("DROP DROP DROP DROP"));
+    }
 }

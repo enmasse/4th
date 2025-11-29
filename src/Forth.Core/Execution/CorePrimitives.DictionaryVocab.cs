@@ -583,4 +583,12 @@ internal static partial class CorePrimitives
         i.SetOrder(new List<string?> { null });
         return Task.CompletedTask;
     }
+
+    [Primitive("ALSO", HelpString = "ALSO ( -- ) - duplicate the first wordlist in the search order")]
+    private static Task Prim_ALSO(ForthInterpreter i)
+    {
+        if (i._usingModules.Count > 0)
+            i._usingModules.Add(i._usingModules[i._usingModules.Count - 1]);
+        return Task.CompletedTask;
+    }
 }
