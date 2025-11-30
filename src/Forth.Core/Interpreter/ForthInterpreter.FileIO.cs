@@ -199,4 +199,39 @@ public partial class ForthInterpreter
         _lastWriteBuffer = bytes;
         _lastWritePositionAfter = fs.Position;
     }
+
+    /// <summary>
+    /// Opens a file at the specified path using the provided file access method bits and returns a numeric handle used by Forth words.
+    /// </summary>
+    /// <param name="filename">File system path.</param>
+    /// <param name="fam">File access method bits.</param>
+    /// <param name="truncate">If true, truncates the file if it exists.</param>
+    /// <returns>Allocated file handle.</returns>
+    /// <exception cref="IOException">Propagated if the underlying file cannot be opened.</exception>
+    internal int OpenFileHandle(string filename, long fam, bool truncate = false)
+    {
+        FileStream fs;
+        // fam
+        FileMode fmode;
+        FileAccess faccess;
+        if ((fam & 1) != 0)
+        {
+            fmode = truncate ? FileMode.Create : FileMode.OpenOrCreate;
+            faccess = FileAccess.Write;
+        }
+        else if ((fam & 2) != 0)
+        {
+            fmode = FileMode.Open;
+            faccess = FileAccess.ReadWrite;
+        }
+        else
+        {
+            fmode = FileMode.Open;
+            faccess = FileAccess.Read;
+        }
+        fs = new FileStream(filename, fmode, faccess);
+        var handle = ++_nextFileHandle;
+        _openFiles[handle] = fs;
+        return handle;
+    }
 }

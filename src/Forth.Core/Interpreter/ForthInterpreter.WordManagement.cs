@@ -151,7 +151,10 @@ public partial class ForthInterpreter
         return false;
     }
 
-    internal IEnumerable<string> GetAllWordNames()
+    /// <summary>
+    /// Gets all word names in the dictionary.
+    /// </summary>
+    public IEnumerable<string> GetAllWordNames()
     {
         var names = new List<string>();
         foreach (var kv in _dict)

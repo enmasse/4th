@@ -240,6 +240,12 @@ public partial class ForthInterpreter
                     continue;
                 }
 
+                if (_currentLocals != null && _currentLocals.Contains(tok))
+                {
+                    CurrentList().Add(intr => { intr.Push(intr._locals![tok]); return Task.CompletedTask; });
+                    continue;
+                }
+
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
             }
         }
@@ -288,7 +294,12 @@ public partial class ForthInterpreter
     {
         value = 0.0;
         if (string.IsNullOrEmpty(token)) return false;
-        if (!token.Contains('.') && !token.Contains('e') && !token.Contains('E')) return false;
-        return double.TryParse(token, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
+        if (!token.EndsWith('e') && !token.EndsWith('E') && !token.EndsWith('d') && !token.EndsWith('D')) return false;
+        string toParse = token;
+        if (token.EndsWith('d') || token.EndsWith('D'))
+        {
+            toParse = token.Substring(0, token.Length - 1);
+        }
+        return double.TryParse(toParse, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
     }
 }

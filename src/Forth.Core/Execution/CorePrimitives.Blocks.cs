@@ -73,6 +73,48 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("LOAD", HelpString = "LOAD ( n -- ) load and interpret block n")]
+    private static async Task Prim_LOAD(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "LOAD");
+        var n = (int)ToLong(i.PopInternal());
+        i.EnsureBlockExistsOnDisk(n);
+        var addr = i.GetOrAllocateBlockAddr(n);
+        i.LoadBlockFromBacking(n, addr);
+        i.SetCurrentBlockNumber(n);
+        var sb = new StringBuilder(ForthInterpreter.BlockSize);
+        for (int k = 0; k < ForthInterpreter.BlockSize; k++)
+        {
+            i.MemTryGet(addr + k, out var v);
+            sb.Append((char)(v & 0xFF));
+        }
+        var blockContent = sb.ToString();
+        await i.EvalAsync(blockContent);
+    }
+
+    [Primitive("THRU", HelpString = "THRU ( n1 n2 -- ) load and interpret blocks from n1 to n2")]
+    private static async Task Prim_THRU(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "THRU");
+        var n2 = (int)ToLong(i.PopInternal());
+        var n1 = (int)ToLong(i.PopInternal());
+        for (int n = n1; n <= n2; n++)
+        {
+            i.EnsureBlockExistsOnDisk(n);
+            var addr = i.GetOrAllocateBlockAddr(n);
+            i.LoadBlockFromBacking(n, addr);
+            i.SetCurrentBlockNumber(n);
+            var sb = new StringBuilder(ForthInterpreter.BlockSize);
+            for (int k = 0; k < ForthInterpreter.BlockSize; k++)
+            {
+                i.MemTryGet(addr + k, out var v);
+                sb.Append((char)(v & 0xFF));
+            }
+            var blockContent = sb.ToString();
+            await i.EvalAsync(blockContent);
+        }
+    }
+
     [Primitive("BUFFER", HelpString = "BUFFER ( u -- a-addr ) assign a block buffer to block u")]
     private static Task Prim_BUFFER(ForthInterpreter i)
     {

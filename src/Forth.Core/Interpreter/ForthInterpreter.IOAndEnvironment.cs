@@ -1,5 +1,8 @@
+using System;
+using System.Collections;
 using System.Reflection;
 using Forth.Core.Binding;
+using Forth.Core.Execution;
 
 namespace Forth.Core.Interpreter;
 
@@ -52,5 +55,27 @@ public partial class ForthInterpreter
 
         // Current directory
         _dict = _dict.SetItem(("ENV", "PWD"), new Word(i => { i.Push(Environment.CurrentDirectory); return Task.CompletedTask; }) { Name = "PWD", Module = "ENV" });
+
+        // Current date
+        _dict = _dict.SetItem(("ENV", "DATE"), new Word(i => { i.Push(DateTime.Now.ToString("yyyy-MM-dd")); return Task.CompletedTask; }) { Name = "DATE", Module = "ENV" });
+
+        // Current time
+        _dict = _dict.SetItem(("ENV", "TIME"), new Word(i => { i.Push(DateTime.Now.ToString("HH:mm:ss")); return Task.CompletedTask; }) { Name = "TIME", Module = "ENV" });
+
+        // Add all environment variables as words
+        var envVars = Environment.GetEnvironmentVariables();
+        foreach (DictionaryEntry entry in envVars)
+        {
+            var name = (string)entry.Key;
+            var value = entry.Value as string ?? "";
+            _dict = _dict.SetItem(("ENV", name), new Word(i => { i.Push(value); return Task.CompletedTask; }) { Name = name, Module = "ENV" });
+        }
+    }
+
+    [Primitive("ENV", HelpString = "ENV ( -- wid ) - environment wordlist id")]
+    private static Task Prim_ENV(ForthInterpreter i)
+    {
+        i.Push("ENV");
+        return Task.CompletedTask;
     }
 }

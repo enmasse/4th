@@ -92,4 +92,27 @@ public class ArithmeticTests
         Assert.True(await forth2.EvalAsync("-7 3 FM/MOD"));
         Assert.Equal(new long[] { 2, -3 }, forth2.Stack.Select(o => (long)o).ToArray()); // floored: -7 / 3 = -3 rem 2
     }
+
+    [Fact]
+    public async Task QuestionMark_FetchAndPrint()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        // Store 42 at address 100
+        Assert.True(await forth.EvalAsync("42 100 !"));
+        // ? should fetch and print
+        Assert.True(await forth.EvalAsync("100 ?"));
+        // Check output
+        Assert.Single(io.Outputs);
+        Assert.Contains("42", io.Outputs[0]); // Assuming it prints the value
+    }
+
+    private sealed class TestIO : IForthIO
+    {
+        public readonly System.Collections.Generic.List<string> Outputs = new();
+        public void Print(string text) => Outputs.Add(text);
+        public void PrintNumber(long number) => Outputs.Add(number.ToString());
+        public void NewLine() => Outputs.Add("\n");
+        public string? ReadLine() => null;
+    }
 }

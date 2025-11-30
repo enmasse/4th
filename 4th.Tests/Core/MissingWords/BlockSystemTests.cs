@@ -52,6 +52,34 @@ public class BlockSystemTests
     }
 
     [Fact]
+    public async Task LoadBlock()
+    {
+        var io = new TestIO();
+        var f = new ForthInterpreter(io);
+        // Save some Forth code to block 0
+        await f.EvalAsync("S\" 1 2 + .\" 0 SAVE");
+        // Load block 0
+        await f.EvalAsync("0 LOAD");
+        var result = string.Join("", io.Outputs);
+        Assert.Contains("3", result);
+    }
+
+    [Fact]
+    public async Task Thru_LoadsRangeOfBlocks()
+    {
+        var io = new TestIO();
+        var f = new ForthInterpreter(io);
+        // Save "1 ." to block 0, "2 ." to block 1
+        await f.EvalAsync("S\" 1 .\" 0 SAVE");
+        await f.EvalAsync("S\" 2 .\" 1 SAVE");
+        // THRU 0 1
+        await f.EvalAsync("0 1 THRU");
+        var result = string.Join("", io.Outputs);
+        Assert.Contains("1", result);
+        Assert.Contains("2", result);
+    }
+
+    [Fact]
     public async Task BufferAssignsBlockBuffer()
     {
         var f = new ForthInterpreter();

@@ -1,3 +1,4 @@
+using Forth.Core;
 using Forth.Core.Interpreter;
 using Xunit;
 using System.Threading.Tasks;
@@ -212,8 +213,8 @@ public class DoubleNumberTests
         // -1 -1 D2* should return -2 -1
         Assert.True(await f.EvalAsync("-1 -1 D2*"));
         Assert.Equal(2, f.Stack.Count);
-        Assert.Equal(-2L, (long)f.Stack[0]);
-        Assert.Equal(-1L, (long)f.Stack[1]);
+        Assert.Equal(-2L, (long)f.Stack[0])
+        ;Assert.Equal(-1L, (long)f.Stack[1]);
     }
 
     [Fact]
@@ -556,5 +557,47 @@ public class DoubleNumberTests
         Assert.Equal(2, f.Stack.Count);
         Assert.Equal(long.MaxValue - 1, (long)f.Stack[0]);
         Assert.Equal(0L, (long)f.Stack[1]);
+    }
+
+    [Fact]
+    public async Task DDot_PrintsDouble()
+    {
+        var io = new TestIO();
+        var f = new ForthInterpreter(io);
+        // 123 0 D. should print 123
+        Assert.True(await f.EvalAsync("123 0 D."));
+        Assert.Single(io.Outputs);
+        Assert.Equal("123", io.Outputs[0]);
+    }
+
+    [Fact]
+    public async Task DDot_PrintsNegativeDouble()
+    {
+        var io = new TestIO();
+        var f = new ForthInterpreter(io);
+        // -123 -1 D. should print -123
+        Assert.True(await f.EvalAsync("-123 -1 D."));
+        Assert.Single(io.Outputs);
+        Assert.Equal("-123", io.Outputs[0]);
+    }
+
+    [Fact]
+    public async Task DDot_PrintsLargeDouble()
+    {
+        var io = new TestIO();
+        var f = new ForthInterpreter(io);
+        // 0 1 D. should print 18446744073709551616 (2^64)
+        Assert.True(await f.EvalAsync("0 1 D."));
+        Assert.Single(io.Outputs);
+        Assert.Equal("18446744073709551616", io.Outputs[0]);
+    }
+
+    private sealed class TestIO : IForthIO
+    {
+        public readonly System.Collections.Generic.List<string> Outputs = new();
+        public void Print(string text) => Outputs.Add(text);
+        public void PrintNumber(long number) => Outputs.Add(number.ToString());
+        public void NewLine() => Outputs.Add("\n");
+        public string? ReadLine() => null;
     }
 }

@@ -13,6 +13,7 @@ internal class Word
     public string? Module { get; set; }
     public bool IsHidden { get; set; }
     public string? HelpString { get; set; }
+    public string? Category { get; set; }
     // For CREATE/VARIABLE/DOES> defined words, store associated data-field address
     public long? BodyAddr { get; set; }
 

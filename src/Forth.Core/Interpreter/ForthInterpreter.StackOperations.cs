@@ -96,6 +96,13 @@ public partial class ForthInterpreter
     internal void SwapTop2() =>
         _stack.SwapTop2();
 
+    internal void PushLocal(string name)
+    {
+        if (_locals == null || !_locals.TryGetValue(name, out var val))
+            throw new ForthException(ForthErrorCode.UndefinedWord, $"Local {name} not defined");
+        Push(val);
+    }
+
     internal void PicturedBegin() =>
         _picBuf = new StringBuilder();
 

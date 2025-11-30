@@ -181,7 +181,7 @@ public class FileIOTests
             // Write a tiny forth file that prints text and CR
             File.WriteAllText(path, ".\" LOADED\" CR\n");
             // Push filename string onto stack and invoke LOAD
-            Assert.True(await forth.EvalAsync($"\"{path}\" LOAD"));
+            Assert.True(await forth.EvalAsync($"\"{path}\" LOAD-FILE"));
             // LOAD executes lines which cause Print and NewLine
             Assert.True(io.Outputs.Count >= 2);
             Assert.Equal("LOADED", io.Outputs[0]);
@@ -799,7 +799,7 @@ public class FileIOTests
 
         Assert.True(await forth.EvalAsync("0 BIN"));
         Assert.Equal(4, forth.Stack.Count);
-        Assert.Equal(0L, (long)forth.Stack[3]);
+        Assert.Equal(4L, (long)forth.Stack[3]);
     }
 
     [Fact]
@@ -1011,6 +1011,33 @@ public class FileIOTests
     }
 
     [Fact]
+    public async Task CopyFile_CopiesExistingFile()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var srcPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dstPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(srcPath, "content");
+            Assert.True(File.Exists(srcPath));
+            Assert.False(File.Exists(dstPath));
+            // S" src" S" dst" COPY-FILE -> ior
+            Assert.True(await forth.EvalAsync($"S\" {srcPath}\" S\" {dstPath}\" COPY-FILE"));
+            Assert.Single(forth.Stack);
+            Assert.Equal(0L, (long)forth.Stack[0]);
+            Assert.True(File.Exists(srcPath));
+            Assert.True(File.Exists(dstPath));
+            Assert.Equal("content", File.ReadAllText(dstPath));
+        }
+        finally
+        {
+            if (File.Exists(srcPath)) File.Delete(srcPath);
+            if (File.Exists(dstPath)) File.Delete(dstPath);
+        }
+    }
+
+    [Fact]
     public async Task Included_Executes_File_Content()
     {
         var io = new TestIO();
@@ -1025,6 +1052,28 @@ public class FileIOTests
             Assert.True(io.Outputs.Count >= 2);
             Assert.Equal("INCLUDED", io.Outputs[0]);
             Assert.Equal("\n", io.Outputs[1]);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task OpenFile_WithFam_ReadBinary()
+    {
+        var forth = new ForthInterpreter();
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        try
+        {
+            File.WriteAllText(path, "test");
+            // OPEN-FILE with fam 4 (R/O BIN OR)
+            Assert.True(await forth.EvalAsync($"\"{path}\" 4 OPEN-FILE"));
+            Assert.True(await forth.EvalAsync("SWAP DROP"));
+            var h = (long)forth.Stack[^1];
+            Assert.True(h > 0);
+            // Close
+            Assert.True(await forth.EvalAsync($"{h} CLOSE-FILE"));
         }
         finally
         {

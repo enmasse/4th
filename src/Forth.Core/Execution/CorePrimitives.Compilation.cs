@@ -540,4 +540,98 @@ internal static partial class CorePrimitives
         });
         return Task.CompletedTask;
     }
+
+    [Primitive("CS-PICK", HelpString = "CS-PICK ( u -- x ) - copy u-th item from control-flow stack to data stack")]
+    private static Task Prim_CS_PICK(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CS-PICK");
+        var u = ToLong(i.PopInternal());
+        if (u < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-PICK: negative index {u}");
+        var arr = i._controlStack.ToArray();
+        int idx = arr.Length - 1 - (int)u;
+        if (idx < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-PICK: index {u} exceeds control stack depth");
+        i.Push(arr[idx]);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("CS-ROLL", HelpString = "CS-ROLL ( u -- ) - rotate top u+1 control-flow stack items")]
+    private static Task Prim_CS_ROLL(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "CS-ROLL");
+        var u = ToLong(i.PopInternal());
+        if (u < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-ROLL: negative count {u}");
+        int count = (int)u + 1;
+        if (count > i._controlStack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-ROLL: not enough items on control stack");
+        var temp = new Forth.Core.Interpreter.ForthInterpreter.CompileFrame[count];
+        for (int k = count - 1; k >= 0; k--) temp[k] = i._controlStack.Pop();
+        // Rotate left: move first to end
+        if (count > 0)
+        {
+            var first = temp[0];
+            for (int k = 0; k < count - 1; k++) temp[k] = temp[k + 1];
+            temp[count - 1] = first;
+        }
+        // Push back in order
+        for (int k = count - 1; k >= 0; k--) i._controlStack.Push(temp[k]);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("LOCALS|", IsImmediate = true, HelpString = "LOCALS| <name>... | - declare local variables")]
+    private static Task Prim_LOCALS_BAR(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "LOCALS| outside compilation");
+        var locals = new List<string>();
+        while (true)
+        {
+            var token = i.ReadNextTokenOrThrow("LOCALS| expects names followed by |");
+            if (token == "|") break;
+            locals.Add(token);
+        }
+        i._currentLocals = locals;
+        // Add the setup code
+        i.CurrentList().Add(ii =>
+        {
+            ii._locals = new Dictionary<string, object>();
+            for (int k = 0; k < locals.Count; k++)
+            {
+                ii._locals[locals[k]] = ii.PopInternal();
+            }
+            return Task.CompletedTask;
+        });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("(LOCAL)", IsImmediate = true, HelpString = "(LOCAL) <name> - declare a local variable")]
+    private static Task Prim_LOCAL(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "LOCAL outside compilation");
+        var name = i.ReadNextTokenOrThrow("LOCAL expects a name");
+        
+        // Initialize or append to the list of locals
+        if (i._currentLocals == null)
+        {
+            i._currentLocals = new List<string> { name };
+            // Add setup code to initialize the runtime locals dictionary
+            i.CurrentList().Add(ii =>
+            {
+                ii._locals = new Dictionary<string, object>();
+                return Task.CompletedTask;
+            });
+        }
+        else
+        {
+            i._currentLocals.Add(name);
+        }
+        
+        // Add code to pop and store this local at runtime
+        i.CurrentList().Add(ii =>
+        {
+            ii.EnsureStack(1, "(LOCAL)");
+            ii._locals![name] = ii.PopInternal();
+            return Task.CompletedTask;
+        });
+        return Task.CompletedTask;
+    }
 }

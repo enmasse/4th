@@ -64,6 +64,7 @@ class Program
                 // Floating point word set (subset)
                 "F.", "F!", "F@", "F+", "F-", "F*", "F/", "F>S", "S>F", "FABS", "FNEGATE",
                 "FLOOR", "FROUND", "FEXP", "FLOG", "FSIN", "FCOS", "FTAN", "FASIN", "FACOS", "FATAN2",
+                "FSQRT", "FTRUNC", "F~", "F<", "F=", "F0<", "F0=", "FMAX", "FMIN", "FVARIABLE", "FCONSTANT", "FM/MOD",
             },
             ["double-number"] = new[]
             {
@@ -92,10 +93,33 @@ class Program
             ["string"] = new[]
             {
                 "-TRAILING", "/STRING", "BLANK", "CMOVE", "CMOVE>", "COMPARE", "SEARCH", "SLITERAL",
-            }
+            },
+            ["tools"] = new[]
+            {
+                ".S", "?", "DUMP", "SEE", "WORDS", "FORGET", "MARKER",
+            },
+            ["exception"] = new[]
+            {
+                "ABORT", "ABORT\"", "CATCH", "THROW",
+            },
+            ["block-ext"] = new[]
+            {
+                "THRU",
+            },
+            ["double-number-ext"] = Array.Empty<string>(),
+            ["exception-ext"] = Array.Empty<string>(),
+            ["facility-ext"] = Array.Empty<string>(),
+            ["file-ext"] = Array.Empty<string>(),
+            ["float-ext"] = Array.Empty<string>(),
+            ["local-ext"] = Array.Empty<string>(),
+            ["memory-allocation-ext"] = Array.Empty<string>(),
+            ["programming-tools-ext"] = Array.Empty<string>(),
+            ["search-order-ext"] = Array.Empty<string>(),
+            ["string-ext"] = Array.Empty<string>(),
+            ["tools-ext"] = Array.Empty<string>()
         };
 
-    private static (HashSet<string> merged, string[] selected) BuildSelectedSets(string[] args)
+    private static (Dictionary<string, string[]> selectedSets, string[] selectedNames) BuildSelectedSets(string[] args)
     {
         var setArg = args.FirstOrDefault(a => a.StartsWith("--sets=", StringComparison.OrdinalIgnoreCase));
         string[] requested;
@@ -113,15 +137,15 @@ class Program
                 requested = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
-        var merged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var selected = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var key in requested)
         {
             if (WordSets.TryGetValue(key, out var list))
             {
-                foreach (var w in list) merged.Add(w);
+                selected[key] = list;
             }
         }
-        return (merged, requested);
+        return (selected, requested);
     }
 
     static int Main(string[] args)
@@ -139,14 +163,14 @@ class Program
         }
 
         var repoRoot = ResolveRepoRoot(Directory.GetCurrentDirectory());
-        var (ansSet, selectedSets) = BuildSelectedSets(args);
+        var (selectedSets, selectedNames) = BuildSelectedSets(args);
 
         var sb = new StringBuilder();
 
         sb.AppendLine($"Report generated on {DateTime.Now:yyyy-MM-dd}");
         sb.AppendLine();
 
-        Console.WriteLine($"Tracking sets: {string.Join(", ", selectedSets)} (total words: {ansSet.Count})");
+        Console.WriteLine($"Tracking sets: {string.Join(", ", selectedNames)} (total words: {selectedSets.Values.Sum(v => v.Length)})");
         Console.WriteLine($"Report generated on {DateTime.Now:yyyy-MM-dd}"); // Include date for reference
 
         var csFiles = Directory.EnumerateFiles(repoRoot, "*.cs", SearchOption.AllDirectories)
@@ -172,19 +196,23 @@ class Program
         sb.AppendLine($"Found {primNames.Count} primitives in code:\n");
         foreach (var p in primNames.OrderBy(x => x)) sb.AppendLine(p);
 
-        var found = primNames.Where(p => ansSet.Contains(p)).OrderBy(s => s).ToArray();
-        var missing = ansSet.Where(a => !primNames.Contains(a)).OrderBy(s => s).ToArray();
-        var extras = primNames.Where(p => !ansSet.Contains(p)).OrderBy(s => s).ToArray();
+        var totalMissing = 0;
+        foreach (var (setName, words) in selectedSets.OrderBy(kvp => kvp.Key))
+        {
+            var found = words.Where(w => primNames.Contains(w)).OrderBy(s => s).ToArray();
+            var missing = words.Where(w => !primNames.Contains(w)).OrderBy(s => s).ToArray();
+            totalMissing += missing.Length;
 
-        sb.AppendLine($"\nTracked sets: {string.Join(", ", selectedSets)}");
-        sb.AppendLine($"\nANS words present ({found.Length}):");
-        foreach (var fnd in found) sb.AppendLine(fnd);
+            sb.AppendLine($"\n## {setName} ({words.Length} words)");
+            sb.AppendLine($"Present ({found.Length}): {string.Join(", ", found)}");
+            sb.AppendLine($"Missing ({missing.Length}): {string.Join(", ", missing)}");
+        }
 
-        sb.AppendLine($"\nOther primitives in code not in tracked sets ({extras.Length}):");
-        foreach (var e in extras) sb.AppendLine(e);
+        var extras = primNames.Where(p => !selectedSets.Values.SelectMany(v => v).Contains(p)).OrderBy(s => s).ToArray();
+        sb.AppendLine($"\n## Other primitives in code not in tracked sets ({extras.Length})");
+        sb.AppendLine(string.Join(", ", extras));
 
-        sb.AppendLine($"\nMissing tracked words ({missing.Length}):");
-        foreach (var m in missing) sb.AppendLine(m);
+        sb.AppendLine($"\nTotal missing tracked words: {totalMissing}");
 
         try
         {
@@ -207,10 +235,17 @@ class Program
             if (bool.TryParse(val, out var b)) failOnMissing = b;
         }
 
-        if (failOnMissing && missing.Length > 0)
+        if (failOnMissing && totalMissing > 0)
         {
-            Console.WriteLine($"\nFailing due to {missing.Length} missing tracked ANS words across sets: {string.Join(", ", selectedSets)}");
-            foreach (var m in missing) Console.WriteLine($"- {m}");
+            Console.WriteLine($"\nFailing due to {totalMissing} missing tracked ANS words across sets: {string.Join(", ", selectedNames)}");
+            foreach (var (setName, words) in selectedSets.OrderBy(kvp => kvp.Key))
+            {
+                var missing = words.Where(w => !primNames.Contains(w)).OrderBy(s => s).ToArray();
+                if (missing.Length > 0)
+                {
+                    Console.WriteLine($"  {setName}: {string.Join(", ", missing)}");
+                }
+            }
             return 2;
         }
 

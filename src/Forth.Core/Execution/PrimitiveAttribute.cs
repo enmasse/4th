@@ -10,6 +10,7 @@ namespace Forth.Core.Execution
         public string? Module { get; set; }
         public bool IsAsync { get; set; }
         public string? HelpString { get; set; }
+        public string? Category { get; set; }
 
         public PrimitiveAttribute(string name)
         {

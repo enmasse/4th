@@ -195,6 +195,16 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("S>F", HelpString = "S>F ( n -- r ) - convert single-cell integer to floating-point number")]
+    private static Task Prim_SToF(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "S>F");
+        var n = i.PopInternal();
+        var d = ToDoubleFromObj(n);
+        i.Push(d);
+        return Task.CompletedTask;
+    }
+
     [Primitive("FABS", HelpString = "FABS ( r -- |r| ) - floating-point absolute value")]
     private static Task Prim_FABS(ForthInterpreter i)
     {
@@ -305,6 +315,61 @@ internal static partial class CorePrimitives
         var y = i.PopInternal();
         var res = Math.Atan2(ToDoubleFromObj(y), ToDoubleFromObj(x));
         i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F~", HelpString = "F~ ( r1 r2 r3 -- flag ) - true if |r1 - r2| < r3")]
+    private static Task Prim_FTilde(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "F~");
+        var r3 = ToDoubleFromObj(i.PopInternal());
+        var r2 = ToDoubleFromObj(i.PopInternal());
+        var r1 = ToDoubleFromObj(i.PopInternal());
+        var diff = Math.Abs(r1 - r2);
+        i.Push(diff < r3 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FMIN", HelpString = "FMIN ( r1 r2 -- r3 ) - return the minimum of r1 and r2")]
+    private static Task Prim_FMIN(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FMIN");
+        var r2 = ToDoubleFromObj(i.PopInternal());
+        var r1 = ToDoubleFromObj(i.PopInternal());
+        var min = Math.Min(r1, r2);
+        i.Push(min);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FMAX", HelpString = "FMAX ( r1 r2 -- r3 ) - return the maximum of r1 and r2")]
+    private static Task Prim_FMAX(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FMAX");
+        var r2 = ToDoubleFromObj(i.PopInternal());
+        var r1 = ToDoubleFromObj(i.PopInternal());
+        var max = Math.Max(r1, r2);
+        i.Push(max);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FSQRT", HelpString = "FSQRT ( r -- r ) - floating-point square root")]
+    private static Task Prim_FSQRT(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FSQRT");
+        var a = i.PopInternal();
+        var res = Math.Sqrt(ToDoubleFromObj(a));
+        i.Push(res);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FTRUNC", HelpString = "FTRUNC ( r -- n ) - convert floating-point number to integer by truncating towards zero")]
+    private static Task Prim_FTRUNC(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FTRUNC");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        var n = (long)Math.Truncate(d);
+        i.Push(n);
         return Task.CompletedTask;
     }
 }

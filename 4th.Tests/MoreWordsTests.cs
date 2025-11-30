@@ -61,4 +61,55 @@ public class MoreWordsTests
         Assert.True(await forth.EvalAsync("81 EMIT"));
         Assert.Equal(new[] { "Q" }, io.Outputs);
     }
+
+    [Fact]
+    public async Task Env_Date_ReturnsCurrentDate()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("\"ENV\" DEFINITIONS DATE"));
+        Assert.Single(forth.Stack);
+        Assert.IsType<string>(forth.Stack[0]);
+        var dateStr = (string)forth.Stack[0];
+        // Should be in YYYY-MM-DD format
+        Assert.Matches(@"^\d{4}-\d{2}-\d{2}$", dateStr);
+    }
+
+    [Fact]
+    public async Task Env_Time_ReturnsCurrentTime()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("\"ENV\" DEFINITIONS TIME"));
+        Assert.Single(forth.Stack);
+        Assert.IsType<string>(forth.Stack[0]);
+        var timeStr = (string)forth.Stack[0];
+        // Should be in HH:MM:SS format
+        Assert.Matches(@"^\d{2}:\d{2}:\d{2}$", timeStr);
+    }
+
+    [Fact]
+    public async Task GetEnv_ReturnsEnvironmentVariable()
+    {
+        // Set before creating interpreter so it's included in ENV wordlist
+        Environment.SetEnvironmentVariable("FORTH_TEST_VAR", "test_value");
+        var forth = new ForthInterpreter();
+        try
+        {
+            Assert.True(await forth.EvalAsync("\"ENV\" DEFINITIONS FORTH_TEST_VAR"));
+            Assert.Single(forth.Stack);
+            Assert.IsType<string>(forth.Stack[0]);
+            Assert.Equal("test_value", (string)forth.Stack[0]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FORTH_TEST_VAR", null);
+        }
+    }
+
+    [Fact]
+    public async Task EnvWordlist_DoesNotIncludeNonExistentVariables()
+    {
+        var forth = new ForthInterpreter();
+        // Try to access a variable that shouldn't exist
+        await Assert.ThrowsAsync<ForthException>(() => forth.EvalAsync("\"ENV\" DEFINITIONS NON_EXISTENT_VAR_12345"));
+    }
 }

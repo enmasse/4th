@@ -25,6 +25,9 @@ public partial class ForthInterpreter : IForthInterpreter
 
     internal readonly Dictionary<string,long> _values = new(StringComparer.OrdinalIgnoreCase); // internal
 
+    internal Dictionary<string, object>? _locals;
+    internal List<string>? _currentLocals;
+
     private readonly ControlFlowRuntime _controlFlow = new();
 
     private readonly long _stateAddr;

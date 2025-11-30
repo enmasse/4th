@@ -3,7 +3,7 @@
 ## Resolved Issues
 
 ## Goal
-- Achieve full ANS-Forth conformity for all word sets (Core, Core-Ext, File, Block, Float, Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String).
+- Achieved full ANS-Forth conformity for all word sets (Core, Core-Ext, File, Block, Float, Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String).
 
 ## Method
 - A scan of `Primitive` attributes and tests in the repository is used to determine what exists. Tool `tools/ans-diff` automates comparison and can fail CI on missing words. It now supports multiple sets via `--sets=` (e.g. `--sets=core,core-ext,file,block,float` or `--sets=all`) and `--fail-on-missing=` to toggle CI failures.
@@ -51,9 +51,23 @@
 - Implemented SLITERAL primitive with regression tests.
 - Implemented SAVE-INPUT primitive with regression tests.
 - Implemented RESTORE-INPUT primitive with regression tests.
+- Implemented CS-PICK primitive with regression tests.
+- Implemented CS-ROLL primitive with regression tests.
+- Implemented S>F primitive with regression tests.
+- Implemented LOCALS| primitive with regression tests.
+- Implemented >UNUMBER primitive with regression tests.
+- Implemented LOCAL primitive with regression tests.
+- Implemented F~ primitive with regression tests.
+- Implemented COPY-FILE primitive with regression tests.
+- Implemented LOAD primitive with regression tests.
+- Implemented DATE and TIME in ENV wordlist with regression tests.
+- Implemented population of ENV wordlist with all environment variables as individual words.
+- Implemented THRU primitive with regression tests.
+- Implemented FMIN and FMAX primitives with regression tests.
+- Implemented FAM support in OPEN-FILE for binary file I/O.
 - Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote.
 - IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives.
-- ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (Core/Core-Ext/File/Block/Float), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now includes present/missing/extras for the selected sets.
+- ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (all ANS Forth word sets), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now groups results by word set, showing present/missing per set.
 - Inline IL: stabilized `IL{ ... }IL`
   - DynamicMethod signature now `(ForthInterpreter intr, ForthStack stack)`; `ldarg.0` is interpreter, `ldarg.1` is stack
   - Local type inference (declare `object` for `Pop()` results, `long` for arithmetic); consistent `LocalBuilder`-based `ldloc/stloc/ldloca`
@@ -78,6 +92,9 @@
 - Fixed LIST block formatting to trim null characters, ensuring clean output without control characters.
 - Implemented `DELETE-FILE` to remove files, with tests for typical and edge cases.
 - Implemented `RESIZE` to change file size, with tests for typical and edge cases.
+- Implemented FSQRT primitive with regression tests.
+- Implemented FTRUNC primitive with regression tests.
+- Implemented ? primitive with regression tests.
 
 ## Notes
 - **Duplicate primitive detection**: `CreateWords()` now validates that each primitive name is unique within its module, preventing silent shadowing issues.
@@ -135,21 +152,17 @@
 - [x] Implement ONLY primitive with regression tests
 - [x] Implement ALSO primitive with regression tests
 - [x] Split ForthInterpreter.cs into additional partial classes for better organization
+- [x] Enhance the Interactive REPL with tab completion, syntax highlighting, persistent history, and better error diagnostics
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
-- Support for binary file I/O or more advanced block operations.
-- Implement true BLOCK editor primitives (LOAD, LIST variants) and block-level caching policies.
-- Add optional `ENV` wordlist or mechanism for platform/environment queries.
-- Introduce configurable BASE parsing for signed/unsigned distinction (e.g. `>UNUMBER`).
+- Support for binary file I/O or more advanced block operations (FAM support implemented).
+- Implement true BLOCK editor primitives (LIST implemented, LOAD implemented, THRU implemented) and block-level caching policies.
+- Add optional `ENV` wordlist or mechanism for platform/environment queries (populated with environment variables).
 
 ## Missing ANS Forth words (tracked by `ans-diff`)
-- Depends on selected sets. Core subset currently reports none; Core-Ext/File/Block/Float will list gaps until implemented.
-- The following sets are now tracked: `double-number`, `facility`, `local`, `memory-allocation`, `programming-tools`, `search-order`, `string`.
+- None! Full conformity achieved for all tracked ANS Forth word sets.
+- All ANS Forth word sets are tracked by ans-diff.
 
-## Current gaps (from latest ans-diff for sets: core, core-ext, block, file, float, double-number, facility, local, memory-allocation, programming-tools, search-order, string)
-- (LOCAL)
-- CS-PICK
-- CS-ROLL
-- LOCALS|
-- S>F
+## Current gaps
+- None

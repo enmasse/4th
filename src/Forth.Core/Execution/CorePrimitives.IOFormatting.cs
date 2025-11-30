@@ -7,8 +7,19 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive(".", HelpString = "Print top of stack as a number ( n -- )")]
+    [Primitive(".", Category = "Arithmetic", HelpString = ". ( n -- ) - print top of stack as a number")]
     private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
+
+    [Primitive("D.", Category = "Arithmetic", HelpString = "D. ( d -- ) - print double-cell number")]
+    private static Task Prim_DDot(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "D.");
+        var high = ToLong(i.PopInternal());
+        var low = ToLong(i.PopInternal());
+        var d = (new System.Numerics.BigInteger(high) << 64) | new System.Numerics.BigInteger((ulong)low);
+        i.WriteText(d.ToString());
+        return Task.CompletedTask;
+    }
 
     [Primitive(".S", HelpString = "Print stack contents in angle brackets")]
     private static Task Prim_DotS(ForthInterpreter i)

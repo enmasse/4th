@@ -20,6 +20,38 @@ public class ProgrammingToolsTests
         Assert.Equal(-1L, id);
     }
 
+    [Fact]
+    public async Task CsPick_ThrowsOnEmptyControlStack()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<ForthException>(() => forth.EvalAsync("0 CS-PICK"));
+        Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
+    [Fact]
+    public async Task CsPick_ThrowsOnNegativeIndex()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<ForthException>(() => forth.EvalAsync("-1 CS-PICK"));
+        Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
+    [Fact]
+    public async Task CsRoll_ThrowsOnEmptyControlStack()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<ForthException>(() => forth.EvalAsync("0 CS-ROLL"));
+        Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
+    [Fact]
+    public async Task CsRoll_ThrowsOnNegativeCount()
+    {
+        var forth = new ForthInterpreter();
+        var ex = await Assert.ThrowsAsync<ForthException>(() => forth.EvalAsync("-1 CS-ROLL"));
+        Assert.Equal(ForthErrorCode.StackUnderflow, ex.Code);
+    }
+
     private sealed class TestIO : IForthIO
     {
         public void Print(string text) { }

@@ -8,7 +8,7 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
-    [Primitive("1+", HelpString = "Increment ( n -- n+1 )")]
+    [Primitive("1+", Category = "Arithmetic", HelpString = "Increment ( n -- n+1 )")]
     private static Task Prim_OnePlus(ForthInterpreter i)
     {
         i.EnsureStack(1, "1+");
@@ -79,7 +79,7 @@ internal static partial class CorePrimitives
         i._stack.Push(ForthValue.FromLong(n < 0 ? -n : n));
         return Task.CompletedTask;
     }
-    [Primitive("+", HelpString = "Add two numbers ( a b -- sum )")]
+    [Primitive("+", Category = "Arithmetic", HelpString = "Add two numbers ( a b -- sum )")]
     private static Task Prim_Plus(ForthInterpreter i)
     {
         i.EnsureStack(2, "+");
@@ -741,6 +741,16 @@ internal static partial class CorePrimitives
             i._stack.Push(ForthValue.FromLong(d2_lo));
             i._stack.Push(ForthValue.FromLong(d2_hi));
         }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("?", HelpString = "? ( addr -- ) - fetch and print the value at addr")]
+    private static Task Prim_Question(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "?");
+        var addr = ToLong(i.PopInternal());
+        var val = i._mem[addr];
+        i.WriteText(val.ToString());
         return Task.CompletedTask;
     }
 }

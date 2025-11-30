@@ -90,6 +90,7 @@ internal static partial class CorePrimitives
                 word.Module = module;
                 word.IsImmediate = attr.IsImmediate;
                 word.HelpString = attr.HelpString;
+                word.Category = attr.Category;
                 dict[(module, name)] = word;
             }
         }

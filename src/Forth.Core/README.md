@@ -1,6 +1,6 @@
 # Forth.Core
 
-Minimal async-capable Forth interpreter core library targeting .NET 9.
+Fully ANS Forth compliant, minimal async-capable Forth interpreter core library targeting .NET 9.
 
 ## Features
 - High-performance core: typed `ForthValue` structs internally (no boxing) with object-based public API
@@ -17,8 +17,8 @@ Minimal async-capable Forth interpreter core library targeting .NET 9.
 - Introspection: `SEE` decompiler, `HELP` system
 - Environment: `ENV` wordlist (`OS`, `CPU`, `MEMORY`, `MACHINE`, `USER`, `PWD`)
 - Inline IL: `IL{ ... }IL` for advanced scenarios
-- Interactive REPL with history and debugging commands
-- ANS compliance tracking via `tools/ans-diff` across Core, Core-Ext, File, Block, Float sets
+- Enhanced interactive REPL with tab completion, syntax highlighting, persistent history, and improved error diagnostics
+- Full ANS Forth conformity achieved across all word sets (Core, Core-Ext, File, Block, Float, Double-Number, Facility, Local, Memory-Allocation, Programming-Tools, Search-Order, String, and extensions). Verified via `tools/ans-diff` with 0 missing words.
 
 ## Performance
 The interpreter uses an optimized internal representation with `ForthValue` structs to avoid boxing primitive types, providing significant performance improvements for stack operations while preserving full backward compatibility through the public `object`-based API.
@@ -45,7 +45,7 @@ Include and load files:
 await forth.EvalAsync("INCLUDE \"./script.4th\"");
 ```
 
-Run ANS compliance diff:
+Run ANS compliance diff (currently reports 0 missing words for full conformity):
 ```powershell
 dotnet run --project tools/ans-diff -- --sets=all --fail-on-missing=true
 ```

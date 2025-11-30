@@ -69,5 +69,6 @@ public partial class ForthInterpreter
         _currentDefName = null;
         _currentInstructions = null;
         _currentDefTokens = null;
+        _currentLocals = null;
     }
 }

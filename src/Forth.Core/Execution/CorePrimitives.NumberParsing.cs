@@ -86,4 +86,31 @@ internal static partial class CorePrimitives
 
         remainderFlag = idx < slice.Length;
     }
+
+    [Primitive(">UNUMBER", HelpString = ">UNUMBER ( c-addr u -- u | c-addr u 0 ) - parse unsigned number")]
+    private static Task Prim_ToUNumber(ForthInterpreter i)
+    {
+        i.EnsureStack(2, ">UNUMBER");
+        var u = ToLong(i.PopInternal());
+        var addr = i.PopInternal();
+        if (u < 0) throw new ForthException(ForthErrorCode.TypeError, ">UNUMBER negative length");
+
+        i.MemTryGet(i.BaseAddr, out var baseVal);
+        int @base = (int)(baseVal <= 1 ? 10 : baseVal);
+        if (@base < 2) @base = 10;
+
+        var addrLong = ToLong(addr);
+        string slice = i.ReadMemoryString(addrLong, (int)u);
+        if (NumberParser.TryParse(slice, def => @base, out var num))
+        {
+            i.Push(num);
+        }
+        else
+        {
+            i.Push(addr);
+            i.Push(u);
+            i.Push(0L);
+        }
+        return Task.CompletedTask;
+    }
 }

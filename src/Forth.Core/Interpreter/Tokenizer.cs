@@ -121,6 +121,21 @@ public static class Tokenizer
 
             if (c == '(')
             {
+                // Special case: (LOCAL) as a single token
+                if (i + 6 < input.Length && 
+                    input.Substring(i, 7).Equals("(LOCAL)", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (current.Count > 0)
+                    {
+                        list.Add(new string(current.ToArray()));
+                        current.Clear();
+                    }
+                    list.Add("(LOCAL)");
+                    i += 6; // skip past "(LOCAL)"
+                    continue;
+                }
+                
+                // Otherwise, it's a comment
                 inComment = true;
                 continue;
             }

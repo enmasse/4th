@@ -274,4 +274,40 @@ public class ToNumberIsolationTests
         Assert.Equal("123", content);
         return Task.CompletedTask;
     }
+
+    [Fact]
+    public async Task ToUNumber_ParseUnsignedNumber()
+    {
+        var f = New();
+        await f.EvalAsync("S\" 123\" >UNUMBER");
+        
+        Assert.Single(f.Stack);
+        var num = (long)f.Stack[0];
+        
+        Assert.Equal(123L, num);
+    }
+
+    [Fact]
+    public async Task ToUNumber_ParseHexUnsignedNumber()
+    {
+        var f = New();
+        await f.EvalAsync("HEX S\" FF\" >UNUMBER DECIMAL");
+        
+        Assert.Single(f.Stack);
+        var num = (long)f.Stack[0];
+        
+        Assert.Equal(255L, num);
+    }
+
+    [Fact]
+    public async Task ToUNumber_InvalidNumber()
+    {
+        var f = New();
+        await f.EvalAsync("S\" ABC\" >UNUMBER");
+        
+        Assert.Equal(3, f.Stack.Count);
+        var flag = (long)f.Stack[2];
+        
+        Assert.Equal(0L, flag); // failure flag
+    }
 }

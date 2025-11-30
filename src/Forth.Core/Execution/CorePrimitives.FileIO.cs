@@ -230,7 +230,7 @@ internal static partial class CorePrimitives
         var filename = i.ReadMemoryString(addr, u);
         try
         {
-            var h = i.OpenFileHandle(filename, (ForthInterpreter.FileOpenMode)fam, create: true);
+            var h = i.OpenFileHandle(filename, fam, truncate: true);
             i.Push((long)h);
             i.Push(0L);
         }
@@ -283,8 +283,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "BIN");
         var fam = (long)i.PopInternal();
-        // For now, just return fam, since binary is default
-        i.Push(fam);
+        i.Push(fam | 4);
         return Task.CompletedTask;
     }
 
@@ -401,8 +400,8 @@ internal static partial class CorePrimitives
         await i.EvalAsync(text).ConfigureAwait(false);
     }
 
-    [Primitive("LOAD", IsAsync = true, HelpString = "LOAD ( filename -- ) interpret file at runtime")]
-    private static async Task Prim_LOAD(ForthInterpreter i)
+    [Primitive("LOAD-FILE", IsAsync = true, HelpString = "LOAD-FILE ( filename -- ) interpret file at runtime")]
+    private static async Task Prim_LOADFILE(ForthInterpreter i)
     {
         string pathToken;
         if (i.Stack.Count > 0 && i.Stack[^1] is string s)
@@ -411,7 +410,7 @@ internal static partial class CorePrimitives
         }
         else
         {
-            pathToken = i.ReadNextTokenOrThrow("Expected path after LOAD");
+            pathToken = i.ReadNextTokenOrThrow("Expected path after LOAD-FILE");
         }
         if (pathToken.Length >= 2 && pathToken[0] == '"' && pathToken[^1] == '"')
             pathToken = pathToken[1..^1];
@@ -463,6 +462,28 @@ internal static partial class CorePrimitives
         try
         {
             File.Move(oldName, newName);
+            i.Push(0L);
+        }
+        catch (Exception)
+        {
+            i.Push(-1L);
+        }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("COPY-FILE", HelpString = "COPY-FILE ( c-addr1 u1 c-addr2 u2 -- ior ) - copy file")]
+    private static Task Prim_COPYFILE(ForthInterpreter i)
+    {
+        i.EnsureStack(4, "COPY-FILE");
+        var u2 = ToLong(i.PopInternal());
+        var addr2 = ToLong(i.PopInternal());
+        var u1 = ToLong(i.PopInternal());
+        var addr1 = ToLong(i.PopInternal());
+        var src = i.ReadMemoryString(addr1, u1);
+        var dst = i.ReadMemoryString(addr2, u2);
+        try
+        {
+            File.Copy(src, dst);
             i.Push(0L);
         }
         catch (Exception)
