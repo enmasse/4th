@@ -15,6 +15,13 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive(":NONAME", IsImmediate = true, HelpString = ":NONAME - begin an anonymous definition, leaving xt on stack")]
+    private static Task Prim_ColonNoname(ForthInterpreter i)
+    {
+        i.BeginDefinition(null);
+        return Task.CompletedTask;
+    }
+
     [Primitive(";", IsImmediate = true, HelpString = "; - finish a definition")]
     private static Task Prim_Semi(ForthInterpreter i) { i.FinishDefinition(); return Task.CompletedTask; }
 

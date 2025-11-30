@@ -26,9 +26,9 @@ public partial class ForthInterpreter
         _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
     // Begin a new definition named `name` (called by : primitive)
-    internal void BeginDefinition(string name)
+    internal void BeginDefinition(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError, "Invalid name for definition");
+        if (name != null && string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError, "Invalid name for definition");
         if (_isCompiling) throw new ForthException(ForthErrorCode.CompileError, "Nested definitions not supported");
         _isCompiling = true;
         _mem[_stateAddr] = 1;
@@ -40,8 +40,8 @@ public partial class ForthInterpreter
     // Finish current definition (called by ; primitive)
     internal void FinishDefinition()
     {
-        if (!_isCompiling || string.IsNullOrEmpty(_currentDefName)) throw new ForthException(ForthErrorCode.CompileError, "; without matching :");
-        var name = _currentDefName!;
+        if (!_isCompiling) throw new ForthException(ForthErrorCode.CompileError, "; without matching :");
+        var name = _currentDefName;
         var instrs = _currentInstructions ?? new List<Func<ForthInterpreter, Task>>();
         var bodyTokens = _currentDefTokens != null ? new List<string>(_currentDefTokens) : null;
 
@@ -52,16 +52,26 @@ public partial class ForthInterpreter
                 await a(ii).ConfigureAwait(false);
         }) { Name = name, Module = _currentModule, BodyTokens = bodyTokens };
 
-        _dict = _dict.SetItem((_currentModule, name), word);
+        if (name != null)
+        {
+            _dict = _dict.SetItem((_currentModule, name), word);
 
-        // Store decompiled source for SEE/." etc.
-        var decompText = bodyTokens is null || bodyTokens.Count == 0
-            ? $": {name} ;"
-            : $": {name} {string.Join(' ', bodyTokens)} ;";
-        _decompile[name] = decompText;
+            // Store decompiled source for SEE/." etc.
+            var decompText = bodyTokens is null || bodyTokens.Count == 0
+                ? $": {name} ;"
+                : $": {name} {string.Join(' ', bodyTokens)} ;";
+            _decompile[name] = decompText;
 
-        RegisterDefinition(name);
+            RegisterDefinition(name);
+        }
+
         _lastDefinedWord = word;
+
+        // For :NONAME, push the word onto the stack
+        if (name == null)
+        {
+            Push(word);
+        }
 
         // Reset compilation state
         _isCompiling = false;
