@@ -42,4 +42,13 @@ public class FiberSpawnTests
         Assert.Single(f.Stack);
         Assert.Equal(42L, (long)f.Stack[0]);
     }
+
+    [Fact]
+    public async Task ColonNoname_NestedInDefinition()
+    {
+        var f = New();
+        await f.EvalAsync(": OUTER :NONAME 10 20 + ; EXECUTE ; OUTER");
+        Assert.Single(f.Stack);
+        Assert.Equal(30L, (long)f.Stack[0]);
+    }
 }

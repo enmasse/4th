@@ -22,6 +22,17 @@ public partial class ForthInterpreter
     internal Word? _lastDefinedWord;
     internal string? _lastDeferred;
 
+    private readonly Stack<CompilationContext> _compilationStack = new();
+
+    private sealed class CompilationContext
+    {
+        public bool IsCompiling;
+        public string? CurrentDefName;
+        public List<Func<ForthInterpreter, Task>>? CurrentInstructions;
+        public List<string>? CurrentDefTokens;
+        public List<string>? CurrentLocals;
+    }
+
     internal List<Func<ForthInterpreter, Task>> CurrentList() =>
         _controlStack.Count == 0 ? _currentInstructions! : _controlStack.Peek().GetCurrentList();
 
@@ -29,12 +40,27 @@ public partial class ForthInterpreter
     internal void BeginDefinition(string? name)
     {
         if (name != null && string.IsNullOrWhiteSpace(name)) throw new ForthException(ForthErrorCode.CompileError, "Invalid name for definition");
-        if (_isCompiling) throw new ForthException(ForthErrorCode.CompileError, "Nested definitions not supported");
+        // Allow nesting only for :NONAME (name == null)
+        if (name != null && _isCompiling) throw new ForthException(ForthErrorCode.CompileError, "Nested definitions not supported");
+
+        // Push current context
+        var context = new CompilationContext
+        {
+            IsCompiling = _isCompiling,
+            CurrentDefName = _currentDefName,
+            CurrentInstructions = _currentInstructions,
+            CurrentDefTokens = _currentDefTokens,
+            CurrentLocals = _currentLocals
+        };
+        _compilationStack.Push(context);
+
+        // Start new definition
         _isCompiling = true;
         _mem[_stateAddr] = 1;
         _currentDefName = name;
         _currentInstructions = new List<Func<ForthInterpreter, Task>>();
         _currentDefTokens = new List<string>();
+        _currentLocals = null;
     }
 
     // Finish current definition (called by ; primitive)
@@ -73,12 +99,13 @@ public partial class ForthInterpreter
             Push(word);
         }
 
-        // Reset compilation state
-        _isCompiling = false;
-        _mem[_stateAddr] = 0;
-        _currentDefName = null;
-        _currentInstructions = null;
-        _currentDefTokens = null;
-        _currentLocals = null;
+        // Pop and restore context
+        var context = _compilationStack.Pop();
+        _isCompiling = context.IsCompiling;
+        _mem[_stateAddr] = _isCompiling ? 1 : 0;
+        _currentDefName = context.CurrentDefName;
+        _currentInstructions = context.CurrentInstructions;
+        _currentDefTokens = context.CurrentDefTokens;
+        _currentLocals = context.CurrentLocals;
     }
 }

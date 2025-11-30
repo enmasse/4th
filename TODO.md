@@ -159,6 +159,7 @@
 - Support for binary file I/O or more advanced block operations (FAM support implemented).
 - Implement true BLOCK editor primitives (LIST implemented, LOAD implemented, THRU implemented) and block-level caching policies.
 - Add optional `ENV` wordlist or mechanism for platform/environment queries (populated with environment variables).
+- Research and integrate an official ANS-Forth conformity test suite (e.g., from Forth200x or similar) to validate full compliance beyond the current ans-diff tool.
 
 ## Missing ANS Forth words (tracked by `ans-diff`)
 - None! Full conformity achieved for all tracked ANS Forth word sets.
@@ -166,3 +167,9 @@
 
 ## Current gaps
 - None
+
+## Discrepancies to address for full ANS-Forth compliance
+- Tokenizer supports C-style // line comments, which are not part of ANS-Forth (only \ for line comments and ( ) for block comments are standard)
+- Floating-point number parsing requires a suffix ('e', 'E', 'd', or 'D'), but ANS-Forth allows decimal numbers like 1.5 without any suffix
+- THRU primitive is missing for the block-ext word set
+- Check for any other non-standard extensions or behaviors (e.g., custom syntax or semantics not in ANS)
