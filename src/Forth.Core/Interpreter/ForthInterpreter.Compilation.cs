@@ -71,6 +71,50 @@ public partial class ForthInterpreter
         var instrs = _currentInstructions ?? new List<Func<ForthInterpreter, Task>>();
         var bodyTokens = _currentDefTokens != null ? new List<string>(_currentDefTokens) : null;
 
+        // If DOES> was used, capture its body and add patching code to the end of instructions
+        string? capturedDoesBody = null;
+        if (_doesCollecting && _doesTokens is { Count: > 0 })
+        {
+            capturedDoesBody = string.Join(' ', _doesTokens);
+            
+            // Add instruction that patches the last CREATEd word with DOES> behavior
+            var doesBody = capturedDoesBody; // capture in closure
+            instrs.Add(ii =>
+            {
+                if (string.IsNullOrEmpty(ii._lastCreatedName))
+                    throw new ForthException(ForthErrorCode.CompileError, "DOES> used without preceding CREATE");
+                    
+                var createdName = ii._lastCreatedName;
+                var createdAddr = ii._lastCreatedAddr;
+                
+                // Create new word with DOES> behavior: push address, then execute body
+                var newWord = new Word(async intr =>
+                {
+                    intr.Push(createdAddr);
+                    await intr.EvalAsync(doesBody).ConfigureAwait(false);
+                })
+                {
+                    Name = createdName,
+                    Module = ii._currentModule,
+                    BodyAddr = createdAddr
+                };
+
+                // Replace the word in dictionary
+                ii._dict = ii._dict.SetItem((ii._currentModule, createdName), newWord);
+                ii.RegisterDefinition(createdName);
+                ii._lastDefinedWord = newWord;
+                
+                // Clear _lastCreatedName so this DOES> doesn't affect subsequent CREATEs
+                ii._lastCreatedName = null;
+                
+                return Task.CompletedTask;
+            });
+        }
+
+        // Clear DOES> state
+        _doesCollecting = false;
+        _doesTokens = null;
+
         // Create word that executes collected instruction delegates sequentially
         var word = new Word(async ii =>
         {

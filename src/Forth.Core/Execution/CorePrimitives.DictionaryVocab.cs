@@ -111,23 +111,76 @@ internal static partial class CorePrimitives
     [Primitive("CREATE", IsImmediate = true, HelpString = "CREATE <name> - create a new data-definition word")]
     private static Task Prim_CREATE(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
-        var addr = i._nextAddr;
-        i._lastCreatedName = name;
-        i._lastCreatedAddr = addr;
-        var created = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr };
-        i._dict = i._dict.SetItem((i._currentModule, name), created);
-        i.RegisterDefinition(name);
-        i._lastDefinedWord = created;
-        // record decompile placeholder
-        i._decompile[name] = $": {name} ;";
-        return Task.CompletedTask;
+        // CREATE is state-smart: immediate during interpretation, compiled during compilation
+        if (i._isCompiling)
+        {
+            // In compile mode: read name NOW at compile-time and embed it in compiled action
+            // This ensures the name is consumed from the token stream during compilation
+            // so the compiler doesn't try to compile it as a word reference
+            var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
+            
+            // Compile an action that creates the word at runtime
+            i.CurrentList().Add(ii =>
+            {
+                var addr = ii._nextAddr;
+                ii._lastCreatedName = name;
+                ii._lastCreatedAddr = addr;
+                
+                // Create the word directly - do NOT call BeginDefinition
+                var created = new Word(iii => { iii.Push(addr); return Task.CompletedTask; }) 
+                { 
+                    Name = name, 
+                    Module = ii._currentModule, 
+                    BodyAddr = addr 
+                };
+                ii._dict = ii._dict.SetItem((ii._currentModule, name), created);
+                ii.RegisterDefinition(name);
+                ii._lastDefinedWord = created;
+                ii._decompile[name] = $": {name} ;";
+                return Task.CompletedTask;
+            });
+            return Task.CompletedTask;
+        }
+        else
+        {
+            // In interpret mode: execute immediately (stack unchanged)
+            var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
+            var addr = i._nextAddr;
+            i._lastCreatedName = name;
+            i._lastCreatedAddr = addr;
+            var created = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) 
+            { 
+                Name = name, 
+                Module = i._currentModule, 
+                BodyAddr = addr 
+            };
+            i._dict = i._dict.SetItem((i._currentModule, name), created);
+            i.RegisterDefinition(name);
+            i._lastDefinedWord = created;
+            i._decompile[name] = $": {name} ;";
+            return Task.CompletedTask;
+        }
     }
 
     [Primitive("DOES>", IsImmediate = true, HelpString = "DOES> - begin definition of runtime behavior for last CREATE")]
-    private static Task Prim_DOES(ForthInterpreter i) { if (string.IsNullOrEmpty(i._lastCreatedName)) throw new ForthException(ForthErrorCode.CompileError, "DOES> without CREATE"); i._doesCollecting = true; i._doesTokens = new List<string>(); return Task.CompletedTask; }
+    private static Task Prim_DOES(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "DOES> must be used within a definition");
+            
+        // Start collecting DOES> body tokens  
+        i._doesCollecting = true;
+        i._doesTokens = new List<string>();
+        
+        // Note: The actual patching code will be compiled when ; is encountered and DOES> collection finishes
+        // We mark that DOES> is active so FinishDefinition knows to handle it
+        
+        return Task.CompletedTask;
+    }
 
     [Primitive("VARIABLE", IsImmediate = true, HelpString = "VARIABLE <name> - define a named storage cell")]
     private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
@@ -448,7 +501,7 @@ internal static partial class CorePrimitives
         {
             query = s; i.PopInternal();
         }
-        if (query is null) { i.Push(0L); return Task.CompletedTask; }
+        if query is null) { i.Push(0L); return Task.CompletedTask; }
         query = query.Trim().ToUpperInvariant();
         switch (query)
         {

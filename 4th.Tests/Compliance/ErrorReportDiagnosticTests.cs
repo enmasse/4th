@@ -210,4 +210,231 @@ public class ErrorReportDiagnosticTests
 
         Assert.True(hasTestErrors, "ERROR-COUNT pattern should create words");
     }
+
+    [Fact]
+    public async Task Diagnostic_SimpleCreateDoes()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 1: Simple CREATE without DOES>");
+        await forth.EvalAsync("CREATE SIMPLE-VAR");
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasSimple = words1.Any(w => w.Equals("SIMPLE-VAR", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"SIMPLE-VAR defined: {hasSimple}");
+        Assert.True(hasSimple, "Simple CREATE should define a word");
+        
+        // Execute it
+        await forth.EvalAsync("SIMPLE-VAR");
+        _output.WriteLine($"Stack after SIMPLE-VAR: {forth.Stack.Count} items");
+        Assert.Single(forth.Stack);
+    }
+
+    [Fact]
+    public async Task Diagnostic_CreateInsideColon()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 2: CREATE inside colon definition");
+        await forth.EvalAsync(": MAKE-VAR CREATE ;");
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasMakeVar = words1.Any(w => w.Equals("MAKE-VAR", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"MAKE-VAR defined: {hasMakeVar}");
+        Assert.True(hasMakeVar, "MAKE-VAR should be defined");
+        
+        _output.WriteLine("Executing: MAKE-VAR TEST-VAR");
+        await forth.EvalAsync("MAKE-VAR TEST-VAR");
+        var words2 = forth.GetAllWordNames().ToList();
+        var hasTestVar = words2.Any(w => w.Equals("TEST-VAR", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"TEST-VAR defined: {hasTestVar}");
+        Assert.True(hasTestVar, "TEST-VAR should be created by MAKE-VAR");
+    }
+
+    [Fact]
+    public async Task Diagnostic_CreateDupCommaInColon()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 3: CREATE DUP , inside colon definition");
+        await forth.EvalAsync(": MAKE-CONST CREATE DUP , ;");
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasMakeConst = words1.Any(w => w.Equals("MAKE-CONST", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"MAKE-CONST defined: {hasMakeConst}");
+        Assert.True(hasMakeConst, "MAKE-CONST should be defined");
+        
+        _output.WriteLine("Executing: 42 MAKE-CONST TEST-CONST");
+        await forth.EvalAsync("42 MAKE-CONST TEST-CONST");
+        var words2 = forth.GetAllWordNames().ToList();
+        var hasTestConst = words2.Any(w => w.Equals("TEST-CONST", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"TEST-CONST defined: {hasTestConst}");
+        _output.WriteLine($"Stack depth after MAKE-CONST: {forth.Stack.Count}");
+        Assert.True(hasTestConst, "TEST-CONST should be created by MAKE-CONST");
+    }
+
+    [Fact]
+    public async Task Diagnostic_SimpleDoesPattern()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 4: Simple DOES> pattern");
+        await forth.EvalAsync(": CONSTANT-MAKER CREATE , DOES> @ ;");
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasMaker = words1.Any(w => w.Equals("CONSTANT-MAKER", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"CONSTANT-MAKER defined: {hasMaker}");
+        Assert.True(hasMaker, "CONSTANT-MAKER should be defined");
+        
+        _output.WriteLine("Executing: 99 CONSTANT-MAKER MY-CONST");
+        await forth.EvalAsync("99 CONSTANT-MAKER MY-CONST");
+        var words2 = forth.GetAllWordNames().ToList();
+        var hasMyConst = words2.Any(w => w.Equals("MY-CONST", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"MY-CONST defined: {hasMyConst}");
+        
+        if (hasMyConst)
+        {
+            _output.WriteLine("Executing: MY-CONST");
+            await forth.EvalAsync("MY-CONST");
+            _output.WriteLine($"Stack: {string.Join(", ", forth.Stack)}");
+            Assert.Single(forth.Stack);
+            Assert.Equal(99L, (long)forth.Stack[0]);
+        }
+        else
+        {
+            Assert.True(hasMyConst, "MY-CONST should be created by CONSTANT-MAKER");
+        }
+    }
+
+    [Fact]
+    public async Task Diagnostic_ErrorCountPattern()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 5: ERROR-COUNT pattern from errorreport.fth");
+        await forth.EvalAsync("DECIMAL");
+        await forth.EvalAsync(": ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasErrorCount = words1.Any(w => w.Equals("ERROR-COUNT", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"ERROR-COUNT defined: {hasErrorCount}");
+        Assert.True(hasErrorCount, "ERROR-COUNT should be defined");
+        
+        _output.WriteLine("Executing: 0 ERROR-COUNT CORE-ERRORS");
+        await forth.EvalAsync("0 ERROR-COUNT CORE-ERRORS");
+        var words2 = forth.GetAllWordNames().ToList();
+        var hasCoreErrors = words2.Any(w => w.Equals("CORE-ERRORS", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"CORE-ERRORS defined: {hasCoreErrors}");
+        _output.WriteLine($"Stack depth after ERROR-COUNT: {forth.Stack.Count}");
+        if (forth.Stack.Count > 0)
+        {
+            _output.WriteLine($"Stack: {string.Join(", ", forth.Stack)}");
+        }
+        
+        if (hasCoreErrors)
+        {
+            _output.WriteLine("Executing: CORE-ERRORS");
+            await forth.EvalAsync("CORE-ERRORS");
+            _output.WriteLine($"Stack after CORE-ERRORS: {string.Join(", ", forth.Stack)}");
+        }
+        
+        Assert.True(hasCoreErrors, "CORE-ERRORS should be created by ERROR-COUNT");
+    }
+
+    [Fact]
+    public async Task Diagnostic_MultipleErrorCounts()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 6: Multiple ERROR-COUNT calls");
+        await forth.EvalAsync("DECIMAL");
+        await forth.EvalAsync(": ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
+        
+        _output.WriteLine("Executing: 0 ERROR-COUNT ERR1 ERROR-COUNT ERR2");
+        await forth.EvalAsync("0 ERROR-COUNT ERR1 ERROR-COUNT ERR2");
+        
+        var words = forth.GetAllWordNames().ToList();
+        var hasErr1 = words.Any(w => w.Equals("ERR1", StringComparison.OrdinalIgnoreCase));
+        var hasErr2 = words.Any(w => w.Equals("ERR2", StringComparison.OrdinalIgnoreCase));
+        
+        _output.WriteLine($"ERR1 defined: {hasErr1}");
+        _output.WriteLine($"ERR2 defined: {hasErr2}");
+        _output.WriteLine($"Stack depth: {forth.Stack.Count}");
+        if (forth.Stack.Count > 0)
+        {
+            _output.WriteLine($"Stack: {string.Join(", ", forth.Stack)}");
+        }
+        
+        Assert.True(hasErr1, "ERR1 should be created");
+        Assert.True(hasErr2, "ERR2 should be created");
+    }
+
+    [Fact]
+    public async Task Diagnostic_DoesCollectingState()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 7: Check DOES> collecting state");
+        _output.WriteLine("Define: : TEST-DOES CREATE DOES> ;");
+        await forth.EvalAsync(": TEST-DOES CREATE DOES> ;");
+        
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasTestDoes = words1.Any(w => w.Equals("TEST-DOES", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"TEST-DOES defined: {hasTestDoes}");
+        
+        // Check if _doesCollecting leaked
+        _output.WriteLine("Execute: TEST-DOES FOO");
+        try
+        {
+            await forth.EvalAsync("TEST-DOES FOO");
+            var words2 = forth.GetAllWordNames().ToList();
+            var hasFoo = words2.Any(w => w.Equals("FOO", StringComparison.OrdinalIgnoreCase));
+            _output.WriteLine($"FOO defined: {hasFoo}");
+            _output.WriteLine($"Stack depth: {forth.Stack.Count}");
+        }
+        catch (System.Exception ex)
+        {
+            _output.WriteLine($"ERROR: {ex.Message}");
+            throw;
+        }
+    }
+
+    [Fact]
+    public async Task Diagnostic_StepByStepErrorCount()
+    {
+        var forth = new ForthInterpreter();
+        
+        _output.WriteLine("Test 8: Step-by-step ERROR-COUNT definition and use");
+        
+        _output.WriteLine("Step 1: DECIMAL");
+        await forth.EvalAsync("DECIMAL");
+        
+        _output.WriteLine("Step 2: Define ERROR-COUNT");
+        await forth.EvalAsync(": ERROR-COUNT");
+        _output.WriteLine($"  _isCompiling: {forth._isCompiling}");
+        
+        _output.WriteLine("Step 3: Add CREATE to definition");
+        // This won't work as separate steps, but let's test the full definition
+        
+        _output.WriteLine("Full definition: : ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
+        await forth.EvalAsync(": ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
+        
+        var words1 = forth.GetAllWordNames().ToList();
+        var hasErrorCount = words1.Any(w => w.Equals("ERROR-COUNT", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"ERROR-COUNT defined after full definition: {hasErrorCount}");
+        
+        _output.WriteLine("\nStep 4: Push 0 on stack");
+        await forth.EvalAsync("0");
+        _output.WriteLine($"Stack: {string.Join(", ", forth.Stack)}");
+        
+        _output.WriteLine("\nStep 5: Call ERROR-COUNT with name TEST-ERR");
+        await forth.EvalAsync("ERROR-COUNT TEST-ERR");
+        
+        var words2 = forth.GetAllWordNames().ToList();
+        var hasTestErr = words2.Any(w => w.Equals("TEST-ERR", StringComparison.OrdinalIgnoreCase));
+        _output.WriteLine($"TEST-ERR defined: {hasTestErr}");
+        _output.WriteLine($"Stack after ERROR-COUNT: {string.Join(", ", forth.Stack)}");
+        
+        if (hasTestErr)
+        {
+            _output.WriteLine("\nStep 6: Execute TEST-ERR");
+            await forth.EvalAsync("TEST-ERR");
+            _output.WriteLine($"Stack after TEST-ERR: {string.Join(", ", forth.Stack)}");
+        }
+    }
 }

@@ -134,8 +134,20 @@ public partial class ForthInterpreter
 
             if (_doesCollecting)
             {
-                _doesTokens?.Add(tok);
-                continue;
+                // Stop DOES> collection when semicolon is encountered
+                // The semicolon will be processed normally to finish the definition
+                if (tok == ";")
+                {
+                    // Don't add semicolon to DOES> tokens
+                    // Process it normally to finish definition (which will apply DOES> body)
+                    FinishDefinition();
+                    continue;
+                }
+                else
+                {
+                    _doesTokens?.Add(tok);
+                    continue;
+                }
             }
 
             if (!_isCompiling)
@@ -250,30 +262,8 @@ public partial class ForthInterpreter
             }
         }
 
-        if (_doesCollecting && !string.IsNullOrEmpty(_lastCreatedName) && _doesTokens is { Count: > 0 })
-        {
-            var bodyLine = string.Join(' ', _doesTokens);
-            var addr = _lastCreatedAddr;
-
-            var newWord = new Word(async intr =>
-            {
-                intr.MemTryGet(addr, out var cur);
-                intr.Push(addr);
-                intr.Push(cur);
-                await intr.EvalAsync(bodyLine).ConfigureAwait(false);
-            })
-            {
-                Name = _lastCreatedName,
-                Module = _currentModule
-            };
-
-            _dict = _dict.SetItem((_currentModule, _lastCreatedName), newWord);
-            RegisterDefinition(_lastCreatedName);
-            _lastDefinedWord = newWord;
-            _doesCollecting = false;
-            _doesTokens = null;
-            _lastCreatedName = null;
-        }
+        // DOES> finalization now happens in FinishDefinition() when semicolon is encountered,
+        // not at end of evaluation. This allows multiple CREATE-DOES> pairs in one file.
 
         _tokens = null; // clear stream
         return !_exitRequested;

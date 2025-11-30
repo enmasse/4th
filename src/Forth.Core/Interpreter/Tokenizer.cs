@@ -135,11 +135,31 @@ public static class Tokenizer
                     continue;
                 }
                 
-                // Otherwise, it's a comment
+                // Otherwise, it's a comment - save current token and skip to )
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
                 inComment = true;
                 continue;
             }
-            if (c == '\\') break; // line comment
+            if (c == '\\')
+            {
+                // Backslash comment - rest of line is ignored
+                // Save current token first
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                // Skip to end of line or end of input
+                while (i + 1 < input.Length && input[i + 1] != '\n' && input[i + 1] != '\r')
+                {
+                    i++;
+                }
+                continue;
+            }
             if (char.IsWhiteSpace(c))
             {
                 if (current.Count > 0)
@@ -181,17 +201,6 @@ public static class Tokenizer
                 }
                 current.Add('"');
                 inString = true;
-                continue;
-            }
-
-            if (c == '[' || c == ']' || c == '\'')
-            {
-                if (current.Count > 0)
-                {
-                    list.Add(new string(current.ToArray()));
-                    current.Clear();
-                }
-                list.Add(c.ToString());
                 continue;
             }
 

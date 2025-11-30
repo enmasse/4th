@@ -250,7 +250,7 @@ public class ToNumberIsolationTests
     public Task Tokenizer_Output_Verification()
     {
         // Test what the tokenizer produces
-        var tokens = Tokenizer.Tokenize("S\" 123\" 0 0 >NUMBER");
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize("S\" 123\" 0 0 >NUMBER");
         
         _output.WriteLine($"Token count: {tokens.Count}");
         for (int i = 0; i < tokens.Count; i++)
