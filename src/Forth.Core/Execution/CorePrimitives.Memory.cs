@@ -8,13 +8,52 @@ namespace Forth.Core.Execution;
 internal static partial class CorePrimitives
 {
     [Primitive("@", HelpString = "@ ( addr -- value ) - fetch cell at address")]
-    private static Task Prim_At(ForthInterpreter i) { i.EnsureStack(1, "@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push(v); return Task.CompletedTask; }
+    private static Task Prim_At(ForthInterpreter i) 
+    { 
+        i.EnsureStack(1, "@"); 
+        var addr = ToLong(i.PopInternal()); 
+        // Fetch as object (handles both execution tokens and numeric values)
+        i.MemTryGetObject(addr, out object v); 
+        i.Push(v); 
+        return Task.CompletedTask; 
+    }
 
     [Primitive("!", HelpString = "! ( x addr -- ) - store x at address")]
-    private static Task Prim_Bang(ForthInterpreter i) { i.EnsureStack(2, "!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); i.MemSet(addr, val); i._lastStoreAddr = addr; i._lastStoreValue = val; return Task.CompletedTask; }
+    private static Task Prim_Bang(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "!");
+        var addrObj = i.PopInternal();
+        var valObj = i.PopInternal();
+
+        // Accept addresses as numbers or words with a data-field address
+        long addr = addrObj switch
+        {
+            Word w when w.BodyAddr.HasValue => w.BodyAddr.Value,
+            _ => ToLong(addrObj)
+        };
+        
+        // Store the value - if it's a Word (execution token), store as object
+        // Otherwise convert to long
+        if (valObj is Word)
+        {
+            i.MemSet(addr, valObj);
+            i._lastStoreAddr = addr;
+            i._lastStoreValue = 0; // Can't store object in long field
+        }
+        else
+        {
+            long valueToStore = ToLong(valObj);
+            i.MemSet(addr, valueToStore);
+            i._lastStoreAddr = addr;
+            i._lastStoreValue = valueToStore;
+        }
+        return Task.CompletedTask;
+    }
+
+    // No helper; `!` does not execute words to derive values
 
     [Primitive("+!", HelpString = "+! ( x addr -- ) - add x to cell at addr")]
-    private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, cur + add); return Task.CompletedTask; }
+    private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, ToLong(cur) + add); return Task.CompletedTask; }
 
     [Primitive("C!", HelpString = "C! ( x addr -- ) - store low byte of x at addr")]
     private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }

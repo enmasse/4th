@@ -208,6 +208,14 @@ public static class Tokenizer
         }
         if (current.Count > 0)
             list.Add(new string(current.ToArray()));
+        
+        // Note: We don't need to check if inComment is still true at end of line,
+        // because according to ANS Forth, parenthetical comments that don't close
+        // on the same line simply remain open until the closing ) is found in
+        // subsequent input. However, when tokenizing single lines in isolation,
+        // an unclosed comment will simply consume the rest of the line, which is
+        // the correct behavior for line-by-line evaluation.
+        
         return list;
     }
 }

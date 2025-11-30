@@ -405,24 +405,19 @@ public class ErrorReportDiagnosticTests
         await forth.EvalAsync("DECIMAL");
         
         _output.WriteLine("Step 2: Define ERROR-COUNT");
-        await forth.EvalAsync(": ERROR-COUNT");
-        _output.WriteLine($"  _isCompiling: {forth._isCompiling}");
-        
-        _output.WriteLine("Step 3: Add CREATE to definition");
-        // This won't work as separate steps, but let's test the full definition
-        
         _output.WriteLine("Full definition: : ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
         await forth.EvalAsync(": ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;");
         
         var words1 = forth.GetAllWordNames().ToList();
         var hasErrorCount = words1.Any(w => w.Equals("ERROR-COUNT", StringComparison.OrdinalIgnoreCase));
         _output.WriteLine($"ERROR-COUNT defined after full definition: {hasErrorCount}");
+        Assert.True(hasErrorCount, "ERROR-COUNT should be defined");
         
-        _output.WriteLine("\nStep 4: Push 0 on stack");
+        _output.WriteLine("\nStep 3: Push 0 on stack");
         await forth.EvalAsync("0");
         _output.WriteLine($"Stack: {string.Join(", ", forth.Stack)}");
         
-        _output.WriteLine("\nStep 5: Call ERROR-COUNT with name TEST-ERR");
+        _output.WriteLine("\nStep 4: Call ERROR-COUNT with name TEST-ERR");
         await forth.EvalAsync("ERROR-COUNT TEST-ERR");
         
         var words2 = forth.GetAllWordNames().ToList();
@@ -430,11 +425,19 @@ public class ErrorReportDiagnosticTests
         _output.WriteLine($"TEST-ERR defined: {hasTestErr}");
         _output.WriteLine($"Stack after ERROR-COUNT: {string.Join(", ", forth.Stack)}");
         
+        Assert.True(hasTestErr, "TEST-ERR should be created");
+        
+        // The ERROR-COUNT word leaves CELL+ (1) on the stack
+        Assert.Single(forth.Stack);
+        Assert.Equal(1L, (long)forth.Stack[0]);
+        
         if (hasTestErr)
         {
-            _output.WriteLine("\nStep 6: Execute TEST-ERR");
-            await forth.EvalAsync("TEST-ERR");
+            _output.WriteLine("\nStep 5: Execute TEST-ERR (after clearing stack)");
+            await forth.EvalAsync("SP! TEST-ERR");
             _output.WriteLine($"Stack after TEST-ERR: {string.Join(", ", forth.Stack)}");
+            Assert.Single(forth.Stack);
+            Assert.Equal(0L, (long)forth.Stack[0]);
         }
     }
 }

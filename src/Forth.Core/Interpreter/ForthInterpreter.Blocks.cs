@@ -385,7 +385,6 @@ namespace Forth.Core.Interpreter
         internal string? BlockFileDir => _blockFileDir;
 
         // LRU tracking for cached block-address / accessor entries to limit growth
-        // private const int MaxCachedBlocks = 64; // configurable cap for cached blocks
         private readonly LinkedList<int> _blockLru = new(); // most-recent-first
         private readonly Dictionary<int, LinkedListNode<int>> _blockLruNodes = new();
 
@@ -408,6 +407,15 @@ namespace Forth.Core.Interpreter
         }
 
         internal void MemSet_Suppressor(long addr, long v) => MemSet(addr, v);
+
+        // Overload for storing objects (execution tokens, etc)
+        internal void MemSet(long addr, object v)
+        {
+            // Remove any existing numeric value at this address
+            _mem.Remove(addr);
+            // Store the object
+            _objMem[addr] = v;
+        }
 
         internal void MemSet(long addr,long v)
          {
@@ -453,6 +461,61 @@ namespace Forth.Core.Interpreter
 
         internal void MemTryGet_Suppressor(long addr, out long v) { MemTryGet(addr, out v); }
 
+        // Method for retrieving objects or longs (avoiding overload ambiguity)
+        internal void MemTryGetObject(long addr, out object v)
+        {
+            // Check object memory first
+            if (_objMem.TryGetValue(addr, out var objVal))
+            {
+                v = objVal;
+                return;
+            }
+
+            // If using MMF and address belongs to a mapped block, read from accessor
+            if (_useMmf && TryGetBlockForAddr(addr, out var blk, out var off))
+            {
+                try
+                {
+                    var mmfLocal = _mmf;
+                    if (mmfLocal is not null)
+                    {
+                        using var acc = mmfLocal.CreateViewAccessor((long)blk * BlockSize, BlockSize, MemoryMappedFileAccess.Read);
+                         v = (long)acc.ReadByte(off);
+                         // track usage
+                         MarkBlockUsed(blk);
+                         EnforceBlockCacheLimit();
+                         return;
+                    }
+                }
+                catch
+                {
+                    // Fall back to in-memory on error
+                }
+            }
+
+            // Check heap allocations
+            foreach (var kv in _heapAllocations)
+            {
+                var start = kv.Key;
+                var (bytes, size) = kv.Value;
+                if (addr >= start && addr < start + size)
+                {
+                    v = (long)bytes[addr - start];
+                    return;
+                }
+            }
+
+            // Default behavior: read from interpreter memory cells
+            if (_mem.TryGetValue(addr, out var longVal))
+            {
+                v = longVal;
+            }
+            else
+            {
+                v = 0L;
+            }
+        }
+
         internal void MemTryGet(long addr, out long v)
          {
             // If using MMF and address belongs to a mapped block, read from accessor
@@ -487,6 +550,20 @@ namespace Forth.Core.Interpreter
                     v = (long)bytes[addr - start];
                     return;
                 }
+            }
+
+            // Check object memory (might contain a long boxed as object)
+            if (_objMem.TryGetValue(addr, out var objVal))
+            {
+                // Try to convert object to long
+                if (objVal is long l)
+                {
+                    v = l;
+                    return;
+                }
+                // If it's not a numeric type, return 0
+                v = 0L;
+                return;
             }
 
             // Default behavior: read from interpreter memory cells

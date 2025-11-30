@@ -17,7 +17,8 @@ public partial class ForthInterpreter : IForthInterpreter
     internal ImmutableDictionary<(string? Module, string Name), Word> _dict = CorePrimitives.Words;
     private readonly IForthIO _io;
     private bool _exitRequested;
-    internal readonly Dictionary<long,long> _mem = new(); // internal
+    internal readonly Dictionary<long,long> _mem = new(); // internal - numeric storage
+    internal readonly Dictionary<long,object> _objMem = new(); // internal - object storage (execution tokens, etc)
     internal long _nextAddr = 1; // internal
 
     internal long _heapPtr = 1000000L;
@@ -52,7 +53,7 @@ public partial class ForthInterpreter : IForthInterpreter
     internal long _lastStoreValue;
 
     // LRU cache size configuration (new)
-    private int _maxCachedBlocks;
+    private int _maxCachedBlocks = 64; // default 64, configurable via BlockCacheSize property or constructor
     /// <summary>
     /// Gets or sets the maximum number of cached block mappings/accessors in the interpreter's LRU.
     /// Setting this property will evict blocks if the new value is less than the current count.
@@ -82,6 +83,8 @@ public partial class ForthInterpreter : IForthInterpreter
         byte b => b,
         char c => c,
         bool bo => bo ? -1L : 0L,
+        double d => (long)d,
+        Word w when w.BodyAddr.HasValue => w.BodyAddr.Value,
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {v?.GetType().Name ?? "null"}")
     };
 

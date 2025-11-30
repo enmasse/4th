@@ -284,12 +284,16 @@ public partial class ForthInterpreter
     {
         value = 0.0;
         if (string.IsNullOrEmpty(token)) return false;
-        if (!token.EndsWith('e') && !token.EndsWith('E') && !token.EndsWith('d') && !token.EndsWith('D')) return false;
-        string toParse = token;
-        if (token.EndsWith('d') || token.EndsWith('D'))
-        {
-            toParse = token.Substring(0, token.Length - 1);
-        }
-        return double.TryParse(toParse, System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
+        // Detect floating-point literals if token contains exponent (e/E) or a decimal point.
+        // Support optional trailing 'd'/'D' suffix to indicate double.
+        bool hasSuffixD = token.EndsWith('d') || token.EndsWith('D');
+        string span = hasSuffixD ? token.Substring(0, token.Length - 1) : token;
+        bool looksFloating = span.Contains('e') || span.Contains('E') || span.Contains('.')
+            || span.IndexOf("NaN", StringComparison.OrdinalIgnoreCase) >= 0
+            || span.IndexOf("Infinity", StringComparison.OrdinalIgnoreCase) >= 0;
+        if (!looksFloating) return false;
+        // Handle Forth floating zero literal forms like 0E or 0e
+        if (span.Equals("0E", StringComparison.OrdinalIgnoreCase)) { value = 0.0; return true; }
+        return double.TryParse(span, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
     }
 }

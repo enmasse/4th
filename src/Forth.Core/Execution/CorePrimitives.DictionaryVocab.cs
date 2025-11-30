@@ -114,34 +114,84 @@ internal static partial class CorePrimitives
         // CREATE is state-smart: immediate during interpretation, compiled during compilation
         if (i._isCompiling)
         {
-            // In compile mode: read name NOW at compile-time and embed it in compiled action
-            // This ensures the name is consumed from the token stream during compilation
-            // so the compiler doesn't try to compile it as a word reference
-            var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
-            
-            // Compile an action that creates the word at runtime
-            i.CurrentList().Add(ii =>
+            // In compile mode: check if there's a next token that looks like a name
+            // If yes, read it now and create the word at compile-time (e.g., ": FOO CREATE BAR ...")
+            // If no or it doesn't look like a name, compile runtime behavior (e.g., ": MAKER CREATE ...")
+            string? nameAtCompileTime = null;
+            if (i.TryReadNextToken(out var nextTok) && !string.IsNullOrWhiteSpace(nextTok))
             {
-                var addr = ii._nextAddr;
-                ii._lastCreatedName = name;
-                ii._lastCreatedAddr = addr;
+                // Check if this token looks like a word name (not a number, not an operator already defined)
+                // For simplicity, if it's not a number and not an existing word, treat it as a name for CREATE
+                bool looksLikeNumber = long.TryParse(nextTok, out _) || double.TryParse(nextTok, out _);
+                bool isExistingWord = i.TryResolveWord(nextTok, out _);
                 
-                // Create the word directly - do NOT call BeginDefinition
+                if (!looksLikeNumber && !isExistingWord)
+                {
+                    // This looks like a name for CREATE - consume it and create at compile-time
+                    nameAtCompileTime = nextTok;
+                }
+                else
+                {
+                    // This doesn't look like a name - put it back and compile runtime behavior
+                    i._tokenIndex--; // put token back
+                }
+            }
+            else
+            {
+                // No next token or it's whitespace - compile runtime behavior
+                if (nextTok != null) i._tokenIndex--; // put token back if we got one
+            }
+            
+            if (nameAtCompileTime != null)
+            {
+                // Create the word NOW at compile-time
+                var name = nameAtCompileTime;
+                var addr = i._nextAddr;
+                i._lastCreatedName = name;
+                i._lastCreatedAddr = addr;
+                
                 var created = new Word(iii => { iii.Push(addr); return Task.CompletedTask; }) 
                 { 
                     Name = name, 
-                    Module = ii._currentModule, 
+                    Module = i._currentModule, 
                     BodyAddr = addr 
                 };
-                ii._dict = ii._dict.SetItem((ii._currentModule, name), created);
-                ii.RegisterDefinition(name);
-                ii._lastDefinedWord = created;
-                ii._decompile[name] = $": {name} ;";
+                i._dict = i._dict.SetItem((i._currentModule, name), created);
+                i.RegisterDefinition(name);
+                i._lastDefinedWord = created;
+                i._decompile[name] = $": {name} ;";
                 return Task.CompletedTask;
-            });
-            return Task.CompletedTask;
+            }
+            else
+            {
+                // Compile an action that reads the name at RUNTIME
+                // This allows patterns like ": MAKER CREATE DUP , ;" then "100 MAKER VALUE-HOLDER"
+                i.CurrentList().Add(ii =>
+                {
+                    // Read name from runtime token stream
+                    var name = ii.ReadNextTokenOrThrow("Expected name after CREATE");
+                    if (string.IsNullOrWhiteSpace(name))
+                        throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
+                    
+                    var addr = ii._nextAddr;
+                    ii._lastCreatedName = name;
+                    ii._lastCreatedAddr = addr;
+                    
+                    // Create the word directly - do NOT call BeginDefinition
+                    var created = new Word(iii => { iii.Push(addr); return Task.CompletedTask; }) 
+                    { 
+                        Name = name, 
+                        Module = ii._currentModule, 
+                        BodyAddr = addr 
+                    };
+                    ii._dict = ii._dict.SetItem((ii._currentModule, name), created);
+                    ii.RegisterDefinition(name);
+                    ii._lastDefinedWord = created;
+                    ii._decompile[name] = $": {name} ;";
+                    return Task.CompletedTask;
+                });
+                return Task.CompletedTask;
+            }
         }
         else
         {
@@ -169,15 +219,55 @@ internal static partial class CorePrimitives
     [Primitive("DOES>", IsImmediate = true, HelpString = "DOES> - begin definition of runtime behavior for last CREATE")]
     private static Task Prim_DOES(ForthInterpreter i)
     {
-        if (!i._isCompiling)
-            throw new ForthException(ForthErrorCode.CompileError, "DOES> must be used within a definition");
+        if (i._isCompiling)
+        {
+            // In compile mode: start collecting DOES> body tokens  
+            i._doesCollecting = true;
+            i._doesTokens = new List<string>();
             
-        // Start collecting DOES> body tokens  
-        i._doesCollecting = true;
-        i._doesTokens = new List<string>();
-        
-        // Note: The actual patching code will be compiled when ; is encountered and DOES> collection finishes
-        // We mark that DOES> is active so FinishDefinition knows to handle it
+            // Note: The actual patching code will be compiled when ; is encountered and DOES> collection finishes
+            // We mark that DOES> is active so FinishDefinition knows to handle it
+        }
+        else
+        {
+            // In interpret mode: collect remaining tokens on the line and apply immediately
+            if (string.IsNullOrEmpty(i._lastCreatedName))
+                throw new ForthException(ForthErrorCode.CompileError, "DOES> used without preceding CREATE");
+            
+            var doesTokens = new List<string>();
+            // Collect all remaining tokens on the current line
+            while (i.TryReadNextToken(out var tok))
+            {
+                doesTokens.Add(tok);
+            }
+            
+            if (doesTokens.Count == 0)
+                throw new ForthException(ForthErrorCode.CompileError, "DOES> requires a body");
+            
+            var createdName = i._lastCreatedName;
+            var createdAddr = i._lastCreatedAddr;
+            var doesBody = string.Join(' ', doesTokens);
+            
+            // Create new word with DOES> behavior: push address, then execute body
+            var newWord = new Word(async intr =>
+            {
+                intr.Push(createdAddr);
+                await intr.EvalAsync(doesBody).ConfigureAwait(false);
+            })
+            {
+                Name = createdName,
+                Module = i._currentModule,
+                BodyAddr = createdAddr
+            };
+
+            // Replace the word in dictionary
+            i._dict = i._dict.SetItem((i._currentModule, createdName), newWord);
+            i.RegisterDefinition(createdName);
+            i._lastDefinedWord = newWord;
+            
+            // Clear _lastCreatedName so subsequent DOES> won't accidentally apply to this word
+            i._lastCreatedName = null;
+        }
         
         return Task.CompletedTask;
     }
@@ -188,11 +278,33 @@ internal static partial class CorePrimitives
     [Primitive("CONSTANT", IsImmediate = true, HelpString = "CONSTANT <name> - define a constant with top value")]
     private static Task Prim_CONSTANT(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; i._decompile[name] = $": {name} {val} ;"; return Task.CompletedTask; }
 
-    [Primitive("VALUE", IsImmediate = true, HelpString = "VALUE <name> - define a named variable-like value")]
-    private static Task Prim_VALUE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected text after VALUE"); if (!i._values.ContainsKey(name)) i._values[name] = 0; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
+    [Primitive("VALUE", IsImmediate = true, HelpString = "VALUE <name> - define a named variable-like value (consumes stack)")]
+    private static Task Prim_VALUE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected text after VALUE"); i.EnsureStack(1, "VALUE"); var val = ToLong(i.PopInternal()); i._values[name] = val; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
 
     [Primitive("TO", IsImmediate = true, HelpString = "TO <name> - set a VALUE to the top of stack")]
-    private static Task Prim_TO(ForthInterpreter i) { i.EnsureStack(1, "TO"); var name = i.ReadNextTokenOrThrow("Expected name after TO"); var vv = ToLong(i.PopInternal()); i.ValueSet(name, vv); return Task.CompletedTask; }
+    private static Task Prim_TO(ForthInterpreter i) 
+    { 
+        var name = i.ReadNextTokenOrThrow("Expected name after TO"); 
+        if (!i._isCompiling)
+        {
+            // Interpret mode: execute immediately
+            i.EnsureStack(1, "TO"); 
+            var vv = ToLong(i.PopInternal()); 
+            i.ValueSet(name, vv); 
+        }
+        else
+        {
+            // Compile mode: compile runtime behavior
+            i.CurrentList().Add(ii => 
+            { 
+                ii.EnsureStack(1, "TO"); 
+                var vv = ToLong(ii.PopInternal()); 
+                ii.ValueSet(name, vv); 
+                return Task.CompletedTask; 
+            });
+        }
+        return Task.CompletedTask; 
+    }
 
     [Primitive("DEFER", IsImmediate = true, HelpString = "DEFER <name> - define a deferred execution token")]
     private static Task Prim_DEFER(ForthInterpreter i)
@@ -501,7 +613,7 @@ internal static partial class CorePrimitives
         {
             query = s; i.PopInternal();
         }
-        if query is null) { i.Push(0L); return Task.CompletedTask; }
+        if (query is null) { i.Push(0L); return Task.CompletedTask; }
         query = query.Trim().ToUpperInvariant();
         switch (query)
         {

@@ -234,8 +234,8 @@ public class CreateDoesStackTests
     {
         var forth = new ForthInterpreter();
         
-        // Counter: CREATE name DOES> @ 1+ DUP ROT !
-        await forth.EvalAsync(": COUNTER CREATE 0 , DOES> DUP @ 1+ SWAP ! ;");
+        // Counter: CREATE name DOES> DUP @ 1+ TUCK SWAP !
+        await forth.EvalAsync(": COUNTER CREATE 0 , DOES> DUP @ 1+ TUCK SWAP ! ;");
         
         await forth.EvalAsync("COUNTER CTR");
         

@@ -372,4 +372,47 @@ internal static partial class CorePrimitives
         i.Push(n);
         return Task.CompletedTask;
     }
+
+    [Primitive("FOVER", HelpString = "FOVER ( r1 r2 -- r1 r2 r1 ) - copy second floating item to top")]
+    private static Task Prim_FOVER(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FOVER");
+        var r2 = i.PopInternal();
+        var r1 = i.PopInternal();
+        // Restore original order and then push copy of r1
+        i.Push(r1);
+        i.Push(r2);
+        i.Push(ToDoubleFromObj(r1));
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FDROP", HelpString = "FDROP ( r -- ) - drop top floating item")]
+    private static Task Prim_FDROP(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FDROP");
+        _ = i.PopInternal();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FLOATS", HelpString = "FLOATS ( n -- n' ) - scale by float-cell size")]
+    private static Task Prim_FLOATS(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FLOATS");
+        var n = ForthInterpreter.ToLong(i.PopInternal());
+        // In this system, one float occupies one cell
+        i.Push(n);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FDEPTH", HelpString = "FDEPTH ( -- n ) - return number of floating items on stack")]
+    private static Task Prim_FDEPTH(ForthInterpreter i)
+    {
+        int count = 0;
+        for (int idx = 0; idx < i.Stack.Count; idx++)
+        {
+            if (i.Stack[idx] is double) count++;
+        }
+        i.Push((long)count);
+        return Task.CompletedTask;
+    }
 }

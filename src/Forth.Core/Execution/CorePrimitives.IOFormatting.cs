@@ -41,7 +41,10 @@ internal static partial class CorePrimitives
     [Primitive("TYPE", HelpString = "TYPE ( c-addr u | string -- ) - write string data to output")]
     private static Task Prim_TYPE(ForthInterpreter i)
     {
-        if (i.Stack.Count >= 2 && IsNumeric(i.Stack[^1]) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
+        if (i.Stack.Count == 0)
+            throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow in TYPE");
+            
+        if (i.Stack.Count >= 2 && IsNumeric(i.Stack[^1]) && (IsNumeric(i.Stack[^2]) || i.Stack[^2] is string || i.Stack[^2] is Word))
         {
             var u = ToLong(i.PopInternal());
             var addrOrStr = i.PopInternal();
@@ -50,15 +53,53 @@ internal static partial class CorePrimitives
             { var sliceLen = (int)u <= sstr.Length ? (int)u : sstr.Length; i.WriteText(sliceLen == sstr.Length ? sstr : sstr.Substring(0, sliceLen)); return Task.CompletedTask; }
             if (IsNumeric(addrOrStr))
             { var a = ToLong(addrOrStr); i.WriteText(i.ReadMemoryString(a, u)); return Task.CompletedTask; }
+            if (addrOrStr is Word w)
+            {
+                // If the word has a known body address, use it directly
+                if (w.BodyAddr.HasValue)
+                {
+                    i.WriteText(i.ReadMemoryString(w.BodyAddr.Value, u));
+                    return Task.CompletedTask;
+                }
+                // Otherwise, execute the word to obtain address or (addr u) pair
+                int before = i.Stack.Count;
+                w.ExecuteAsync(i).GetAwaiter().GetResult();
+                int added = i.Stack.Count - before;
+                if (added <= 0)
+                    throw new ForthException(ForthErrorCode.TypeError, "TYPE address word did not push a result");
+                if (added >= 2 && IsNumeric(i.Stack[^1]) && IsNumeric(i.Stack[^2]))
+                {
+                    var u2 = ToLong(i.PopInternal());
+                    var a2 = ToLong(i.PopInternal());
+                    // Prefer the length from the pair just produced
+                    i.WriteText(i.ReadMemoryString(a2, u2));
+                    return Task.CompletedTask;
+                }
+                // Single value: treat as address
+                var addrVal = i.PopInternal();
+                var a = ToLong(addrVal);
+                i.WriteText(i.ReadMemoryString(a, u));
+                return Task.CompletedTask;
+            }
             throw new ForthException(ForthErrorCode.TypeError, "TYPE address/string expected before length");
         }
-        i.EnsureStack(1, "TYPE");
+        // Single string on stack
         var obj = i.PopInternal();
         if (obj is string s) { i.WriteText(s); return Task.CompletedTask; }
         throw new ForthException(ForthErrorCode.TypeError, "TYPE expects string or (addr len)");
     }
 
-    internal static bool IsNumeric(object o) => o is long || o is int || o is short || o is byte;
+    internal static bool IsNumeric(object o) => o is long || o is int || o is short || o is byte || o is double || o is char || o is bool;
+
+    private static long ResolveWordAddress(ForthInterpreter i, Word w)
+    {
+        int before = i.Stack.Count;
+        w.ExecuteAsync(i).GetAwaiter().GetResult();
+        if (i.Stack.Count <= before)
+            throw new ForthException(ForthErrorCode.TypeError, "Address word did not push a result");
+        var addrVal = i.PopInternal();
+        return ForthInterpreter.ToLong(addrVal);
+    }
 
     [Primitive("WORDS", HelpString = "List all available word names")]
     private static Task Prim_WORDS(ForthInterpreter i) { var names = i.GetAllWordNames(); var sb = new StringBuilder(); bool first = true; foreach (var n in names) { if (!first) sb.Append(' '); first = false; sb.Append(n); } i.WriteText(sb.ToString()); return Task.CompletedTask; }
