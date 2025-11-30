@@ -99,6 +99,12 @@ public partial class ForthInterpreter : IForthInterpreter
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => _list;
     }
 
+    // Persistent bracket conditional state for multi-line support (ANS Forth compliant)
+    internal int _bracketIfNestingDepth = 0;   // Track [IF] nesting depth across lines
+    internal bool _bracketIfSkipping = false;   // Are we currently skipping due to false [IF]?
+    internal bool _bracketIfSeenElse = false;   // Have we seen [ELSE] at current depth?
+    internal int _bracketIfActiveDepth = 0;     // How many active [IF] blocks (including executing ones)
+
     internal void RequestExit() => _exitRequested = true;
 
     internal void ThrowExit() => throw new ExitWordException();

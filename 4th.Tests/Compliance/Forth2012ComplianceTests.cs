@@ -13,9 +13,18 @@ public class Forth2012ComplianceTests
 
     private static string GetRepoRoot()
     {
-        // From bin\Debug\net9.0 -> 4th
-        var dir = Directory.GetCurrentDirectory();
-        return Path.GetFullPath(Path.Combine(dir, "..", "..", "..", ".."));
+        // Search upward for the solution file to find the repo root
+        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (dir != null)
+        {
+            if (Directory.GetFiles(dir.FullName, "*.sln").Any())
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
+        }
+        // Fallback: assume we're in bin\Debug\net9.0
+        return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", ".."));
     }
 
     [Fact]

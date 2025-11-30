@@ -77,8 +77,13 @@ public class ParsingAndStringsTests
     public async Task SLiteral_CompilesStringLiteral()
     {
         var forth = new ForthInterpreter();
-        // Define a word that uses SLITERAL
-        Assert.True(await forth.EvalAsync(": test S\" hello\" SLITERAL ; test"));
+        // SLITERAL takes a runtime (c-addr u) and compiles it as a string literal
+        // First allocate a string and get its address
+        Assert.True(await forth.EvalAsync("S\" hello\""));
+        Assert.Equal(2, forth.Stack.Count);
+        
+        // Now compile a word that uses SLITERAL with those values
+        Assert.True(await forth.EvalAsync(": test SLITERAL ; test"));
         Assert.Equal(2, forth.Stack.Count);
         var addr = (long)forth.Stack[0];
         var u = (long)forth.Stack[1];
@@ -129,10 +134,14 @@ public class ParsingAndStringsTests
     [Fact]
     public async Task SQuote_PushesString()
     {
+        // S" now follows ANS Forth standard: pushes c-addr u (address + length)
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("S\" world\""));
-        Assert.Single(forth.Stack);
-        Assert.IsType<string>(forth.Stack[0]);
-        Assert.Equal("world", (string)forth.Stack[0]);
+        Assert.Equal(2, forth.Stack.Count);
+        var caddr = (long)forth.Stack[0];
+        var u = (long)forth.Stack[1];
+        Assert.Equal(5L, u);
+        var str = forth.ReadMemoryString(caddr, u);
+        Assert.Equal("world", str);
     }
 }

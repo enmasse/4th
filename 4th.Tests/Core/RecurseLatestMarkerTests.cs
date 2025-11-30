@@ -34,7 +34,8 @@ namespace Forth.Tests.Core
             var f = new ForthInterpreter();
             // Create marker M, then define a word and a VALUE, then restore; both should be gone/reverted
             Assert.True(await f.EvalAsync("MARKER M"));
-            Assert.True(await f.EvalAsync(": T 1 ; VALUE X 10 TO X"));
+            // ANS Forth: VALUE requires an initial value from stack
+            Assert.True(await f.EvalAsync(": T 1 ; 0 VALUE X 10 TO X"));
             // Sanity: both exist
             Assert.True(await f.EvalAsync("T X"));
             Assert.Equal(2, f.Stack.Count);

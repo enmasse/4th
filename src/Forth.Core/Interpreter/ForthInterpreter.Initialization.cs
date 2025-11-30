@@ -52,29 +52,47 @@ public partial class ForthInterpreter
 
     private async Task LoadPreludeAsync()
     {
-        // Try to load embedded prelude resource
-        var asm = typeof(ForthInterpreter).Assembly;
-        var resourceName = "Forth.Core.prelude.4th";
-        using var stream = asm.GetManifestResourceStream(resourceName);
-        if (stream != null)
+        try
         {
-            using var reader = new System.IO.StreamReader(stream);
-            var prelude = await reader.ReadToEndAsync();
-            await LoadPreludeText(prelude);
-            return;
+            // Try to load embedded prelude resource
+            var asm = typeof(ForthInterpreter).Assembly;
+            var resourceName = "Forth.Core.prelude.4th";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                using var reader = new System.IO.StreamReader(stream);
+                var prelude = await reader.ReadToEndAsync();
+                await LoadPreludeText(prelude);
+                _preludeLoaded = true;
+                return;
+            }
+
+            // Fallback: try loading from file system (for development)
+            var preludePath = System.IO.Path.Combine(
+                System.IO.Path.GetDirectoryName(asm.Location) ?? ".",
+                "prelude.4th");
+
+            if (System.IO.File.Exists(preludePath))
+            {
+                var prelude = await System.IO.File.ReadAllTextAsync(preludePath);
+                await LoadPreludeText(prelude);
+                _preludeLoaded = true;
+            }
+            else
+            {
+                // No prelude available - mark as loaded to avoid blocking
+                _preludeLoaded = true;
+            }
         }
-
-        // Fallback: try loading from file system (for development)
-        var preludePath = System.IO.Path.Combine(
-            System.IO.Path.GetDirectoryName(asm.Location) ?? ".",
-            "prelude.4th");
-
-        if (System.IO.File.Exists(preludePath))
+        catch (System.Exception ex)
         {
-            var prelude = await System.IO.File.ReadAllTextAsync(preludePath);
-            await LoadPreludeText(prelude);
+            // If prelude fails to load, mark as loaded anyway to avoid blocking
+            // The interpreter will still work without prelude words
+            _preludeLoaded = true;
+            // Store the exception for debugging
+            System.Diagnostics.Debug.WriteLine($"Prelude loading failed: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
         }
-        _preludeLoaded = true;
     }
 
     private async Task LoadPreludeText(string prelude)

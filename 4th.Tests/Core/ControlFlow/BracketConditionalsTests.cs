@@ -95,12 +95,20 @@ namespace Forth.Tests.Core.ControlFlow
             Assert.Empty(forth.Stack);
         }
 
-        // Intention: Verify unmatched bracket throws error
+        // Intention: Verify unmatched bracket with multi-line support
+        // With ANS Forth multi-line support, an unmatched [IF] will skip subsequent lines
+        // until [THEN] is found. Test that [ELSE] or [THEN] without [IF] throws error.
         [Fact]
         public async Task BracketIF_Unmatched_Throws()
         {
             var forth = new ForthInterpreter();
-            await Assert.ThrowsAsync<Forth.Core.ForthException>(() => forth.EvalAsync("0 [IF] 1"));
+            // [ELSE] without [IF] should throw
+            await Assert.ThrowsAsync<Forth.Core.ForthException>(() => forth.EvalAsync("[ELSE]"));
+            
+            // Create new interpreter for second test
+            var forth2 = new ForthInterpreter();
+            // [THEN] without [IF] should throw
+            await Assert.ThrowsAsync<Forth.Core.ForthException>(() => forth2.EvalAsync("[THEN]"));
         }
 
         // Intention: Verify nested with empty branches

@@ -14,8 +14,10 @@ public class DefiningWordsTests
     public async Task CreateDoes_Basic()
     {
         var forth = new ForthInterpreter();
-        // Data cell initialized to 0; DOES> reads current, increments, stores, and leaves new value on stack
-        Assert.True(await forth.EvalAsync("CREATE COUNTER 0 , DOES> 1 + DUP >R SWAP R> SWAP !"));
+        // CREATE COUNTER with a cell initialized to 0
+        // DOES> reads current value, increments it, stores back, and leaves new value on stack
+        Assert.True(await forth.EvalAsync("CREATE COUNTER 0 ,"));
+        Assert.True(await forth.EvalAsync("DOES> DUP @ 1 + DUP ROT !"));
         // Invoke twice: 1 then 2
         Assert.True(await forth.EvalAsync("COUNTER"));
         Assert.Single(forth.Stack);
@@ -33,7 +35,8 @@ public class DefiningWordsTests
     public async Task ValueAndTo_Assignment()
     {
         var forth = new ForthInterpreter();
-        Assert.True(await forth.EvalAsync("VALUE X")); // define X default 0
+        // ANS Forth: VALUE requires an initial value from stack
+        Assert.True(await forth.EvalAsync("0 VALUE X")); // define X initialized to 0
         Assert.True(await forth.EvalAsync("10 TO X")); // assign 10
         Assert.True(await forth.EvalAsync("X"));
         Assert.Single(forth.Stack);
@@ -47,7 +50,7 @@ public class DefiningWordsTests
 
         // Simplify: reset interpreter to validate reassignment
         var forth2 = new ForthInterpreter();
-        Assert.True(await forth2.EvalAsync("VALUE X 10 TO X 20 TO X X"));
+        Assert.True(await forth2.EvalAsync("5 VALUE X 10 TO X 20 TO X X"));
         Assert.Single(forth2.Stack);
         Assert.Equal(20L, (long)forth2.Stack[0]);
     }

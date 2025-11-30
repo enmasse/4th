@@ -51,7 +51,8 @@ public class ForgetWordTests
     public async Task Forget_RemovesVALUE_Definition()
     {
         var forth = new ForthInterpreter();
-        Assert.True(await forth.EvalAsync("VALUE X 42 TO X X"));
+        // ANS Forth: VALUE requires an initial value from stack
+        Assert.True(await forth.EvalAsync("0 VALUE X 42 TO X X"));
         Assert.Single(forth.Stack);
         Assert.Equal(42L, (long)forth.Stack[0]);
 

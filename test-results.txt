@@ -1,0 +1,1739 @@
+﻿Test run for D:\source\4th\4th.Tests\bin\Debug\net9.0\4th.Tests.dll (.NETCoreApp,Version=v9.0)
+VSTest version 17.14.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+D:\source\4th\4th.Tests\bin\Debug\net9.0\4th.Tests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.0.1+5ebf84cd75 (64-bit .NET 9.0.11)
+[xUnit.net 00:00:00.04]   Discovering: 4th.Tests
+[xUnit.net 00:00:00.09]   Discovered:  4th.Tests
+[xUnit.net 00:00:00.09]   Starting:    4th.Tests
+  Passed Forth.Tests.Compliance.ComputeCellsPerFpTests.ComputeCellsPerFp_ThenConstant [24 ms]
+  Standard Output Messages:
+ After BASE @: stack = [10]
+ After COMPUTE-CELLS-PER-FP CONSTANT: stack = [10]
+
+
+  Passed Forth.Tests.Core.MissingWords.HexModeVariableTests.Variable_WithHashSign_InHexMode_Works [24 ms]
+  Passed Forth.Tests.Core.MissingWords.FacilityTests.AtXy_PositionsCursor [23 ms]
+  Passed Forth.Tests.Core.MissingWords.IOKeyAndAcceptTests.Accept_ReturnsLineLengthAndWritesBuffer [25 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.Modules_Example [26 ms]
+  Passed Forth.Tests.Compliance.ComputeCellsPerFpTests.ComputeCellsPerFp_WithBaseOnStack [1 ms]
+  Standard Output Messages:
+ After BASE @: stack = [10]
+ After defining COMPUTE-CELLS-PER-FP: stack = [10]
+ After COMPUTE-CELLS-PER-FP: stack = [10, 1]
+
+
+  Passed Forth.Tests.Core.ReadmeExamplesTests.DefiningWords_Example [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.IOKeyAndAcceptTests.Expect_ReturnsLineLengthAndWritesBuffer [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FacilityTests.TimeAndDate_ReturnsCurrentTimeAndDate [1 ms]
+  Passed Forth.Tests.Core.MissingWords.HexModeVariableTests.HashErrors_Token_InHexMode_IsWord_NotNumber [2 ms]
+  Passed Forth.Tests.Core.MissingWords.IOKeyAndAcceptTests.Key_EofReturnsMinusOne [7 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.ControlFlow_Example [7 ms]
+  Passed Forth.Tests.Core.MissingWords.IOKeyAndAcceptTests.Key_ReturnsKeyCode [< 1 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.BasicOperations_Example [< 1 ms]
+  Passed Forth.Tests.Core.Math.UnsignedMathTests.UMSlashMod_Basics [35 ms]
+  Passed Forth.Tests.Core.MissingWords.FacilityTests.Page_ClearsScreen [8 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_NestedEmptyBranches [< 1 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.EnvironmentQueries_Example [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.CreateDupCommaInsideColonDefinition_ShouldWork [36 ms]
+  Standard Output Messages:
+ TEST-MAKER defined
+ Stack after TEST-MAKER: [1]
+
+
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.InterpretIF_False_RunsElsePart [< 1 ms]
+  Passed Forth.Tests.Core.Math.UnsignedMathTests.ULess_Basics [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.DoLoopTests.DoLoop_Basic [1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_EmptyThenBranch [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.IOKeyAndAcceptTests.KeyQuestion_AvailabilityFlags [1 ms]
+  Passed Forth.Tests.Core.Math.UnsignedMathTests.ZeroGreater_Basics [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.NumericBaseAndFormattingTests.PicturedNumericOutput [1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_True_ExecutesFirstPart [< 1 ms]
+  Passed Forth.Tests.Core.Stack.ReturnStackTests.ReturnStack_BasicTransfer [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.DoLoopTests.DoLoop_LeaveEarly [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Variable_MultipleLines_Works [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_SeparatedForms [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.NumericBaseAndFormattingTests.BaseSwitching [< 1 ms]
+  Passed Forth.Tests.Core.Stack.ReturnStackTests.ReturnStack_RPFetch [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Variable_SameLineInitialize_Works [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_EmptyElseBranch [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.DoLoopTests.Unloop_InsideExit [< 1 ms]
+  Passed Forth.Tests.Core.Stack.ReturnStackTests.ReturnStack_DoubleCellTransfer [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_False_ExecutesElsePart [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Variable_SameLineInitialize_NonZero_Works [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.NumericBaseAndFormattingTests.ToNumber_Parsing [1 ms]
+  Passed Forth.Tests.Core.Math.UnsignedMathTests.UMStar_Basics [1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.CreateInsideColonDefinition_ShouldWork [2 ms]
+  Passed Forth.Tests.Core.Introspection.HelpTests.Help_PrintsNoHelpForCreatedWordWhenNoHelpSet [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_DeepNesting [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Variable_ThenInitialize_Works [< 1 ms]
+  Passed Forth.Tests.Core.Introspection.HelpTests.Help_PrintsHelpForPrimitiveByName [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_MixedForms [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Variable_WithHashSign_TtesterPattern_Works [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.CreateInInterpretMode_ShouldNotPushAddress [1 ms]
+  Standard Output Messages:
+ Stack after CREATE: []
+
+
+  Passed Forth.Tests.Core.MissingWords.VariableInitializationTests.Tokenizer_HandlesHashInWordName [< 1 ms]
+  Passed Forth.Tests.Core.Introspection.HelpTests.Help_PrintsNoHelpForUnknownName [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_Nested_SkipsCorrectly [< 1 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_DoesCollectingState [1 ms]
+  Standard Output Messages:
+ Test 7: Check DOES> collecting state
+ Define: : TEST-DOES CREATE DOES> ;
+ TEST-DOES defined: True
+ Execute: TEST-DOES FOO
+ FOO defined: True
+ Stack depth: 0
+
+
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.InterpretIF_True_RunsThenPart [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_True_When_AtLowBoundary_Inclusive [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_SkipsExecutionWhenFalse [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_Order_Matters [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.MultipleErrorCountCalls_ShouldAccumulateOffset [1 ms]
+  Standard Output Messages:
+ Stack after chained calls: [3]
+
+
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_TestSimpleDefinition [1 ms]
+  Standard Output Messages:
+ Testing basic word definition...
+ TEST-WORD defined: True
+ ? TEST-WORD executed correctly, returned 42
+
+
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_With_Negatives [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellTests.Double_Cell_Stack_Operations [3 ms]
+  Passed Forth.Tests.Core.ControlFlow.BracketConditionalsTests.BracketIF_Unmatched_Throws [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.CreateFollowedByDupAllot_ShouldWork [< 1 ms]
+  Standard Output Messages:
+ Stack before CREATE: [10]
+ Stack after CREATE: [10]
+ Stack after DUP: [10, 10]
+ Stack after ALLOT: [10]
+
+
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_True_When_InRange [< 1 ms]
+  Passed Forth.Tests.Core.Exceptions.AbortQuoteTests.AbortQuote_DoesNotThrow_WhenFlagFalse [< 1 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_CreateDupCommaInColon [1 ms]
+  Standard Output Messages:
+ Test 3: CREATE DUP , inside colon definition
+ MAKE-CONST defined: True
+ Executing: 42 MAKE-CONST TEST-CONST
+ TEST-CONST defined: True
+ Stack depth after MAKE-CONST: 1
+
+
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_False_When_Outside_Negatives [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_False_When_BelowLow [< 1 ms]
+  Passed Forth.Tests.Core.Exceptions.AbortQuoteTests.AbortQuote_Throws_WhenFlagTrue [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ProgrammingToolsTests.CsRoll_ThrowsOnNegativeCount [1 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.CreateDoes_BasicPattern [< 1 ms]
+  Standard Output Messages:
+ Stack after MY-CONST: [42]
+
+
+  Passed Forth.Tests.Core.MissingWords.WithinTests.Within_False_When_AtHighBoundary_Exclusive [< 1 ms]
+  Passed Forth.Tests.Core.Stack.StackAndArithmeticTests.BasicArithmetic [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.ColonNonameInsideColon_ShouldWork [2 ms]
+  Standard Output Messages:
+ Result: True
+ Stack: [42]
+
+
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.Does_WithoutPrecedingCreate_ShouldFail [< 1 ms]
+  Standard Output Messages:
+ Expected error: DOES> used without preceding CREATE
+
+
+  Passed Forth.Tests.Core.MissingWords.ProgrammingToolsTests.CsPick_ThrowsOnEmptyControlStack [1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.NestedColonDefinitions_ShouldFail [< 1 ms]
+  Standard Output Messages:
+ Expected error: Nested definitions not supported
+
+
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.CreateInColonWithStackValues_ShouldPreserveStack [< 1 ms]
+  Standard Output Messages:
+ Stack: [10, 20, 30]
+
+
+  Passed Forth.Tests.Core.MissingWords.ProgrammingToolsTests.SourceId_ReturnsInputSourceIdentifier [< 1 ms]
+  Passed Forth.Tests.Core.Introspection.IntrospectionAndToolsTests.Depth_Word [4 ms]
+  Passed FourTh.Tests.Core.Loops.ConditionalDoAndPlusLoopTests.QDo_RunsBody_WhenStartNotEqualLimit [1 ms]
+  Passed Forth.Tests.Core.MissingWords.ProgrammingToolsTests.CsPick_ThrowsOnNegativeIndex [< 1 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.Create_InInterpretMode_ShouldNotModifyStack [< 1 ms]
+  Standard Output Messages:
+ Stack before CREATE: [1, 2, 3]
+ Stack after CREATE: [1, 2, 3]
+
+
+  Passed Forth.Tests.Core.Introspection.IntrospectionAndToolsTests.DotS_StackDisplay [< 1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.ErrorReportPattern_Line33_ShouldWork [1 ms]
+  Standard Output Messages:
+ Stack before line 33: [2]
+ Stack after line 33: []
+
+
+  Passed Forth.Tests.Core.MissingWords.ProgrammingToolsTests.CsRoll_ThrowsOnEmptyControlStack [< 1 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.CreateDoes_WithStackManipulation [< 1 ms]
+  Standard Output Messages:
+ Stack after FIRST: [1]
+ Stack after SECOND: [2]
+
+
+  Passed Forth.Tests.Repl.ReplExitTests.ByeAndQuitExit [1 ms]
+  Passed Forth.Tests.Core.Introspection.IntrospectionAndToolsTests.Dump_Memory [1 ms]
+  Passed Forth.Tests.Core.Compilation.NestedCompilationTests.CreateDoesInsideColonDefinition_ShouldWork [1 ms]
+  Standard Output Messages:
+ ERROR-COUNT defined
+ Stack after ERROR-COUNT: [1]
+ Stack after CORE-ERRORS: [0]
+
+
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.DoesWithComplexBody_ShouldWork [< 1 ms]
+  Standard Output Messages:
+ First call: 1
+ Second call: 2
+ Third call: 3
+
+
+  Passed Forth.Tests.Core.Async.CustomAwaitableTests.Taskq_CustomAwaitable_ReportsCompleted [1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.Parsing_And_Strings [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_MultipleInSameWord_Works [4 ms]
+  Passed FourTh.Tests.Core.Loops.ConditionalDoAndPlusLoopTests.PlusLoop_Leave_ExitsEarly [3 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.MultipleDoesWords_ShouldBeIndependent [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.RestoreInput_SucceedsWithCorrectState [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_InWordDefinition_TypeWorks [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_AddTwoNumbers_InlineVar [11 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.Create_InCompileMode_ShouldNotModifyStack [< 1 ms]
+  Standard Output Messages:
+ Stack after TESTER: [42, 99]
+
+
+  Passed FourTh.Tests.Core.Loops.ConditionalDoAndPlusLoopTests.PlusLoop_PositiveStep_TerminatesAtLimit [1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_AtTopLevel_PushesImmediately [< 1 ms]
+  Passed FourTh.Tests.Core.Loops.ConditionalDoAndPlusLoopTests.QDo_SkipsBody_WhenStartEqualsLimit [< 1 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.CreateDupComma_StackBehavior [1 ms]
+  Standard Output Messages:
+ Stack after MAKER: [100]
+
+
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_Branch_IncrementIfNonZero [1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.ErrorXT_Pattern_Works [1 ms]
+  Passed FourTh.Tests.Core.Loops.ConditionalDoAndPlusLoopTests.PlusLoop_NegativeStep_TerminatesAtLimit [< 1 ms]
+  Passed Forth.Tests.Core.Async.CustomAwaitableTests.Await_CustomAwaiter_ResultPushed [3 ms]
+  Passed Forth.Tests.Core.Introspection.IntrospectionAndToolsTests.Words_PrintsWordList [4 ms]
+  Passed Forth.Tests.Core.Defining.CreateDoesStackTests.DoesBody_ShouldAccessDataField [< 1 ms]
+  Standard Output Messages:
+ Stack: [6]
+
+
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_AddTwoNumbers_FixedSlots [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SimpleWordWithType_Works [< 1 ms]
+  Passed Forth.Tests.Core.Introspection.IntrospectionAndToolsTests.See_Decompile [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.LocalTests.LocalsBar_DeclaresLocals [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_CalledViaVariable_Works [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_IncrementValue [< 1 ms]
+  Passed Forth.Tests.Core.Tokenizer.MultiLineCommentTests.MultiLineComment_SpanningLines [1 ms]
+  Standard Output Messages:
+ Tokens: ':', 'WORD', 'CODE', ';'
+
+
+  Passed Forth.Tests.Core.MissingWords.LocalTests.Local_DeclaresLocal [1 ms]
+  Passed Forth.Tests.Core.Tokenizer.MultiLineCommentTests.MultiLineComment_ActualTtesterPattern [< 1 ms]
+  Standard Output Messages:
+ Tokens: ':', 'FEXACTLY=', '0E', 'F~', ';'
+
+
+  Passed Forth.Tests.Core.Tokenizer.MultiLineCommentTests.MultiLineComment_SingleLine [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_InWordDefinition_PushesAddrAndLength [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DotBracketSTests.DotBracketS_EmptyStack [1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_AddTwoNumbers [1 ms]
+  Passed Forth.Tests.Core.MissingWords.TypeStringLiteralTests.SQuote_InCompoundWord_PreservesStack [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DotBracketSTests.DotBracketS_StackDisplay [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_PopThenPush_Roundtrip [< 1 ms]
+  Passed Core.DefinitionAndErrorsTests.UndefinedWord_ShouldThrow [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DotBracketSTests.DotBracketS_SingleItem [< 1 ms]
+  Passed Forth.Tests.Core.Math.ExtendedMathTests.DivMod_Variants [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_PopThenPush_Roundtrip_StackApi [< 1 ms]
+  Passed Core.DefinitionAndErrorsTests.DefineSimpleWord_ThatAddsTwoNumbers [< 1 ms]
+  Passed Forth.Tests.Core.Math.ExtendedMathTests.Bitwise_Basics [< 1 ms]
+  Passed Core.DefinitionAndErrorsTests.DefineWord_UsingExistingWords [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.VariablesAndLoopsTests.BeginWhileRepeat_Loop [1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_PushLiteralValue [< 1 ms]
+  Passed Forth.Tests.Core.Math.ExtendedMathTests.Bitwise_Shifts [< 1 ms]
+  Passed Core.DefinitionAndErrorsTests.StackUnderflow_ShouldThrow [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_AddTwoNumbers_ShortVar [< 1 ms]
+  Passed Forth.Tests.Core.Math.ExtendedMathTests.DoubleCell_Ops [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.VariablesAndLoopsTests.BeginUntil_Loop [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.DeferBeforeIs_ThrowsOnInvocation [1 ms]
+  Passed Forth.Tests.Core.ControlFlow.VariablesAndLoopsTests.CharAndLiteral [1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_Branch_NegateIfPositive [1 ms]
+  Passed Forth.Tests.Core.Math.ExtendedMathTests.Comparisons_Extended [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.ReturnStackUnderflow_RGreater [< 1 ms]
+  Passed Forth.Tests.Core.ControlFlow.VariablesAndLoopsTests.Variable_ReadWrite [< 1 ms]
+  Passed Forth.Tests.InlineILRawOpcodeTests.RawOpcodes_Loop_Sum1ToN [< 1 ms]
+  Passed Forth.Tests.Compliance.ValueInitializationBugTest.Value_TtesterPattern [< 1 ms]
+  Standard Output Messages:
+ Test: ttester.4th pattern
+ After BASE @: [10]
+ After DECIMAL: [10]
+ After TRUE VALUE EXACT?: [10]
+
+
+  Passed Forth.Tests.Core.MissingWords.SourceAndReadLineTests.ReadLine_WritesMemoryAndReturnsLength [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.ModuleSearchOrder_ShadowAndRoot [1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.Resize [2 ms]
+  Passed Forth.Tests.Core.MissingWords.SourceAndReadLineTests.Source_PushesAddressAndLength [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.AbortWithMessage_ThrowsExpected [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.ResizeInvalid [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.CreateWithoutDoes_PushesAddressOnly [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.AllocateNegative [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ReturnStackTests.Return_Stack_Operations [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.PAD_Address [< 1 ms]
+dotnet : [xUnit.net 00:00:00.19]     Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SLiteral_CompilesStringLiteral [FAIL]
+At line:1 char:7
++ try { dotnet test --no-build --logger "console;verbosity=detailed" 2> ...
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([xUnit.net 00:0...gLiteral [FAIL]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[xUnit.net 00:00:00.19]       Forth.Core.ForthException : Stack underflow in SLITERAL
+[xUnit.net 00:00:00.19]       Stack Trace:
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs(50,0): at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.IOFormatting.cs(322,0): at Forth.Core.Execution.CorePrimitives.Prim_SLITERAL(ForthInterpreter i)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(247,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.19]         D:\source\4th\4th.Tests\Core\MissingWords\ParsingAndStringsTests.cs(81,0): at Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SLiteral_CompilesStringLiteral()
+[xUnit.net 00:00:00.19]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.19]     Forth.Tests.Core.Defining.ForgetWordTests.Forget_RemovesVALUE_Definition [FAIL]
+[xUnit.net 00:00:00.19]       Forth.Core.ForthException : Stack underflow in VALUE
+[xUnit.net 00:00:00.19]       Stack Trace:
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs(50,0): at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs(282,0): at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.19]         D:\source\4th\4th.Tests\Core\Defining\ForgetWordTests.cs(54,0): at Forth.Tests.Core.Defining.ForgetWordTests.Forget_RemovesVALUE_Definition()
+[xUnit.net 00:00:00.19]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Compliance.ValueInitializationBugTest.Value_ShouldConsumeStackAtDefinition [2 ms]
+  Standard Output Messages:
+ Test: VALUE should consume top of stack for initialization
+ Stack after 'TRUE VALUE TEST-VAL': []
+
+
+  Passed Forth.Tests.Core.Defining.DefiningWordsTests.Constant_Definition [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.ResizeNegative [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.Allocate [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.Unused_ReturnsRemainingCells [< 1 ms]
+  Failed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SLiteral_CompilesStringLiteral [< 1 ms]
+  Error Message:
+   Forth.Core.ForthException : Stack underflow in SLITERAL
+  Stack Trace:
+     at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs:line 50
+   at Forth.Core.Execution.CorePrimitives.Prim_SLITERAL(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.IOFormatting.cs:line 322
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 247
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SLiteral_CompilesStringLiteral() in D:\source\4th\4th.Tests\Core\MissingWords\ParsingAndStringsTests.cs:line 81
+--- End of stack trace from previous location ---
+  Failed Forth.Tests.Core.Defining.ForgetWordTests.Forget_RemovesVALUE_Definition [1 ms]
+  Error Message:
+   Forth.Core.ForthException : Stack underflow in VALUE
+  Stack Trace:
+     at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs:line 50
+   at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs:line 282
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.Defining.ForgetWordTests.Forget_RemovesVALUE_Definition() in D:\source\4th\4th.Tests\Core\Defining\ForgetWordTests.cs:line 54
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:00.19]     Forth.Tests.Core.Defining.DefiningWordsTests.ValueAndTo_Assignment [FAIL]
+[xUnit.net 00:00:00.19]       Forth.Core.ForthException : Stack underflow in VALUE
+[xUnit.net 00:00:00.19]       Stack Trace:
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs(50,0): at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs(282,0): at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i)
+[xUnit.net 00:00:00.19]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\4th.Tests\Core\Defining\DefiningWordsTests.cs(36,0): at Forth.Tests.Core.Defining.DefiningWordsTests.ValueAndTo_Assignment()
+[xUnit.net 00:00:00.20]         --- End of stack trace from previous location ---
+  Failed Forth.Tests.Core.Defining.DefiningWordsTests.ValueAndTo_Assignment [< 1 ms]
+  Error Message:
+   Forth.Core.ForthException : Stack underflow in VALUE
+  Stack Trace:
+     at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs:line 50
+   at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs:line 282
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.Defining.DefiningWordsTests.ValueAndTo_Assignment() in D:\source\4th\4th.Tests\Core\Defining\DefiningWordsTests.cs:line 36
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.ExtendedCoverageTests.UnmatchedControlFlowTokens_CompileOrUndefined [4 ms]
+  Passed Forth.Tests.Core.Defining.DefiningWordsTests.DeferStoreAndFetch [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.TaskQuestionOnIncompleteTask_ReturnsZero [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CaseTests.Case_No_Match_Default [4 ms]
+[xUnit.net 00:00:00.20]     Forth.Tests.Core.Defining.DefiningWordsTests.CreateDoes_Basic [FAIL]
+[xUnit.net 00:00:00.20]       Forth.Core.ForthException : Stack underflow in SWAP
+[xUnit.net 00:00:00.20]       Stack Trace:
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs(50,0): at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.StackOps.cs(18,0): at Forth.Core.Execution.CorePrimitives.Prim_SWAP(ForthInterpreter i)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs(255,0): at Forth.Core.Execution.CorePrimitives.<>c__DisplayClass155_0.<<Prim_DOES>b__0>d.MoveNext()
+[xUnit.net 00:00:00.20]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.20]         D:\source\4th\4th.Tests\Core\Defining\DefiningWordsTests.cs(20,0): at Forth.Tests.Core.Defining.DefiningWordsTests.CreateDoes_Basic()
+[xUnit.net 00:00:00.20]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.Defining.ForgetWordTests.Forget_ModuleQualified_AffectsGlobalOrder [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.Test_2Drop [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CaseTests.Case_No_Branches_Default [< 1 ms]
+  Failed Forth.Tests.Core.Defining.DefiningWordsTests.CreateDoes_Basic [1 ms]
+  Error Message:
+   Forth.Core.ForthException : Stack underflow in SWAP
+  Stack Trace:
+     at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs:line 50
+   at Forth.Core.Execution.CorePrimitives.Prim_SWAP(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.StackOps.cs:line 18
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Core.Execution.CorePrimitives.<>c__DisplayClass155_0.<<Prim_DOES>b__0>d.MoveNext() in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs:line 255
+--- End of stack trace from previous location ---
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.Defining.DefiningWordsTests.CreateDoes_Basic() in D:\source\4th\4th.Tests\Core\Defining\DefiningWordsTests.cs:line 20
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.Defining.ForgetWordTests.Forget_CoreWord_IsRejected [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.MoveOverlappingBackwardCopy [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CaseTests.Case_Single_Branch [< 1 ms]
+  Passed Forth.Tests.Core.Defining.DefiningWordsTests.DeferAndIs_Rebinding [< 1 ms]
+  Passed Forth.Tests.Core.Defining.ForgetWordTests.Forget_RemovesWord_AndLaterOnes [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CaseTests.Case_Matches_Second [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.PostponeUndefinedWord_RaisesUndefined [1 ms]
+  Passed Forth.Tests.Core.MissingWords.CaseTests.Case_Matches_First [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.DMinus_NoBorrow [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.FreeInvalid [5 ms]
+  Passed Forth.Tests.Core.PreludeLoadingTests.Prelude_IsLoaded [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.NegativeErase_Throws [< 1 ms]
+  Passed Forth.Tests.Core.PreludeLoadingTests.Prelude_ResourceExists [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.MStar_Large128 [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.Free [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.NegativeAllot_Throws [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.DPlus_NoCarry [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.Memory_Fetch_Store_And_Here [< 1 ms]
+  Passed Forth.Tests.Core.PreludeLoadingTests.Prelude_ResourceIsReadable [8 ms]
+[xUnit.net 00:00:00.20]     Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SQuote_PushesString [FAIL]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.MStar_Small [8 ms]
+[xUnit.net 00:00:00.20]       Assert.Single() Failure: The collection contained 2 items
+[xUnit.net 00:00:00.20]       Collection: [7, 5]
+[xUnit.net 00:00:00.20]       Stack Trace:
+[xUnit.net 00:00:00.21]     Forth.Tests.Compliance.TtesterFixTest.TestOriginalPattern_StackConsumption [FAIL]
+[xUnit.net 00:00:00.20]         D:\source\4th\4th.Tests\Core\MissingWords\ParsingAndStringsTests.cs(134,0): at Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SQuote_PushesString()
+[xUnit.net 00:00:00.20]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.MemoryTests.ResizeSmaller [8 ms]
+  Failed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SQuote_PushesString [14 ms]
+  Error Message:
+   Assert.Single() Failure: The collection contained 2 items
+Collection: [7, 5]
+  Stack Trace:
+     at Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SQuote_PushesString() in D:\source\4th\4th.Tests\Core\MissingWords\ParsingAndStringsTests.cs:line 134
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_NoTrailingSpaces [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.DPlus_WithCarry [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CreateBodyAndMMODTests.Body_For_CreateAndVariable_ReturnsAddress [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_EmptyString [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SaveInput_PushesState [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleCellArithmeticTests.DMinus_WithBorrow [< 1 ms]
+  Passed Forth.Tests.Core.Api.PublicWordApiTests.AddSyncWord_ThatUsesInterpreterStackHelpers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_MultipleTrailingSpaces [< 1 ms]
+  Passed Forth.Tests.Core.Api.PublicStackApiTests.PushPop_ReadsAndWrites [< 1 ms]
+  Passed Forth.Tests.Core.Api.PublicWordApiTests.AddSyncWord_AddsTwoNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_WithTrailingSpaces [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.StackOpsTests.TUCK_Duplicates_Top_Under_Second [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.RestoreInput_FailsWithWrongN [1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_ZeroLength [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CreateBodyAndMMODTests.MSlashMod_SymmetricDivision_Basics [2 ms]
+  Passed Forth.Tests.Core.MissingWords.StackOpsTests.QuestionDup_Only_Duplicates_NonZero [1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_NegativeLength_Throws [< 1 ms]
+  Passed Forth.Tests.Compliance.BracketIfConsumptionTest.BracketIf_DoesNotConsumeUnrelatedStackValues [< 1 ms]
+  Standard Output Messages:
+ After BASE @: stack = [10]
+ After [IF] and CONSTANT: stack = [10]
+
+
+  Passed Forth.Tests.Core.MissingWords.StackOpsTests.SP_Bang_Clears_Stack [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_AllSpaces [< 1 ms]
+  Passed Forth.Tests.DynamicLoadTests.LoadAssemblyWords_FromCSharp [< 1 ms]
+  Passed Forth.Tests.Core.Math.DivisionSignTests.Slash_And_MOD_Individual_NegativeCases [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.StackOpsTests.NIP_Drops_Second_Item [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_LeadingAndTrailingSpaces [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SlashString [2 ms]
+  Passed Forth.Tests.Core.Math.DivisionSignTests.StarSlashMOD_ViaPrelude_Works_OnPositives [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.TrailingTests.Trailing_SingleSpace [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.StackOpsTests.SP_At_Pushes_Depth [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ParsingAndStringsTests.SQuote_PushesAddrLen [< 1 ms]
+  Passed Forth.Tests.Core.Math.DivisionSignTests.SlashMod_NegativeOperands_TruncatesTowardZero [< 1 ms]
+  Passed Forth.Tests.Core.Parsing.DotQuoteTests.DotQuote_CompileTime_EmitsPrint [< 1 ms]
+[xUnit.net 00:00:00.21]       Assert.Single() Failure: The collection contained 2 items
+[xUnit.net 00:00:00.21]       Collection: [10, 42]
+[xUnit.net 00:00:00.21]       Stack Trace:
+[xUnit.net 00:00:00.21]         D:\source\4th\4th.Tests\Compliance\TtesterFixTest.cs(31,0): at Forth.Tests.Compliance.TtesterFixTest.TestOriginalPattern_StackConsumption()
+[xUnit.net 00:00:00.21]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.21]       Output:
+[xUnit.net 00:00:00.21]         Original pattern (BASE @ on stack, then [IF]):
+[xUnit.net 00:00:00.21]         After BASE @: stack = [10]
+[xUnit.net 00:00:00.21]         After [IF] block: stack = [10, 42]
+[xUnit.net 00:00:00.21]     Forth.Tests.Compliance.Forth2012ComplianceTests.CoreExtTests [FAIL]
+  Passed Forth.Tests.Core.Parsing.DotQuoteTests.DotQuote_InterpretTime_Prints [< 1 ms]
+  Passed Forth.Tests.Core.Exceptions.ExceptionModelTests.Abort_AbortQuote [< 1 ms]
+  Passed Forth.Tests.Core.Parsing.DotQuoteTests.DotQuote_MissingClosing_Throws [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.LoadBlock [2 ms]
+  Passed Forth.Tests.Core.Exceptions.ExceptionModelTests.CatchThrow_Basic [1 ms]
+  Passed Forth.Tests.Core.MissingWords.VocabOrderTests.GetOrder_DefaultContainsFORTH [1 ms]
+  Failed Forth.Tests.Compliance.TtesterFixTest.TestOriginalPattern_StackConsumption [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection contained 2 items
+Collection: [10, 42]
+  Stack Trace:
+     at Forth.Tests.Compliance.TtesterFixTest.TestOriginalPattern_StackConsumption() in D:\source\4th\4th.Tests\Compliance\TtesterFixTest.cs:line 31
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ Original pattern (BASE @ on stack, then [IF]):
+ After BASE @: stack = [10]
+ After [IF] block: stack = [10, 42]
+
+
+  Passed Forth.Tests.Core.MissingWords.VocabOrderTests.SetOrder_ChangesAndGetOrderReflects [1 ms]
+  Passed Forth.Tests.Compliance.TtesterFixTest.TestFixedPattern_VariableStorage [1 ms]
+  Standard Output Messages:
+ Fixed pattern (save BASE in variable):
+ After saving BASE: stack = []
+ After [IF] block: stack = [42]
+ After restoring BASE: stack = [42]
+
+
+  Passed Forth.Tests.Core.ControlFlow.ControlFlowAndIOPlan.IfElseThen_Branching [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.FlushSavesAndClearsBuffers [2 ms]
+  Passed Forth.Tests.Core.MissingWords.ExceptionAndFlowTests.Exception_And_Flow_Control [< 1 ms]
+  Passed Forth.Tests.SyncFastPathTests.ArithmeticFastPathWorks [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.SaveBuffersSavesDirtyBlocks [< 1 ms]
+[xUnit.net 00:00:00.21]       System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\forth2012-test-suite\src\tester.fr'.
+[xUnit.net 00:00:00.21]       Stack Trace:
+[xUnit.net 00:00:00.21]            at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+[xUnit.net 00:00:00.21]            at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+[xUnit.net 00:00:00.21]            at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+[xUnit.net 00:00:00.21]            at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs(456,0): at Forth.Core.Execution.CorePrimitives.Prim_INCLUDED(ForthInterpreter i)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.21]         D:\source\4th\4th.Tests\Compliance\Forth2012ComplianceTests.cs(45,0): at Forth.Tests.Compliance.Forth2012ComplianceTests.CoreExtTests()
+[xUnit.net 00:00:00.21]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.21]     Forth.Tests.Compliance.Forth2012ComplianceTests.CoreTests [FAIL]
+[xUnit.net 00:00:00.21]       System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\forth2012-test-suite\src\tester.fr'.
+[xUnit.net 00:00:00.21]       Stack Trace:
+[xUnit.net 00:00:00.21]            at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+[xUnit.net 00:00:00.21]            at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.21]            at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+[xUnit.net 00:00:00.21]            at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+[xUnit.net 00:00:00.21]            at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs(456,0): at Forth.Core.Execution.CorePrimitives.Prim_INCLUDED(ForthInterpreter i)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.21]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.21]         D:\source\4th\4th.Tests\Compliance\Forth2012ComplianceTests.cs(29,0): at Forth.Tests.Compliance.Forth2012ComplianceTests.CoreTests()
+[xUnit.net 00:00:00.21]         --- End of stack trace from previous location ---
+  Failed Forth.Tests.Compliance.Forth2012ComplianceTests.CoreExtTests [1 ms]
+  Error Message:
+   System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\forth2012-test-suite\src\tester.fr'.
+  Stack Trace:
+     at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+   at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+   at Forth.Core.Execution.CorePrimitives.Prim_INCLUDED(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs:line 456
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Compliance.Forth2012ComplianceTests.CoreExtTests() in D:\source\4th\4th.Tests\Compliance\Forth2012ComplianceTests.cs:line 45
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.SyncFastPathTests.StringAndCharFastPathWorks [< 1 ms]
+  Passed Forth.Tests.SyncFastPathTests.FallsBackForAwait [< 1 ms]
+  Failed Forth.Tests.Compliance.Forth2012ComplianceTests.CoreTests [< 1 ms]
+  Error Message:
+   System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\forth2012-test-suite\src\tester.fr'.
+  Stack Trace:
+     at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+   at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+   at Forth.Core.Execution.CorePrimitives.Prim_INCLUDED(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs:line 456
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Compliance.Forth2012ComplianceTests.CoreTests() in D:\source\4th\4th.Tests\Compliance\Forth2012ComplianceTests.cs:line 29
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.Thru_LoadsRangeOfBlocks [1 ms]
+  Passed Forth.Tests.Core.Parsing.ParsingAndCompilationTests.Tick_ExecutionToken [< 1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "FOO[BAR]", expectedTokens: ["FOO[BAR]"]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'FOO[BAR]'
+ Tokens: ['FOO[BAR]']
+ Expected: ['FOO[BAR]']
+
+
+610NON-ZEROZERO8500 test content                                                    
+01                                                                 
+02                                                                 
+03                                                                 
+04                                                                 
+05                                                                 
+06                                                                 
+07                                                                 
+08                                                                 
+09                                                                 
+10                                                                 
+11                                                                 
+12                                                                 
+13                                                                 
+14                                                                 
+15                                                                 
+  Passed Forth.Tests.Core.Parsing.ParsingAndCompilationTests.Wordlists_SearchOrder [< 1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "A B C", expectedTokens: ["A", "B", "C"]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'A B C'
+ Tokens: ['A', 'B', 'C']
+ Expected: ['A', 'B', 'C']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "[ ] IF", expectedTokens: ["[", "]", "IF"]) [< 1 ms]
+  Standard Output Messages:
+ Input: '[ ] IF'
+ Tokens: ['[', ']', 'IF']
+ Expected: ['[', ']', 'IF']
+
+
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.ScrVariableHoldsLastListedBlock [1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "WORD1 WORD2", expectedTokens: ["WORD1", "WORD2"]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'WORD1 WORD2'
+ Tokens: ['WORD1', 'WORD2']
+ Expected: ['WORD1', 'WORD2']
+
+
+  Passed Forth.Tests.Core.Parsing.ParsingAndCompilationTests.ImmediateAndPostpone [1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "TEST-NAME", expectedTokens: ["TEST-NAME"]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'TEST-NAME'
+ Tokens: ['TEST-NAME']
+ Expected: ['TEST-NAME']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleSpecialCharacters(input: "ERRORS[]", expectedTokens: ["ERRORS[]"]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'ERRORS[]'
+ Tokens: ['ERRORS[]']
+ Expected: ['ERRORS[]']
+
+
+  Passed Forth.Tests.Core.Parsing.ParsingAndCompilationTests.State_AndInterpretCompile [< 1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleQuotedStrings(input: "ABORT\" error\"", expectedTokens: ["ABORT\"", "\"error\""]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'ABORT" error"'
+ Tokens: ['ABORT"', '"error"']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleQuotedStrings(input: ".\" test\"", expectedTokens: [".\"", "\"test\""]) [< 1 ms]
+  Standard Output Messages:
+ Input: '." test"'
+ Tokens: ['."', '"test"']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleQuotedStrings(input: "S\" hello\"", expectedTokens: ["S\"", "\"hello\""]) [< 1 ms]
+  Standard Output Messages:
+ Input: 'S" hello"'
+ Tokens: ['S"', '"hello"']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleBrackets [< 1 ms]
+  Standard Output Messages:
+ Tokens: ['CREATE', 'ERRORS[]', 'DUP']
+
+
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.ListBlock [1 ms]
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleParenComments [< 1 ms]
+  Standard Output Messages:
+ Input: 'WORD1 ( comment ) WORD2'
+ Tokens: ['WORD1', 'WORD2']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldHandleComments [< 1 ms]
+  Standard Output Messages:
+ Input: 'WORD1 \ comment\nWORD2'
+ Tokens: ['WORD1', 'WORD2']
+
+
+  Passed Forth.Tests.Core.Tokenizer.TokenizerTests.Tokenizer_ShouldNotSplitWordWithBrackets [< 1 ms]
+  Standard Output Messages:
+ Input: 'VARIABLE ERRORS[]'
+ Tokens: ['VARIABLE', 'ERRORS[]']
+
+
+  Passed Forth.Tests.Core.MissingWords.AheadTests.Ahead_In_If [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.File_Exists_Flag [12 ms]
+  Passed Forth.Tests.Core.MissingWords.AheadTests.Ahead_Skips_Code [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.BlockLoadAndSave [1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.BufferAssignsBlockBuffer [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.AheadTests.Ahead_Compiles_Correctly [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.DeleteFile_DeletesExistingFile [1 ms]
+  Passed Forth.Tests.Core.Async.AwaitableRobustnessTests.Await_ValueTask_Void_Completes [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.EmptyBuffersClearsAllBuffers [1 ms]
+  Passed Forth.Tests.Core.Async.AwaitableRobustnessTests.Await_TaskOfT_PushesResult [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemTests.UpdateMarksCurrentBlockDirty [< 1 ms]
+  Passed Forth.Tests.Core.Async.AwaitableRobustnessTests.Await_Throws_ReportsExecutionError [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FLOOR_Flooring [< 1 ms]
+  Passed Forth.Tests.Core.Async.AwaitableRobustnessTests.Await_ValueTaskOfT_PushesResult [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FTilde_ApproximateEquality [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FABS_AbsoluteValue [1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Catch_Task_Exception_From_Bound_Method [1 ms]
+[xUnit.net 00:00:00.23]     Forth.Tests.Core.RecurseLatestMarkerTests.Marker_RestoresDefinitionsAndValues [FAIL]
+[xUnit.net 00:00:00.23]       Forth.Core.ForthException : Stack underflow in VALUE
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs(50,0): at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word)
+[xUnit.net 00:00:00.23]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs(282,0): at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i)
+[xUnit.net 00:00:00.23]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.23]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.23]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.23]         D:\source\4th\4th.Tests\Core\RecurseLatestMarkerTests.cs(37,0): at Forth.Tests.Core.RecurseLatestMarkerTests.Marker_RestoresDefinitionsAndValues()
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FloatingPoint_Arithmetic [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FATAN2_Arctangent2 [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.SToF_ConvertsIntToFloat [< 1 ms]
+  Passed Forth.Tests.Core.Modules.TestIOModuleTests.AddInputLine_DirectString_ReadLine [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FCOS_Cosine [< 1 ms]
+  Failed Forth.Tests.Core.RecurseLatestMarkerTests.Marker_RestoresDefinitionsAndValues [10 ms]
+  Error Message:
+   Forth.Core.ForthException : Stack underflow in VALUE
+  Stack Trace:
+     at Forth.Core.Interpreter.ForthInterpreter.EnsureStack(Int32 needed, String word) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.StackOperations.cs:line 50
+   at Forth.Core.Execution.CorePrimitives.Prim_VALUE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.DictionaryVocab.cs:line 282
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.RecurseLatestMarkerTests.Marker_RestoresDefinitionsAndValues() in D:\source\4th\4th.Tests\Core\RecurseLatestMarkerTests.cs:line 37
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.RecurseLatestMarkerTests.Recurse_AllowsRecursiveDefinition [< 1 ms]
+  Passed Forth.Tests.Core.Modules.TestIOModuleTests.AddInputLine_CountedAddress_ReadLine [1 ms]
+  Passed Forth.Tests.Core.RecurseLatestMarkerTests.Latest_ReturnsLastDefinedXt [< 1 ms]
+  Passed Forth.Tests.Core.Modules.TestIOModuleTests.AddInputLine_AddrLengthPair_ReadLine [< 1 ms]
+  Passed Forth.Tests.Core.Memory.MemoryAndStringTests.CreateAllot_CellStoreFetch [< 1 ms]
+  Passed Forth.Tests.Core.Memory.MemoryAndStringTests.ByteFetchStore [< 1 ms]
+  Passed FourTh.Tests.Core.Loops.PlusLoopEdgeCaseTests.PlusLoop_CrossesLimitDescending_TerminatesAfterBody [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FMin_ReturnsMinimum [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.ReadAndWrite_FileBytes_ViaHandle [11 ms]
+  Passed FourTh.Tests.Core.Loops.PlusLoopEdgeCaseTests.PlusLoop_CrossesLimit_TerminatesAfterBody [< 1 ms]
+  Passed Forth.Tests.Core.Memory.MemoryAndStringTests.SQuoteType_Output [< 1 ms]
+  Passed FourTh.Tests.Core.Loops.PlusLoopEdgeCaseTests.PlusLoop_ZeroStep_DefaultsToDirection [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FloatingPoint_Variables_And_Constants [1 ms]
+  Passed FourTh.Tests.Core.Loops.PlusLoopEdgeCaseTests.QDo_DescendingRange_RunsWhenStartNotEqualLimit [< 1 ms]
+  Passed Forth.Tests.Core.Memory.MemoryAndStringTests.MoveFillErase [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FEXP_Exponential [1 ms]
+  Passed Forth.Tests.MoreWordsTests.Rotations_Work [< 1 ms]
+  Passed Forth.Tests.Core.Memory.MemoryAndStringTests.PlusStore [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.CopyFile_CopiesExistingFile [2 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.TokenizeLine86 [< 1 ms]
+  Standard Output Messages:
+ Tokenizing: VARIABLE #ERRORS 0 #ERRORS !
+ Tokens (5):
+   [0] = 'VARIABLE'
+   [1] = '#ERRORS'
+   [2] = '0'
+   [3] = '#ERRORS'
+   [4] = '!'
+
+
+  Passed Forth.Tests.MoreWordsTests.EnvWordlist_DoesNotIncludeNonExistentVariables [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FLOG_Logarithm [1 ms]
+  Passed Forth.Tests.MoreWordsTests.Emit_PrintsCharacter [< 1 ms]
+  Passed Forth.Tests.MoreWordsTests.Comparisons_Work [< 1 ms]
+  Passed Forth.Tests.MoreWordsTests.Env_Date_ReturnsCurrentDate [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Diagnostics_LastWriteAndReadBuffers [9 ms]
+  Passed Forth.Tests.MoreWordsTests.Env_Time_ReturnsCurrentTime [5 ms]
+  Passed Forth.Tests.MoreWordsTests.GetEnv_ReturnsEnvironmentVariable [< 1 ms]
+  Passed Forth.Tests.MoreWordsTests.Constant_DefinesValueWord [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteFileBytes_NegativeLength_Throws [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMAX_SecondLarger [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FloatingPoint_Printing [11 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoSlash_CarryOver [< 1 ms]
+  Passed Forth.Tests.Core.Modules.ModulesTests.DefineWordInModuleAndCallQualified [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.AppendFile_NegativeLength_AppendsEmpty [1 ms]
+  Passed Forth.Tests.Core.Modules.ModulesTests.UsingModuleAllowsUnqualified [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DULess_NegativeVsPositive [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FASIN_Arcsine [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.RenameFile_NonExistent_ReturnsError [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_NegativeDoubles [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.DeleteFile_NonExistent_ReturnsError [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.OneMinus_Decrements [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DULess_FirstGreaterThanSecond_ReturnsFalse [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FTAN_Tangent [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMIN_FirstSmaller [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.SPACE_EmitsSingleSpace [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FSQRT_SquareRoot [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DULess_EqualUnsignedDoubles_ReturnsFalse [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.FilePosition_AfterOpen [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_FirstLessThanSecond_ReturnsTrue [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoSlash_NegativeEven [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.PICK_NegativeIndexThrows [1 ms]
+  Passed Forth.Tests.Core.Async.ValueTaskExtensionsTests.Await_DirectValueTask_Void [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_NegativeDoubles_Equal [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.RefillTests.Refill_ReadsNextLineAndSetsSource [1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.TRUE_PushesMinusOne [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.Wordlist_And_Definitions_Basic [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.RefillTests.Refill_ReturnsFalseOnEOF [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FloatingPoint_Comparisons [2 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.NIP_RemovesSecond [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.ForthWordlist_ReturnsNull [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DABS_MinValue [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.SPACES_EmitsMultipleSpaces [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.Also_DuplicatesTopWordlist [< 1 ms]
+  Passed Forth.Tests.Core.Async.ValueTaskExtensionsTests.Taskq_ValueTask_IncompleteThenComplete [2 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMIN_SecondSmaller [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.NOT_LogicalNegation [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FROUND_Rounding [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMAX_FirstLarger [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.Only_SetsSearchOrderToForthOnly [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMIN_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.Async.ValueTaskExtensionsTests.Await_DirectValueTaskT_Completed [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.ABS_AbsoluteValue [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.GetCurrent_ReturnsCurrentWordlist [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FACOS_Arccosine [1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.UDot_UnsignedOutput [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoStar_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.SetCurrent_ChangesCurrentWordlist [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.OnePlus_Increments [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FToS_ConvertsFloatToInt [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_MixedSigns [1 ms]
+  Passed Forth.Tests.Core.MissingWords.WordlistDefinitionsTests.SearchWordlist_FindsWordInWordlist [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.TwoStar_Doubles [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FTRUNC_TruncateTowardsZero [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.FALSE_PushesZero [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DNEGATE_LargeNegative [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_Accumulator_NonZero [< 1 ms]
+  Standard Output Messages:
+ Accumulator test (start=10, '5'): acc=105, remFlag=0, consumed=1
+
+
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FMax_ReturnsMaximum [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DABS_Zero [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_StartCount_NonZero [< 1 ms]
+  Standard Output Messages:
+ Start count test (start=2, '789'): acc=789, remFlag=0, consumed=5
+
+
+  Passed Forth.Tests.Core.PreludeWordsTests.QuestionDUP_DuplicatesNonZero [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_NegativeDoubles_Unequal [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_StepByStep_ThreeDigits [< 1 ms]
+  Standard Output Messages:
+ Three digits '123': acc=123, remFlag=0, consumed=3
+
+
+  Passed Forth.Tests.Core.PreludeWordsTests.StarSlashMOD_MultiplyThenDivide [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.SQuote_NoSpace_MemoryLayout [< 1 ms]
+  Standard Output Messages:
+ No space case - c-addr: 7, u: 3
+ Memory: 'X', 'Y', 'Z'
+
+
+  Passed Forth.Tests.Core.MissingWords.FloatingPointTests.FSIN_Sine [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DDot_PrintsDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_UnequalDoubles_ReturnsFalse [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.SQuote_MemoryLayout_Verification [< 1 ms]
+  Standard Output Messages:
+ c-addr: 7, u: 3
+ Memory at c-addr: '1' (code 49)
+ Memory at c-addr+1: '2' (code 50)
+ Memory at c-addr+2: '3' (code 51)
+ Memory at c-addr-1 (length byte): 3
+
+
+  Passed Forth.Tests.Core.PreludeWordsTests.TwoDROP_DropsTwo [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_HexSingleDigit [< 1 ms]
+  Standard Output Messages:
+ Hex 'F': acc=15, remFlag=0, consumed=1
+
+
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DDot_PrintsLargeDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMAX_NegativeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToUNumber_InvalidNumber [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DNEGATE_Zero [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.WITHIN_TestsRange [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_EqualDoubles_ReturnsTrue [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.Tokenizer_Output_Verification [1 ms]
+  Standard Output Messages:
+ Token count: 5
+ Token[0]: 'S"' (length 2)
+ Token[1]: '"123"' (length 5)
+ Token[2]: '0' (length 1)
+ Token[3]: '0' (length 1)
+ Token[4]: '>NUMBER' (length 7)
+ String content after removing quotes: '123'
+
+
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DDot_PrintsNegativeDouble [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_WithLeadingSpace [< 1 ms]
+  Standard Output Messages:
+ Digits '456' (space skipped by tokenizer): acc=456, remFlag=0, consumed=3
+
+
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_LargeNumbers_Unequal [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_StepByStep_TwoDigits [< 1 ms]
+  Standard Output Messages:
+ Two digits '12': acc=12, remFlag=0, consumed=2
+
+
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoStar_PositiveDouble [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_HexTwoDigits [< 1 ms]
+  Standard Output Messages:
+ Hex 'FF': acc=255, remFlag=0, consumed=2
+
+
+  Passed Forth.Tests.Core.PreludeWordsTests.TwoStore_StoresDoubleCell [2 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DNEGATE_NegativeDouble [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToNumber_StepByStep_SingleDigit [< 1 ms]
+  Standard Output Messages:
+ Single digit '5': acc=5, remFlag=0, consumed=1
+
+
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToUNumber_ParseUnsignedNumber [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockLRUTests.EvictionReducesBlockMappings [12 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DNEGATE_LargePositive [< 1 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ReadMemoryString_DirectTest [12 ms]
+  Standard Output Messages:
+ c-addr: 7, u: 3
+ ReadMemoryString result: 'ABC' (length 3)
+
+
+  Passed Forth.Tests.Core.MissingWords.BlockSystemPerBlockTests.OPEN_BLOCK_DIR_PersistenceAcrossInstances [22 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_MixedSigns_Unequal [12 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.PICK_CopiesNthItem [13 ms]
+  Passed Forth.Tests.Core.Numbers.ToNumberIsolationTests.ToUNumber_ParseHexUnsignedNumber [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DABS_LargeNegative [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.TwoSlash_Halves [< 1 ms]
+[xUnit.net 00:00:00.28]     Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_Variable_HashERRORS_Initializes [FAIL]
+[xUnit.net 00:00:00.28]       System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\ttester.4th'.
+[xUnit.net 00:00:00.28]       Stack Trace:
+[xUnit.net 00:00:00.28]            at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+[xUnit.net 00:00:00.28]            at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+[xUnit.net 00:00:00.28]            at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+[xUnit.net 00:00:00.28]            at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs(398,0): at Forth.Core.Execution.CorePrimitives.Prim_INCLUDE(ForthInterpreter i)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.28]         D:\source\4th\4th.Tests\Core\MissingWords\TtesterIncludeTests.cs(40,0): at Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_Variable_HashERRORS_Initializes()
+[xUnit.net 00:00:00.28]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.Stack.StackManipulationTests.DupSwapOverRot [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DULess_FirstLessThanSecond_ReturnsTrue [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.TwoFetch_FetchesDoubleCell [< 1 ms]
+  Failed Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_Variable_HashERRORS_Initializes [< 1 ms]
+  Error Message:
+   System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\ttester.4th'.
+  Stack Trace:
+     at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+   at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+   at Forth.Core.Execution.CorePrimitives.Prim_INCLUDE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs:line 398
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_Variable_HashERRORS_Initializes() in D:\source\4th\4th.Tests\Core\MissingWords\TtesterIncludeTests.cs:line 40
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMIN_Equal [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DictionaryAndVocabTests.Dictionary_And_Vocabulary_Management [1 ms]
+[xUnit.net 00:00:00.28]     Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_CanInclude_WithoutErrors [FAIL]
+[xUnit.net 00:00:00.28]       System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\ttester.4th'.
+[xUnit.net 00:00:00.28]       Stack Trace:
+[xUnit.net 00:00:00.28]            at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+[xUnit.net 00:00:00.28]            at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+[xUnit.net 00:00:00.28]            at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+[xUnit.net 00:00:00.28]            at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+[xUnit.net 00:00:00.28]            at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs(398,0): at Forth.Core.Execution.CorePrimitives.Prim_INCLUDE(ForthInterpreter i)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.28]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.28]         D:\source\4th\4th.Tests\Core\MissingWords\TtesterIncludeTests.cs(21,0): at Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_CanInclude_WithoutErrors()
+[xUnit.net 00:00:00.28]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoSlash_NegativeOdd [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.TUCK_CopiesTopBelowSecond [1 ms]
+  Passed Forth.Tests.Core.MissingWords.CompareTests.Compare_Empty_Strings [< 1 ms]
+  Failed Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_CanInclude_WithoutErrors [< 1 ms]
+  Error Message:
+   System.IO.DirectoryNotFoundException : Could not find a part of the path 'D:\tests\ttester.4th'.
+  Stack Trace:
+     at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.AsyncStreamReader(String path, Encoding encoding)
+   at System.IO.File.InternalReadAllTextAsync(String path, Encoding encoding, CancellationToken cancellationToken)
+   at Forth.Core.Execution.CorePrimitives.Prim_INCLUDE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.FileIO.cs:line 398
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Core.MissingWords.TtesterIncludeTests.Ttester_CanInclude_WithoutErrors() in D:\source\4th\4th.Tests\Core\MissingWords\TtesterIncludeTests.cs:line 21
+--- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoSlash_PositiveOdd [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.CELLS_IdentityOperation [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CompareTests.Compare_Different_Lengths [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BitwiseAndComparisonTests.Bitwise_And_Comparisons [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DEqual_LargeNumbers_Equal [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CompareTests.Compare_Equal_Strings [< 1 ms]
+  Passed Forth.Tests.Core.PreludeWordsTests.PICK_OutOfRangeThrows [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMIN_NegativeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CompareTests.Compare_First_Greater [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.IOAndFormattingTests.IO_Words_Emit_Key_Dot [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMAX_Equal [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.CompareTests.Compare_First_Less [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.S_To_D [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DABS_PositiveDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DULess_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_FirstGreaterThanSecond_ReturnsFalse [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoSlash_PositiveEven [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DMAX_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DLess_EqualDoubles_ReturnsFalse [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.Arithmetic_Helpers [2 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DToS_ZeroHigh [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockSystemPerBlockTests.OPEN_BLOCK_DIR_SaveCreatesPerBlockFile [8 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DToS_NegativeDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.M_Plus [1 ms]
+[xUnit.net 00:00:00.29]     Forth.Tests.Compliance.TtesterStackTraceTests.TraceTtesterLoad_LineByLine [FAIL]
+[xUnit.net 00:00:00.29]       Forth.Core.ForthException : Unmatched bracket conditional
+[xUnit.net 00:00:00.29]       Stack Trace:
+[xUnit.net 00:00:00.29]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs(472,0): at Forth.Core.Execution.CorePrimitives.SkipBracketSection(ForthInterpreter i, Boolean skipElse)
+[xUnit.net 00:00:00.29]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs(422,0): at Forth.Core.Execution.CorePrimitives.Prim_BRACKET_ELSE(ForthInterpreter i)
+[xUnit.net 00:00:00.29]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.29]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.29]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.29]         D:\source\4th\4th.Tests\Compliance\TtesterStackTraceTests.cs(67,0): at Forth.Tests.Compliance.TtesterStackTraceTests.TraceTtesterLoad_LineByLine()
+[xUnit.net 00:00:00.29]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.29]       Output:
+[xUnit.net 00:00:00.29]         Loading ttester.4th (346 lines)
+[xUnit.net 00:00:00.29]         Initial stack: []
+[xUnit.net 00:00:00.29]         Line 79: BASE @...
+[xUnit.net 00:00:00.29]           Stack before: []
+[xUnit.net 00:00:00.29]           Stack after:  [10]
+[xUnit.net 00:00:00.29]         Line 93: "FLOATING" ENVIRONMENT? [IF]...
+[xUnit.net 00:00:00.29]           Stack before: [10]
+[xUnit.net 00:00:00.29]           Stack after:  [10, -1]
+[xUnit.net 00:00:00.29]         Line 94: [IF]...
+[xUnit.net 00:00:00.29]           Stack before: [10, -1]
+[xUnit.net 00:00:00.29]           Stack after:  [10]
+[xUnit.net 00:00:00.29]         Line 95: TRUE...
+[xUnit.net 00:00:00.29]           Stack before: [10]
+[xUnit.net 00:00:00.29]           Stack after:  [10, -1]
+[xUnit.net 00:00:00.29]         
+ERROR at line 96: Unmatched bracket conditional
+[xUnit.net 00:00:00.29]         Line content: [ELSE]
+[xUnit.net 00:00:00.29]         Stack before: [10, -1]
+[xUnit.net 00:00:00.29]         Stack after:  [10, -1]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DABS_NegativeDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoStar_NegativeDouble [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.SM_Slash_Rem [1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DToS_PositiveDouble [< 1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 140) [51 ms]
+  Standard Output Messages:
+ Loading first 140 lines (5550 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Compliance.TtesterSimpleLoadTest.LoadTtester_WholeFile_WithStackMonitoring [79 ms]
+  Standard Output Messages:
+ Step 1: Check BASE address
+ BASE address: 2
+ 
+Step 2: Push a marker value, then BASE @
+ Stack: [999, 10]
+ Expected: [999, 10]
+ 
+Step 3: Load ttester.4th as whole file
+ SUCCESS! Stack: []
+
+
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.QuestionMark_FetchAndPrint [< 1 ms]
+  Failed Forth.Tests.Compliance.TtesterStackTraceTests.TraceTtesterLoad_LineByLine [22 ms]
+  Error Message:
+   Forth.Core.ForthException : Unmatched bracket conditional
+  Stack Trace:
+     at Forth.Core.Execution.CorePrimitives.SkipBracketSection(ForthInterpreter i, Boolean skipElse) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs:line 472
+   at Forth.Core.Execution.CorePrimitives.Prim_BRACKET_ELSE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs:line 422
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Compliance.TtesterStackTraceTests.TraceTtesterLoad_LineByLine() in D:\source\4th\4th.Tests\Compliance\TtesterStackTraceTests.cs:line 67
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ Loading ttester.4th (346 lines)
+ Initial stack: []
+ Line 79: BASE @...
+   Stack before: []
+   Stack after:  [10]
+ Line 93: "FLOATING" ENVIRONMENT? [IF]...
+   Stack before: [10]
+   Stack after:  [10, -1]
+ Line 94: [IF]...
+   Stack before: [10, -1]
+   Stack after:  [10]
+ Line 95: TRUE...
+   Stack before: [10]
+   Stack after:  [10, -1]
+ 
+ERROR at line 96: Unmatched bracket conditional
+ Line content: [ELSE]
+ Stack before: [10, -1]
+ Stack after:  [10, -1]
+
+
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DToS_LargeNumbers [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DTwoStar_CarryOver [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ArithmeticTests.FM_Slash_Mod [1 ms]
+  Passed Forth.Tests.Compliance.ErrorReportTests.ErrorReport_ShouldLoadSuccessfully [127 ms]
+  Passed Forth.Tests.Core.MissingWords.DoubleNumberTests.DNEGATE_PositiveDouble [< 1 ms]
+  Passed ACCEPT partial [123 ms]
+  Passed SEARCH [115 ms]
+  Passed Forth.Tests.Actor.ProtoActorModuleTests.AskLongReturnsValue [112 ms]
+  Passed Actor.ForthActorTests.SpawnForthAndEvalAdds [97 ms]
+  Passed Arithmetic [27 ms]
+  Passed Forth.Tests.Core.Async.FiberSpawnTests.YieldDoesNotLoseStack [168 ms]
+  Passed Forth.Tests.Actor.ProtoActorModuleTests.LoadProtoActorModuleAndSpawnEcho [< 1 ms]
+  Passed Forth.Tests.DynamicLoadTests.LoadAssemblyWords_FromForth [81 ms]
+  Passed Forth.Tests.Core.MissingWords.FacilityTests.Ms_DelaysExecution [135 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_LoadErrorReportLineByLine [127 ms]
+  Standard Output Messages:
+ Loading ttester.4th...
+ ttester.4th loaded successfully
+ #ERRORS variable defined after ttester: True
+ 
+Processing 88 lines from errorreport.fth...
+ Line 17: DECIMAL
+   ? OK
+ Line 19: VARIABLE TOTAL-ERRORS
+   ? OK
+ Line 21: : ERROR-COUNT  ( "name" n1 -- n2 )  \ n2 = n1 + 1cell
+   ? OK
+ Line 22: CREATE  DUP , CELL+
+   ? OK
+ Line 23: DOES>  ( -- offset ) @     \ offset in address units
+   ? OK
+ Line 24: ;
+   ? OK
+ Line 26: 0     \ Offset into ERRORS[] array
+   ? OK
+ Line 27: ERROR-COUNT CORE-ERRORS          ERROR-COUNT CORE-EXT-ERRORS
+   ? OK
+ Line 28: ERROR-COUNT DOUBLE-ERRORS        ERROR-COUNT EXCEPTION-ERRORS
+   ? OK
+ Line 29: ERROR-COUNT FACILITY-ERRORS      ERROR-COUNT FILE-ERRORS
+   ? OK
+ Line 30: ERROR-COUNT LOCALS-ERRORS        ERROR-COUNT MEMORY-ERRORS
+   ? OK
+ Line 31: ERROR-COUNT SEARCHORDER-ERRORS   ERROR-COUNT STRING-ERRORS
+   ? OK
+ Line 32: ERROR-COUNT TOOLS-ERRORS         ERROR-COUNT BLOCK-ERRORS
+   ? OK
+ Line 33: CREATE ERRORS[] DUP ALLOT CONSTANT #ERROR-COUNTS
+   ? OK
+ Line 38: : SET-ERROR-COUNT  ( offset -- )
+   ? OK
+ Line 39: #ERRORS @ SWAP ERRORS[] + !
+   ? OK
+ Line 40: #ERRORS @ TOTAL-ERRORS +!
+   ? OK
+ Line 41: 0 #ERRORS !
+   ? OK
+ Line 42: ;
+   ? OK
+ Line 44: : INIT-ERRORS  ( -- )
+   ? OK
+ Line 45: ERRORS[] #ERROR-COUNTS OVER + SWAP DO -1 I ! 1 CELLS +LOOP
+   ? OK
+ Line 46: 0 TOTAL-ERRORS !
+   ? OK
+ Line 47: CORE-ERRORS SET-ERROR-COUNT
+   ? OK
+ Line 48: ;
+   ? OK
+ Line 50: INIT-ERRORS
+   ? OK
+ Line 54: 25 CONSTANT MARGIN
+   ? OK
+ Line 56: : SHOW-ERROR-LINE  ( n caddr u -- )
+   ? OK
+ Line 57: CR SWAP OVER TYPE MARGIN - ABS >R
+   ? OK
+ Line 58: DUP -1 = IF DROP R> 1- SPACES ." -" ELSE
+   ? OK
+ Line 59: R> .R THEN
+   ? OK
+ Line 60: ;
+   ? OK
+ Line 62: : SHOW-ERROR-COUNT  ( caddr u offset -- )
+   ? OK
+ Line 63: ERRORS[] + @ ROT ROT SHOW-ERROR-LINE
+   ? OK
+ Line 64: ;
+   ? OK
+ Line 66: : HLINE  ( -- )  CR ." ---------------------------"  ;
+   ? OK
+ Line 68: : REPORT-ERRORS
+   ? OK
+ Line 69: HLINE
+   ? OK
+ Line 70: CR 8 SPACES ." Error Report"
+   ? OK
+ Line 71: CR ." Word Set" 13 SPACES ." Errors"
+   ? OK
+ Line 72: HLINE
+   ? OK
+ Line 73: S" Core" CORE-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 74: S" Core extension" CORE-EXT-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 75: S" Block" BLOCK-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 76: S" Double number" DOUBLE-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 77: S" Exception" EXCEPTION-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 78: S" Facility" FACILITY-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 79: S" File-access" FILE-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 80: S" Locals"    LOCALS-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 81: S" Memory-allocation" MEMORY-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 82: S" Programming-tools" TOOLS-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 83: S" Search-order" SEARCHORDER-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 84: S" String" STRING-ERRORS SHOW-ERROR-COUNT
+   ? OK
+ Line 85: HLINE
+   ? OK
+ Line 86: TOTAL-ERRORS @ S" Total" SHOW-ERROR-LINE
+   ? OK
+ Line 87: HLINE CR CR
+   ? OK
+ Line 88: ;
+   ? OK
+ 
+
+Final word count: 552
+ ERROR-related words:
+   - #ERROR-COUNTS
+   - #ERRORS
+   - BLOCK-ERRORS
+   - CORE-ERRORS
+   - CORE-EXT-ERRORS
+   - DOUBLE-ERRORS
+   - ERROR
+   - ERROR-COUNT
+   - ERROR-XT
+   - ERROR1
+   - ERRORS[]
+   - EXCEPTION-ERRORS
+   - FACILITY-ERRORS
+   - FILE-ERRORS
+   - INIT-ERRORS
+   - LOCALS-ERRORS
+   - MEMORY-ERRORS
+   - REPORT-ERRORS
+   - SEARCHORDER-ERRORS
+   - SET-ERROR-COUNT
+   - SHOW-ERROR-COUNT
+   - SHOW-ERROR-LINE
+   - STRING-ERRORS
+   - TOOLS-ERRORS
+   - TOTAL-ERRORS
+
+
+  Passed Forth.Tests.Core.Api.PublicWordApiTests.AddAsyncWord_AwaitsAndPushesResult [86 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.FileIO_Example [135 ms]
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.TaskAlias_ReturnsValueFromChild [52 ms]
+  Passed Forth.Tests.Core.Async.AsyncAwaitTests.AwaitBoundValueTaskMethod [116 ms]
+  Passed Forth.Tests.Core.ReadmeExamplesTests.Previous_EdgeCases [1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.AwaitSameTaskTwice [97 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_ErrorCountPattern [1 ms]
+  Standard Output Messages:
+ Test 5: ERROR-COUNT pattern from errorreport.fth
+ ERROR-COUNT defined: True
+ Executing: 0 ERROR-COUNT CORE-ERRORS
+ CORE-ERRORS defined: True
+ Stack depth after ERROR-COUNT: 1
+ Stack: 1
+ Executing: CORE-ERRORS
+ Stack after CORE-ERRORS: 1, 0
+
+
+  Passed Forth.Tests.Core.ReadmeExamplesTests.ProgrammaticUsage_Example [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.QualifiedSee_WorksForModuleWord [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Write_And_Read_File [40 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_TestErrorCountPattern [1 ms]
+  Standard Output Messages:
+ Testing ERROR-COUNT pattern from errorreport.fth...
+ Words defined: ERROR-COUNT, TEST-ERRORS
+ TEST-ERRORS defined: True
+ Stack after TEST-ERRORS: 1, 0
+
+
+  Passed Forth.Tests.Core.ReadmeExamplesTests.Loops_Example [< 1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Catch_TaskT_Exception_From_Bound_Method [67 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.DivisionByZeroVariants_Throw [< 1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 145) [4 ms]
+  Standard Output Messages:
+ Loading first 145 lines (5659 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Core.ExtendedCoverageTests.PicturedNumeric_HoldCharOnly [< 1 ms]
+  Passed memory-tests-store-iso.tester [4 ms]
+  Passed ACCEPT with CR [4 ms]
+  Passed Increment [4 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.ToNumber_HexWithRemainder [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.Spawn_CapturesVariablesAndConstants [3 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.UnloopOutsideLoop_Throws [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.LiteralCapturesStackValueInsideDefinition [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.Test_0Less [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteFile_InvalidAddr_WritesZeros [4 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.CharMissingToken_Throws [< 1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 125) [3 ms]
+  Standard Output Messages:
+ Loading first 125 lines (5160 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Core.ExtendedCoverageTests.LeaveOutsideLoop_Throws [8 ms]
+[xUnit.net 00:00:00.31]     Forth.Tests.Compliance.ErrorReportTests.ErrorReport_CheckWordsAreDefined [FAIL]
+[xUnit.net 00:00:00.31]       REPORT-ERRORS not found. Available words with ERROR: #ERROR-COUNTS, #ERRORS, BLOCK-ERRORS, CORE-ERRORS, CORE-EXT-ERRORS, DOUBLE-ERRORS, ERROR, ERROR-COUNT, ERROR-XT, ERROR1, ERRORS[], EXCEPTION-ERRORS, FACILITY-ERRORS, FILE-ERRORS, INIT-ERRORS, LOCALS-ERRORS, MEMORY-ERRORS, SEARCHORDER-ERRORS, SET-ERROR-COUNT, STRING-ERRORS, TOOLS-ERRORS, TOTAL-ERRORS
+[xUnit.net 00:00:00.31]       Stack Trace:
+[xUnit.net 00:00:00.31]         D:\source\4th\4th.Tests\Compliance\ErrorReportTests.cs(111,0): at Forth.Tests.Compliance.ErrorReportTests.ErrorReport_CheckWordsAreDefined()
+[xUnit.net 00:00:00.31]         --- End of stack trace from previous location ---
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Read_File_Pushes_String [9 ms]
+  Passed ACCEPT with LF [12 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.HexParsing_MultiDigit [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.FutureAndJoin_ReturnsValueFromChild [11 ms]
+  Failed Forth.Tests.Compliance.ErrorReportTests.ErrorReport_CheckWordsAreDefined [17 ms]
+  Error Message:
+   REPORT-ERRORS not found. Available words with ERROR: #ERROR-COUNTS, #ERRORS, BLOCK-ERRORS, CORE-ERRORS, CORE-EXT-ERRORS, DOUBLE-ERRORS, ERROR, ERROR-COUNT, ERROR-XT, ERROR1, ERRORS[], EXCEPTION-ERRORS, FACILITY-ERRORS, FILE-ERRORS, INIT-ERRORS, LOCALS-ERRORS, MEMORY-ERRORS, SEARCHORDER-ERRORS, SET-ERROR-COUNT, STRING-ERRORS, TOOLS-ERRORS, TOTAL-ERRORS
+  Stack Trace:
+     at Forth.Tests.Compliance.ErrorReportTests.ErrorReport_CheckWordsAreDefined() in D:\source\4th\4th.Tests\Compliance\ErrorReportTests.cs:line 111
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:00.31]     Forth.Tests.Compliance.ErrorReportTests.ErrorReport_ReportErrors_ShouldWork [SKIP]
+[xUnit.net 00:00:00.31]       Depends on CheckWordsAreDefined passing first
+  Skipped Forth.Tests.Compliance.ErrorReportTests.ErrorReport_ReportErrors_ShouldWork [1 ms]
+  Error Message:
+   Depends on CheckWordsAreDefined passing first
+
+  Passed Basic arithmetic [12 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.SQuoteMissingClosing_Throws [< 1 ms]
+  Passed Forth.Tests.Compliance.TtesterStackTraceTests.CompareTokenization_LineByLine_vs_WholeFile [18 ms]
+  Standard Output Messages:
+ Line-by-line token count: 918
+ Whole file token count: 828
+ 
+TOKEN COUNT MISMATCH!
+ 
+First difference at token 95:
+   Line-by-line: 'Leave'
+   Whole file:   '0E'
+ 
+Context (line-by-line):
+     90: 'TO'
+     91: 'EXACT?'
+     92: ';'
+     93: ':'
+     94: 'FEXACTLY='
+ >>> 95: 'Leave'
+     96: 'TRUE'
+     97: 'if'
+     98: 'the'
+     99: 'two'
+ 
+Context (whole file):
+     90: 'TO'
+     91: 'EXACT?'
+     92: ';'
+     93: ':'
+     94: 'FEXACTLY='
+ >>> 95: '0E'
+     96: 'F~'
+     97: ';'
+     98: ':'
+     99: 'FABS='
+ 
+Extra tokens in line-by-line (starting at 828):
+   828: 'RXXX}T'
+   829: 'XTESTER'
+   830: 'XTESTER'
+   831: 'XTESTER'
+   832: 'FTESTER'
+   833: '...}T'
+   834: ';'
+   835: ':'
+   836: 'RXXR}T'
+   837: 'FTESTER'
+
+
+  Passed Forth.Tests.Core.Async.AsyncAwaitTests.AwaitBoundValueTaskVoid [16 ms]
+  Passed Forth.Tests.Core.Async.FiberSpawnTests.SpawnDuplicateTaskAndAwaitBoth [18 ms]
+  Passed Forth.Tests.Core.Async.FiberSpawnTests.ColonNoname_NestedInDefinition [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.Spawn_CapturesModuleContext [2 ms]
+  Passed Forth.Tests.Core.Async.FiberSpawnTests.ColonNoname_CreatesAnonymousWord [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.EnvWords_ReturnValues [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Included_AcceptsString [3 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_CheckWordDefinedAfterLoad [17 ms]
+  Standard Output Messages:
+ Loading ttester.4th...
+ Words before errorreport: 529
+ Has #ERRORS: True
+ 
+Loading errorreport.fth (2972 chars)...
+ EvalAsync returned: True
+ 
+Words after errorreport: 547
+ New words: 18
+ 
+ERROR-related words (22):
+   - #ERROR-COUNTS
+   - #ERRORS
+   - BLOCK-ERRORS
+   - CORE-ERRORS
+   - CORE-EXT-ERRORS
+   - DOUBLE-ERRORS
+   - ERROR
+   - ERROR-COUNT
+   - ERROR-XT
+   - ERROR1
+   - ERRORS[]
+   - EXCEPTION-ERRORS
+   - FACILITY-ERRORS
+   - FILE-ERRORS
+   - INIT-ERRORS
+   - LOCALS-ERRORS
+   - MEMORY-ERRORS
+   - SEARCHORDER-ERRORS
+   - SET-ERROR-COUNT
+   - STRING-ERRORS
+[xUnit.net 00:00:00.31]     Forth.Tests.Compliance.TtesterStackTraceTests.IsolateCriticalSection_Lines119_125 [FAIL]
+   - TOOLS-ERRORS
+   - TOTAL-ERRORS
+ REPORT-ERRORS: ?
+ SET-ERROR-COUNT: ?
+ INIT-ERRORS: ?
+ ERROR-COUNT: ?
+ CORE-ERRORS: ?
+ SHOW-ERROR-LINE: ?
+ HLINE: ?
+ 
+Stack depth: 0
+
+
+[xUnit.net 00:00:00.31]       Forth.Core.ForthException : Unmatched bracket conditional
+[xUnit.net 00:00:00.31]       Stack Trace:
+[xUnit.net 00:00:00.31]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs(472,0): at Forth.Core.Execution.CorePrimitives.SkipBracketSection(ForthInterpreter i, Boolean skipElse)
+[xUnit.net 00:00:00.31]         D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs(422,0): at Forth.Core.Execution.CorePrimitives.Prim_BRACKET_ELSE(ForthInterpreter i)
+[xUnit.net 00:00:00.31]         D:\source\4th\src\Forth.Core\Interpreter\Word.cs(41,0): at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr)
+[xUnit.net 00:00:00.31]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(185,0): at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line)
+[xUnit.net 00:00:00.31]         D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs(66,0): at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line)
+[xUnit.net 00:00:00.31]         D:\source\4th\4th.Tests\Compliance\TtesterStackTraceTests.cs(257,0): at Forth.Tests.Compliance.TtesterStackTraceTests.IsolateCriticalSection_Lines119_125()
+[xUnit.net 00:00:00.31]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.31]       Output:
+[xUnit.net 00:00:00.31]         Loading lines 1-118...
+  Passed Forth.Tests.Core.ExtendedCoverageTests.Test_2RAt [< 1 ms]
+  Passed Conditional negate [16 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.Test_1Plus [< 1 ms]
+  Failed Forth.Tests.Compliance.TtesterStackTraceTests.IsolateCriticalSection_Lines119_125 [4 ms]
+  Error Message:
+   Forth.Core.ForthException : Unmatched bracket conditional
+  Stack Trace:
+     at Forth.Core.Execution.CorePrimitives.SkipBracketSection(ForthInterpreter i, Boolean skipElse) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs:line 472
+   at Forth.Core.Execution.CorePrimitives.Prim_BRACKET_ELSE(ForthInterpreter i) in D:\source\4th\src\Forth.Core\Execution\CorePrimitives.Compilation.cs:line 422
+   at Forth.Core.Interpreter.Word.ExecuteAsync(ForthInterpreter intr) in D:\source\4th\src\Forth.Core\Interpreter\Word.cs:line 41
+   at Forth.Core.Interpreter.ForthInterpreter.EvalInternalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 185
+   at Forth.Core.Interpreter.ForthInterpreter.EvalAsync(String line) in D:\source\4th\src\Forth.Core\Interpreter\ForthInterpreter.Evaluation.cs:line 66
+   at Forth.Tests.Compliance.TtesterStackTraceTests.IsolateCriticalSection_Lines119_125() in D:\source\4th\4th.Tests\Compliance\TtesterStackTraceTests.cs:line 257
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ Loading lines 1-118...
+
+
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_CreateInsideColon [1 ms]
+  Standard Output Messages:
+ Test 2: CREATE inside colon definition
+ MAKE-VAR defined: True
+ Executing: MAKE-VAR TEST-VAR
+ TEST-VAR defined: True
+
+
+  Passed Forth.Tests.Core.ExtendedCoverageTests.LoopReverseIteration_NegativeStep [< 1 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.ExecuteWordBelowTopExecutesAndConsumesXt [< 1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 130) [14 ms]
+  Standard Output Messages:
+ Loading first 130 lines (5253 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Core.ExtendedCoverageTests.TypeOnNonString_ThrowsTypeError [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.Spawn_CapturesParentContext_CanExecuteParentWords [4 ms]
+  Passed Forth.Tests.Core.ExtendedCoverageTests.ConstantWithoutValue_StackUnderflow [< 1 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_MultipleErrorCounts [2 ms]
+  Standard Output Messages:
+ Test 6: Multiple ERROR-COUNT calls
+ Executing: 0 ERROR-COUNT ERR1 ERROR-COUNT ERR2
+ ERR1 defined: True
+ ERR2 defined: True
+ Stack depth: 1
+ Stack: 2
+
+
+  Passed ACCEPT CR LF [8 ms]
+  Passed CREATE-FILE creates file and returns valid handle [7 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 150) [1 ms]
+  Standard Output Messages:
+ Loading first 150 lines (5806 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Compliance.TtesterStackTraceTests.TraceTtesterLoad_AsWholeFile [3 ms]
+  Standard Output Messages:
+ Loading ttester.4th as whole file (12100 chars)
+ Initial stack: []
+ Final stack: []
+ ttester.4th loaded successfully!
+
+
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 135) [1 ms]
+  Standard Output Messages:
+ Loading first 135 lines (5404 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Core.MissingWords.ConcurrencyAndTaskTests.SpawnAndJoin_CompletesWithoutResult [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteLine_WritesStringWithNewline [6 ms]
+  Passed Roundtrip pop/push [5 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_StepByStepErrorCount [2 ms]
+  Standard Output Messages:
+ Test 8: Step-by-step ERROR-COUNT definition and use
+ Step 1: DECIMAL
+ Step 2: Define ERROR-COUNT
+ Full definition: : ERROR-COUNT CREATE DUP , CELL+ DOES> @ ;
+ ERROR-COUNT defined after full definition: True
+ 
+Step 3: Push 0 on stack
+ Stack: 0
+ 
+Step 4: Call ERROR-COUNT with name TEST-ERR
+ TEST-ERR defined: True
+ Stack after ERROR-COUNT: 1
+ 
+Step 5: Execute TEST-ERR (after clearing stack)
+ Stack after TEST-ERR: 0
+
+
+  Passed memory-count-tests.tester [1 ms]
+  Passed ACCEPT basic [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.ReadFileBytes_InvalidHandle_Throws [< 1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstNLines(n: 120) [1 ms]
+  Standard Output Messages:
+ Loading first 120 lines (5012 chars)
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.TtesterPattern_Exact [< 1 ms]
+  Standard Output Messages:
+ After 'BASE @': stack = [10]
+ After 'DECIMAL': stack = [10]
+ After 'VARIABLE ACTUAL-DEPTH': stack = [10]
+ After 'CREATE ACTUAL-RESULTS 32 CELLS ALLOT': stack = [10]
+ After 'VARIABLE START-DEPTH': stack = [10]
+ After 'VARIABLE XCURSOR': stack = [10]
+ After 'VARIABLE ERROR-XT': stack = [10]
+ After 'VARIABLE #ERRORS 0 #ERRORS !': stack = [10]
+
+
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_SimpleDoesPattern [1 ms]
+  Standard Output Messages:
+ Test 4: Simple DOES> pattern
+ CONSTANT-MAKER defined: True
+ Executing: 99 CONSTANT-MAKER MY-CONST
+ MY-CONST defined: True
+ Executing: MY-CONST
+ Stack: 99
+
+
+  Passed memory-tests.tester [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.File_Status_Code [1 ms]
+  Passed ACCEPT buffer limit [2 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.TtesterPattern_AsOneString [< 1 ms]
+  Standard Output Messages:
+ Evaluating as one string...
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.Variable_DefinedOnSeparateLines [< 1 ms]
+  Passed Forth.Tests.Compliance.ErrorReportDiagnosticTests.Diagnostic_SimpleCreateDoes [1 ms]
+  Standard Output Messages:
+ Test 1: Simple CREATE without DOES>
+ SIMPLE-VAR defined: True
+ Stack after SIMPLE-VAR: 1 items
+
+
+  Passed Conditional increment if non-zero [3 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.FileSize_PushesLengthOrMinusOne [1 ms]
+  Passed ACCEPT tests [2 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirst87Lines [1 ms]
+  Standard Output Messages:
+ Loading first 87 lines (4084 chars)
+ Last 3 lines:
+ Line 85: VARIABLE XCURSOR      \ for ...}T
+ Line 86: VARIABLE ERROR-XT
+ Line 87: VARIABLE #ERRORS 0 #ERRORS !
+ Success!
+ Final stack = [10]
+
+
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.Variable_CanBeUsedImmediatelyOnSameLine [< 1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Bind_Async_Void_Task [28 ms]
+  Passed Forth.Tests.Core.Async.AsyncAwaitTests.AwaitBoundAsyncMethod [13 ms]
+  Passed ADD-INPUT-LINE tests [2 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadActualTtesterFile_Lines80to90 [1 ms]
+  Standard Output Messages:
+ Code to evaluate (lines 80-90):
+ Line 80: DECIMAL
+ Line 81: 
+ Line 82: VARIABLE ACTUAL-DEPTH			\ stack record
+ Line 83: CREATE ACTUAL-RESULTS 32 CELLS ALLOT
+ Line 84: VARIABLE START-DEPTH
+ Line 85: VARIABLE XCURSOR      \ for ...}T
+ Line 86: VARIABLE ERROR-XT
+ Line 87: VARIABLE #ERRORS 0 #ERRORS !
+ Line 88: 
+ Line 89: : ERROR 1 #ERRORS +! ERROR-XT @ EXECUTE ;   \ for vectoring of error reporting
+ Line 90: 
+ 
+ Final stack = []
+
+
+  Passed Loop sum [3 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.Variable_WithBaseOnStack [< 1 ms]
+  Standard Output Messages:
+ After BASE @: stack depth = 1
+ After DECIMAL: stack depth = 1
+ After VARIABLE MYVAR 0 MYVAR !: stack depth = 1
+
+
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.Variable_DefinedAndFetched [< 1 ms]
+  Passed Control flow [1 ms]
+  Passed IO and source [1 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadEntireTtesterFile [1 ms]
+  Standard Output Messages:
+ Loading entire file (12100 chars)
+ Success!
+ Final stack = []
+
+
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.ReadAndWrite_FileBytes_MemoryRoundtrip [6 ms]
+  Passed Forth.Tests.Compliance.VariableOnSameLineTests.LoadFirstPartOfTtesterFile [1 ms]
+  Standard Output Messages:
+ Loading first 86 lines (4055 chars)
+ Last 5 lines:
+ Line 82: VARIABLE ACTUAL-DEPTH			\ stack record
+ Line 83: CREATE ACTUAL-RESULTS 32 CELLS ALLOT
+ Line 84: VARIABLE START-DEPTH
+ Line 85: VARIABLE XCURSOR      \ for ...}T
+ Line 86: VARIABLE ERROR-XT
+ Success!
+ Final stack = [10]
+
+
+  Passed example-tests.tester [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Reflection_Read_From_Live_FileStream_After_Write [7 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.OpenFile_WithFam_ReadBinary [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.OpenFile_WithMode_WriteCreatesFile [1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Bind_ValueTask_Void [15 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.RenameFile_RenamesExistingFile [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Include_Executes_File_Content [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.FilePosition_AfterReposition [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.FileAccessMethods [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.CreateFile_TruncatesExistingFile [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Append_File_Appends_Content [2 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Load_Executes_File_Content [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteFileBytes_InvalidHandle_Throws [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Included_Executes_File_Content [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.IncludeFile_Executes_File_Content [1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Bind_Async_Static_Method_Result [16 ms]
+  Passed Forth.Tests.Core.Async.AsyncAwaitTests.PollTaskCompletion [32 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Catch_Sync_Exception_From_Bound_Method [1 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Bind_Sync_Static_Method [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteBytes_FileSize_WithoutClosing [8 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Catch_ValueTaskT_Exception_From_Bound_Method [9 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockFileLifecycleTests.FlushAndCloseBlockFileSingleFileMode [216 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Bind_ValueTask_Static_Method_Result [18 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteThenClose_FileReadDirectly_HasBytes [26 ms]
+  Passed Forth.Tests.Core.Binding.ClrBindingTests.Catch_ValueTask_Exception_From_Bound_Method [< 1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.Open_Reposition_Close_FileHandle [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.WriteFile_NegativeLength_WritesEmpty [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.OpenSeparate_FileStream_ReadAllBytes_AfterWrite_WithShare [7 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.CreateFile_CreatesFile [1 ms]
+  Passed Forth.Tests.Core.MissingWords.FileIOTests.ReadFileBytes_NegativeLength_Throws [1 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockLRUTests.EvictionDisposesMmfAccessorsWhenUsingBlockFile [180 ms]
+  Passed Forth.Tests.Core.MissingWords.BlockFileLifecycleTests.FlushAndCloseBlockFilePerBlockMode [175 ms]
+  Passed FourTh.Tests.Tools.AnsDiffCoreComplianceTests.AnsDiffReportsNoMissingCoreWords [993 ms]
+[xUnit.net 00:00:01.21]   Finished:    4th.Tests
+! # #> #S ' (LOCAL) * */ */MOD + +! +LOOP , - -ROT -TRAILING . ." .R .S .[S] / /MOD /STRING 0< 0<> 0= 0> 1+ 1- 2! 2* 2/ 2>R 2@ 2DROP 2DUP 2OVER 2R> 2R@ 2ROT 2SWAP : :NONAME ; < <# <= <> = > >= >BODY >IN >NUMBER >R >UNUMBER ? ?DO ?DUP @ ABORT ABORT" ABS ACCEPT AGAIN AHEAD ALIGN ALLOCATE ALLOT ALSO AND APPEND-FILE AT-XY AWAIT BASE BEGIN BIN BIND BL BLANK BLK BLOCK BUFFER BYE C! C, C@ CASE CATCH CELL+ CELLS CHAR CHAR+ CHARS CLOSE-BLOCK-FILE CLOSE-FILE CMOVE CMOVE> COMPARE CONSTANT COPY-FILE COUNT CR CREATE CREATE-FILE CS-PICK CS-ROLL D+ D- D. D2* D2/ D< D= D>S DABS DECIMAL DEFER DEFER! DEFER@ DEFINITIONS DELETE-FILE DEPTH DMAX DMIN DNEGATE DO DOES> DROP DU< DUMP DUP ELSE EMIT EMPTY-BUFFERS END-MODULE ENDCASE ENDOF ENV:ALLUSERSPROFILE ENV:APPDATA ENV:CommandPromptType ENV:CommonProgramFiles ENV:CommonProgramFiles(Arm) ENV:CommonProgramFiles(x86) ENV:CommonProgramW6432 ENV:COMPLUS_FusionEnableForcedFullClosureWalk ENV:COMPlus_ThreadPool_UsePortableThreadPool ENV:COMPUTERNAME ENV:ComSpec ENV:CPU ENV:DATE ENV:DevEnvDir ENV:DOTNET_CLI_TELEMETRY_SESSIONID ENV:DOTNET_CLI_UI_LANGUAGE ENV:DOTNET_gcConcurrent ENV:DOTNET_GCHeapCount ENV:DOTNET_GCNoAffinitize ENV:DOTNET_HOST_PATH ENV:DOTNET_MULTILEVEL_LOOKUP ENV:DOTNET_TC_CallCountThreshold ENV:DOTNET_ThreadPool_UnfairSemaphoreSpinLimit ENV:DriverData ENV:EFC_6368_1592913036 ENV:EFC_6368_2397410445 ENV:ExtensionSdkDir ENV:EXTERNAL_INCLUDE ENV:FPS_BROWSER_APP_PROFILE_STRING ENV:FPS_BROWSER_USER_PROFILE_STRING ENV:Framework40Version ENV:FrameworkDir ENV:FrameworkDir32 ENV:FrameworkVersion ENV:FrameworkVersion32 ENV:FSHARPINSTALLDIR ENV:HOMEDRIVE ENV:HOMEPATH ENV:INCLUDE ENV:LIB ENV:LIBPATH ENV:LOCALAPPDATA ENV:LOGONSERVER ENV:MACHINE ENV:MEMORY ENV:MSBUILDENSURESTDOUTFORTASKPROCESSES ENV:MSBuildExtensionsPath ENV:MSBUILDFAILONDRIVEENUMERATINGWILDCARD ENV:MSBuildLoadMicrosoftTargetsReadOnly ENV:MSBuildSDKsPath ENV:MSBUILDUSESERVER ENV:NETFXSDKDir ENV:NUMBER_OF_PROCESSORS ENV:OneDrive ENV:OneDriveConsumer ENV:OnlineServices ENV:OS ENV:Path ENV:PATHEXT ENV:PkgDefApplicationConfigFile ENV:platformcode ENV:PreferredUILang ENV:PROCESSOR_ARCHITECTURE ENV:PROCESSOR_IDENTIFIER ENV:PROCESSOR_LEVEL ENV:PROCESSOR_REVISION ENV:ProgramData ENV:ProgramFiles ENV:ProgramFiles(Arm) ENV:ProgramFiles(x86) ENV:ProgramW6432 ENV:PROMPT ENV:PSModulePath ENV:PUBLIC ENV:PWD ENV:RegionCode ENV:ServiceHubClientProcessVersion ENV:ServiceHubCurrentOsLocale ENV:ServiceHubHostServiceBrokerPipeName ENV:ServiceHubLocationServicePipeName ENV:ServiceHubLogSessionKey ENV:SESSIONNAME ENV:SystemDrive ENV:SystemRoot ENV:TEMP ENV:ThreadedWaitDialogDpiContext ENV:TIME ENV:TMP ENV:USER ENV:USERDOMAIN ENV:USERDOMAIN_ROAMINGPROFILE ENV:USERNAME ENV:USERPROFILE ENV:VCIDEInstallDir ENV:VCINSTALLDIR ENV:VisualStudioDir ENV:VisualStudioEdition ENV:VisualStudioVersion ENV:VS180COMNTOOLS ENV:VSAPPIDDIR ENV:VSAPPIDNAME ENV:VSCMD_ARG_app_plat ENV:VSCMD_ARG_HOST_ARCH ENV:VSCMD_ARG_TGT_ARCH ENV:VSCMD_VER ENV:VSINSTALLDIR ENV:VSLANG ENV:VsPerMonitorDpiAwarenessEnabled.28128 ENV:VSSDK150INSTALL ENV:VSSDKINSTALL ENV:VSSKUEDITION ENV:VSTEST_WINAPPHOST_DOTNET_ROOT ENV:VS_Perf_Session_GCHeapCount ENV:windir ENV:WindowsLibPath ENV:WindowsSDKLibVersion ENV:WindowsSDKVersion ENV:WindowsSDK_ExecutablePath_x64 ENV:WindowsSDK_ExecutablePath_x86 ENV:_MSBUILDTLENABLED ENV:__DOTNET_ADD_32BIT ENV:__DOTNET_PREFERRED_BITNESS ENV:__VSCMD_PREINIT_PATH ENVIRONMENT? ERASE EVALUATE EXECUTE EXIT EXPECT F! F* F+ F- F. F/ F0< F0= F< F= F>S F@ FABS FACOS FALSE FASIN FATAN2 FCONSTANT FCOS FDEPTH FDROP FEXP FILE-EXISTS FILE-POSITION FILE-SIZE FILE-STATUS FILL FIND FLOATS FLOG FLOOR FLUSH FLUSH-BLOCK-FILE FM/MOD FMAX FMIN FNEGATE FORGET FORTH FORTH-WORDLIST FOVER FREE FROUND FSIN FSQRT FTAN FTRUNC FUTURE FVARIABLE F~ GET-CURRENT GET-ORDER HELP HERE HEX HOLD I IF IL{ IMMEDIATE INCLUDE INCLUDE-FILE INCLUDED INVERT IS J JOIN KEY KEY? LAST-STORE LATEST LEAVE LIST LITERAL LOAD LOAD-ASM LOAD-ASM-TYPE LOAD-FILE LOCALS| LOOP LSHIFT M* M+ M/MOD MARKER MAX MIN MOD MODULE MOVE MS NEGATE NIP NOT OF ONLY OPEN-BLOCK-DIR OPEN-BLOCK-FILE OPEN-FILE OR OVER PAD PAGE PICK POSTPONE PREVIOUS QUIT R/O R/W R> R@ READ-FILE READ-FILE-BYTES READ-LINE RECURSE REFILL RENAME-FILE REPEAT REPOSITION-FILE RESIZE RESTORE-INPUT ROT RP@ RSHIFT RUN-NEXT S S" S>D S>F SAVE SAVE-BUFFERS SAVE-INPUT SCR SEARCH SEARCH-WORDLIST SEE SET-CURRENT SET-ORDER SIGN SLITERAL SM/REM SOURCE SOURCE-ID SP! SP@ SPACE SPACES SPAWN STATE SWAP TASK TASK? THEN THROW THRU TIME&DATE TO TRUE TUCK TYPE U. U< UM* UM/MOD UNLOOP UNTIL UNUSED UPDATE USING VALUE VARIABLE VOCAB1:X VOCAB2 W/O WHILE WITHIN WORD WORDLIST WORDS WRITE-FILE WRITE-FILE-BYTES WRITE-LINE XOR YIELD [ ['] [CHAR] [ELSE] [IF] [THEN] ]! # #> #S ' (LOCAL) * */ */MOD + +! +LOOP , - -ROT -TRAILING . ." .R .S .[S] / /MOD /STRING 0< 0<> 0= 0> 1+ 1- 2! 2* 2/ 2>R 2@ 2DROP 2DUP 2OVER 2R> 2R@ 2ROT 2SWAP : :NONAME ; < <# <= <> = > >= >BODY >IN >NUMBER >R >UNUMBER ? ?DO ?DUP @ ABORT ABORT" ABS ACCEPT AGAIN AHEAD ALIGN ALLOCATE ALLOT ALSO AND APPEND-FILE AT-XY AWAIT BASE BEGIN BIN BIND BL BLANK BLK BLOCK BUFFER BYE C! C, C@ CASE CATCH CELL+ CELLS CHAR CHAR+ CHARS CLOSE-BLOCK-FILE CLOSE-FILE CMOVE CMOVE> COMPARE CONSTANT COPY-FILE COUNT CR CREATE CREATE-FILE CS-PICK CS-ROLL D+ D- D. D2* D2/ D< D= D>S DABS DECIMAL DEFER DEFER! DEFER@ DEFINITIONS DELETE-FILE DEPTH DMAX DMIN DNEGATE DO DOES> DROP DU< DUMP DUP ELSE EMIT EMPTY-BUFFERS END-MODULE ENDCASE ENDOF ENV:ALLUSERSPROFILE ENV:APPDATA ENV:CommandPromptType ENV:CommonProgramFiles ENV:CommonProgramFiles(Arm) ENV:CommonProgramFiles(x86) ENV:CommonProgramW6432 ENV:COMPLUS_FusionEnableForcedFullClosureWalk ENV:COMPlus_ThreadPool_UsePortableThreadPool ENV:COMPUTERNAME ENV:ComSpec ENV:CPU ENV:DATE ENV:DevEnvDir ENV:DOTNET_CLI_TELEMETRY_SESSIONID ENV:DOTNET_CLI_UI_LANGUAGE ENV:DOTNET_gcConcurrent ENV:DOTNET_GCHeapCount ENV:DOTNET_GCNoAffinitize ENV:DOTNET_HOST_PATH ENV:DOTNET_MULTILEVEL_LOOKUP ENV:DOTNET_TC_CallCountThreshold ENV:DOTNET_ThreadPool_UnfairSemaphoreSpinLimit ENV:DriverData ENV:EFC_6368_1592913036 ENV:EFC_6368_2397410445 ENV:ExtensionSdkDir ENV:EXTERNAL_INCLUDE ENV:FPS_BROWSER_APP_PROFILE_STRING ENV:FPS_BROWSER_USER_PROFILE_STRING ENV:Framework40Version ENV:FrameworkDir ENV:FrameworkDir32 ENV:FrameworkVersion ENV:FrameworkVersion32 ENV:FSHARPINSTALLDIR ENV:HOMEDRIVE ENV:HOMEPATH ENV:INCLUDE ENV:LIB ENV:LIBPATH ENV:LOCALAPPDATA ENV:LOGONSERVER ENV:MACHINE ENV:MEMORY ENV:MSBUILDENSURESTDOUTFORTASKPROCESSES ENV:MSBuildExtensionsPath ENV:MSBUILDFAILONDRIVEENUMERATINGWILDCARD ENV:MSBuildLoadMicrosoftTargetsReadOnly ENV:MSBuildSDKsPath ENV:MSBUILDUSESERVER ENV:NETFXSDKDir ENV:NUMBER_OF_PROCESSORS ENV:OneDrive ENV:OneDriveConsumer ENV:OnlineServices ENV:OS ENV:Path ENV:PATHEXT ENV:PkgDefApplicationConfigFile ENV:platformcode ENV:PreferredUILang ENV:PROCESSOR_ARCHITECTURE ENV:PROCESSOR_IDENTIFIER ENV:PROCESSOR_LEVEL ENV:PROCESSOR_REVISION ENV:ProgramData ENV:ProgramFiles ENV:ProgramFiles(Arm) ENV:ProgramFiles(x86) ENV:ProgramW6432 ENV:PROMPT ENV:PSModulePath ENV:PUBLIC ENV:PWD ENV:RegionCode ENV:ServiceHubClientProcessVersion ENV:ServiceHubCurrentOsLocale ENV:ServiceHubHostServiceBrokerPipeName ENV:ServiceHubLocationServicePipeName ENV:ServiceHubLogSessionKey ENV:SESSIONNAME ENV:SystemDrive ENV:SystemRoot ENV:TEMP ENV:ThreadedWaitDialogDpiContext ENV:TIME ENV:TMP ENV:USER ENV:USERDOMAIN ENV:USERDOMAIN_ROAMINGPROFILE ENV:USERNAME ENV:USERPROFILE ENV:VCIDEInstallDir ENV:VCINSTALLDIR ENV:VisualStudioDir ENV:VisualStudioEdition ENV:VisualStudioVersion ENV:VS180COMNTOOLS ENV:VSAPPIDDIR ENV:VSAPPIDNAME ENV:VSCMD_ARG_app_plat ENV:VSCMD_ARG_HOST_ARCH ENV:VSCMD_ARG_TGT_ARCH ENV:VSCMD_VER ENV:VSINSTALLDIR ENV:VSLANG ENV:VsPerMonitorDpiAwarenessEnabled.28128 ENV:VSSDK150INSTALL ENV:VSSDKINSTALL ENV:VSSKUEDITION ENV:VSTEST_WINAPPHOST_DOTNET_ROOT ENV:VS_Perf_Session_GCHeapCount ENV:windir ENV:WindowsLibPath ENV:WindowsSDKLibVersion ENV:WindowsSDKVersion ENV:WindowsSDK_ExecutablePath_x64 ENV:WindowsSDK_ExecutablePath_x86 ENV:_MSBUILDTLENABLED ENV:__DOTNET_ADD_32BIT ENV:__DOTNET_PREFERRED_BITNESS ENV:__VSCMD_PREINIT_PATH ENVIRONMENT? ERASE EVALUATE EXECUTE EXIT EXPECT F! F* F+ F- F. F/ F0< F0= F< F= F>S F@ FABS FACOS FALSE FASIN FATAN2 FCONSTANT FCOS FDEPTH FDROP FEXP FILE-EXISTS FILE-POSITION FILE-SIZE FILE-STATUS FILL FIND FLOATS FLOG FLOOR FLUSH FLUSH-BLOCK-FILE FM/MOD FMAX FMIN FNEGATE FORGET FORTH FORTH-WORDLIST FOVER FREE FROUND FSIN FSQRT FTAN FTRUNC FUTURE FVARIABLE F~ GET-CURRENT GET-ORDER HELP HERE HEX HOLD I IF IL{ IMMEDIATE INCLUDE INCLUDE-FILE INCLUDED INVERT IS J JOIN KEY KEY? LAST-STORE LATEST LEAVE LIST LITERAL LOAD LOAD-ASM LOAD-ASM-TYPE LOAD-FILE LOCALS| LOOP LSHIFT M* M+ M/MOD MARKER MAX MIN MOD MODULE MOVE MS NEGATE NIP NOT OF ONLY OPEN-BLOCK-DIR OPEN-BLOCK-FILE OPEN-FILE OR OVER PAD PAGE PICK POSTPONE PREVIOUS QUIT R/O R/W R> R@ READ-FILE READ-FILE-BYTES READ-LINE RECURSE REFILL RENAME-FILE REPEAT REPOSITION-FILE RESIZE RESTORE-INPUT ROT RP@ RSHIFT RUN-NEXT S S" S>D S>F SAVE SAVE-BUFFERS SAVE-INPUT SCR SEARCH SEARCH-WORDLIST SEE SET-CURRENT SET-ORDER SIGN SLITERAL SM/REM SOURCE SOURCE-ID SP! SP@ SPACE SPACES SPAWN STATE SWAP TASK TASK? THEN THROW THRU TIME&DATE TO TRUE TUCK TYPE U. U< UM* UM/MOD UNLOOP UNTIL UNUSED UPDATE USING VALUE VARIABLE W/O WHILE WITHIN WORD WORDLIST WORDS WRITE-FILE WRITE-FILE-BYTES WRITE-LINE XOR YIELD [ ['] [CHAR] [ELSE] [IF] [THEN] ]A42Hello, World!812345
+
+Test Run Failed.
+Total tests: 601
+     Passed: 586
+     Failed: 14
+    Skipped: 1
+ Total time: 1,4764 Seconds

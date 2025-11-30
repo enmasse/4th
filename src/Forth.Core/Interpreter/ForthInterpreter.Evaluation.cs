@@ -28,6 +28,18 @@ public partial class ForthInterpreter
     // Token reading helpers used by primitives and source-level operations
     internal bool TryReadNextToken(out string token)
     {
+        // Check if >IN has been modified externally (e.g., by TESTING word)
+        // If >IN points past all tokens, we're done parsing this line
+        MemTryGet(_inAddr, out var inVal);
+        var inPos = (int)ToLong(inVal);
+        
+        // If >IN points to or past the end of source, no more tokens
+        if (_currentSource != null && inPos >= _currentSource.Length)
+        {
+            token = string.Empty;
+            return false;
+        }
+        
         if (_tokens is null || _tokenIndex >= _tokens.Count)
         {
             token = string.Empty;
@@ -76,6 +88,14 @@ public partial class ForthInterpreter
         // reset memory >IN cell
         _mem[_inAddr] = 0;
         _tokens = Tokenizer.Tokenize(line);
+
+        // ANS Forth bracket conditional multi-line support:
+        // If we're currently skipping due to a false [IF], scan this line for
+        // [IF], [ELSE], [THEN] to track nesting and potentially resume execution
+        if (_bracketIfSkipping)
+        {
+            return await ProcessSkippedLine();
+        }
 
         // Preprocess idiomatic compound tokens like "['] name" or "[']name" into
         // the equivalent sequence: "[" "'" name "]" so existing primitives
@@ -183,6 +203,59 @@ public partial class ForthInterpreter
                 if (TryResolveWord(tok, out var word) && word is not null)
                 {
                     await word.ExecuteAsync(this);
+                    
+                    // Check if bracket conditional changed state to skipping
+                    // If so, process remaining tokens in skip mode inline
+                    if (_bracketIfSkipping)
+                    {
+                        // Skip tokens until we find matching [THEN] or [ELSE]
+                        while (TryReadNextToken(out var skipTok))
+                        {
+                            var skipUpper = skipTok.ToUpperInvariant();
+                            
+                            // Handle composite bracket forms
+                            if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
+                            {
+                                var inner = _tokens[_tokenIndex].ToUpperInvariant();
+                                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
+                                {
+                                    skipUpper = "[" + inner + "]";
+                                    _tokenIndex += 2;
+                                }
+                            }
+                            
+                            if (skipUpper == "[IF]")
+                            {
+                                _bracketIfNestingDepth++;
+                                _bracketIfActiveDepth++;
+                            }
+                            else if (skipUpper == "[THEN]")
+                            {
+                                if (_bracketIfNestingDepth > 0)
+                                {
+                                    _bracketIfNestingDepth--;
+                                    _bracketIfActiveDepth--;
+                                }
+                                else
+                                {
+                                    // End of skipped section - resume normal processing
+                                    _bracketIfSkipping = false;
+                                    _bracketIfSeenElse = false;
+                                    _bracketIfNestingDepth = 0;
+                                    _bracketIfActiveDepth--;
+                                    break;
+                                }
+                            }
+                            else if (skipUpper == "[ELSE]" && _bracketIfNestingDepth == 0)
+                            {
+                                // At our depth - resume execution
+                                _bracketIfSkipping = false;
+                                _bracketIfSeenElse = true;
+                                break;
+                            }
+                        }
+                    }
+                    
                     continue;
                 }
 
@@ -245,6 +318,59 @@ public partial class ForthInterpreter
                         }
 
                         await cw.ExecuteAsync(this);
+                        
+                        // Check if bracket conditional changed state to skipping
+                        // If so, we need to process remaining tokens in skip mode inline
+                        if (_bracketIfSkipping)
+                        {
+                            // Skip tokens until we find matching [THEN] or [ELSE]
+                            while (TryReadNextToken(out var skipTok))
+                            {
+                                var skipUpper = skipTok.ToUpperInvariant();
+                                
+                                // Handle composite bracket forms
+                                if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
+                                {
+                                    var inner = _tokens[_tokenIndex].ToUpperInvariant();
+                                    if (inner == "IF" || inner == "ELSE" || inner == "THEN")
+                                    {
+                                        skipUpper = "[" + inner + "]";
+                                        _tokenIndex += 2;
+                                    }
+                                }
+                                
+                                if (skipUpper == "[IF]")
+                                {
+                                    _bracketIfNestingDepth++;
+                                    _bracketIfActiveDepth++;
+                                }
+                                else if (skipUpper == "[THEN]")
+                                {
+                                    if (_bracketIfNestingDepth > 0)
+                                    {
+                                        _bracketIfNestingDepth--;
+                                        _bracketIfActiveDepth--;
+                                    }
+                                    else
+                                    {
+                                        // End of skipped section - resume normal processing
+                                        _bracketIfSkipping = false;
+                                        _bracketIfSeenElse = false;
+                                        _bracketIfNestingDepth = 0;
+                                        _bracketIfActiveDepth--;
+                                        break;
+                                    }
+                                }
+                                else if (skipUpper == "[ELSE]" && _bracketIfNestingDepth == 0)
+                                {
+                                    // At our depth - resume execution
+                                    _bracketIfSkipping = false;
+                                    _bracketIfSeenElse = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
                         continue;
                     }
 
@@ -284,16 +410,260 @@ public partial class ForthInterpreter
     {
         value = 0.0;
         if (string.IsNullOrEmpty(token)) return false;
-        // Detect floating-point literals if token contains exponent (e/E) or a decimal point.
-        // Support optional trailing 'd'/'D' suffix to indicate double.
+        
+        // ANS Forth compliance: decimal point alone is sufficient for floating-point
+        // Also support: exponent notation (e/E), optional trailing 'd'/'D' suffix, NaN, Infinity
         bool hasSuffixD = token.EndsWith('d') || token.EndsWith('D');
         string span = hasSuffixD ? token.Substring(0, token.Length - 1) : token;
-        bool looksFloating = span.Contains('e') || span.Contains('E') || span.Contains('.')
+        
+        // Check if this looks like a floating-point number
+        bool looksFloating = span.Contains('.') 
+            || span.Contains('e') || span.Contains('E')
             || span.IndexOf("NaN", StringComparison.OrdinalIgnoreCase) >= 0
             || span.IndexOf("Infinity", StringComparison.OrdinalIgnoreCase) >= 0;
+        
         if (!looksFloating) return false;
+        
         // Handle Forth floating zero literal forms like 0E or 0e
         if (span.Equals("0E", StringComparison.OrdinalIgnoreCase)) { value = 0.0; return true; }
+        
+        // Try to parse as double - ANS Forth allows simple decimal notation like "1.5"
         return double.TryParse(span, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
+    }
+
+    /// <summary>
+    /// Process a line while in bracket conditional skip mode.
+    /// Scans for [IF], [ELSE], [THEN] to track nesting depth and potentially resume execution.
+    /// </summary>
+    private async Task<bool> ProcessSkippedLine()
+    {
+        if (_tokens is null) return !_exitRequested;
+
+        for (_tokenIndex = 0; _tokenIndex < _tokens.Count; _tokenIndex++)
+        {
+            var tok = _tokens[_tokenIndex];
+            var upper = tok.ToUpperInvariant();
+
+            // Handle composite bracket forms like "[" "IF" "]"
+            if (tok == "[" && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 2] == "]")
+            {
+                var inner = _tokens[_tokenIndex + 1].ToUpperInvariant();
+                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
+                {
+                    upper = "[" + inner + "]";
+                    _tokenIndex += 2; // consume the composite
+                }
+            }
+
+            // Track [IF] nesting
+            if (upper == "[IF]")
+            {
+                _bracketIfNestingDepth++;
+                _bracketIfActiveDepth++;  // Track active depth even when skipping
+                continue;
+            }
+
+            // Handle [THEN]
+            if (upper == "[THEN]")
+            {
+                if (_bracketIfNestingDepth > 0)
+                {
+                    _bracketIfNestingDepth--;
+                    _bracketIfActiveDepth--;  // Decrement active depth
+                }
+                else
+                {
+                    // End of our conditional block - resume execution
+                    _bracketIfSkipping = false;
+                    _bracketIfSeenElse = false;
+                    _bracketIfNestingDepth = 0;
+                    _bracketIfActiveDepth--;  // Decrement active depth
+                    
+                    // Process remaining tokens on this line
+                    _tokenIndex++;
+                    return await ContinueEvaluation();
+                }
+                continue;
+            }
+
+            // Handle [ELSE]
+            if (upper == "[ELSE]")
+            {
+                if (_bracketIfNestingDepth == 0)
+                {
+                    // At our depth level - switch from skip to execute
+                    _bracketIfSkipping = false;
+                    _bracketIfSeenElse = true;
+                    
+                    // Process remaining tokens on this line
+                    _tokenIndex++;
+                    return await ContinueEvaluation();
+                }
+                // Nested [ELSE] - just skip it
+                continue;
+            }
+        }
+
+        // Entire line skipped
+        _tokens = null;
+        return !_exitRequested;
+    }
+
+    /// <summary>
+    /// Continue evaluation of remaining tokens after resuming from skip mode.
+    /// </summary>
+    private async Task<bool> ContinueEvaluation()
+    {
+        while (TryReadNextToken(out var tok))
+        {
+            if (tok.Length == 0)
+            {
+                continue;
+            }
+
+            // Handle bracket conditionals that might start skipping again
+            var upper = tok.ToUpperInvariant();
+            if (upper == "[IF]" || upper == "[ELSE]" || upper == "[THEN]")
+            {
+                // Execute these as immediate words
+                if (TryResolveWord(tok, out var word) && word is not null)
+                {
+                    await word.ExecuteAsync(this);
+                    
+                    // If we started skipping again, stop processing this line
+                    if (_bracketIfSkipping)
+                    {
+                        _tokens = null;
+                        return !_exitRequested;
+                    }
+                    continue;
+                }
+            }
+
+            // Normal token processing (same as main eval loop)
+            if (_doesCollecting)
+            {
+                if (tok == ";")
+                {
+                    FinishDefinition();
+                    continue;
+                }
+                else
+                {
+                    _doesTokens?.Add(tok);
+                    continue;
+                }
+            }
+
+            if (!_isCompiling)
+            {
+                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
+                    {
+                        throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
+                    }
+                    throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+                }
+
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    Push(tok[1..^1]);
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dnum))
+                {
+                    Push(dnum);
+                    continue;
+                }
+
+                if (TryParseNumber(tok, out var num))
+                {
+                    Push(num);
+                    continue;
+                }
+
+                if (TryResolveWord(tok, out var word) && word is not null)
+                {
+                    await word.ExecuteAsync(this);
+                    continue;
+                }
+
+                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
+            }
+            else
+            {
+                if (tok != ";")
+                {
+                    _currentDefTokens?.Add(tok);
+                }
+
+                if (tok == ";")
+                {
+                    FinishDefinition();
+                    continue;
+                }
+
+                if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(tok[1..^1]);
+                        return Task.CompletedTask;
+                    });
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dlit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(dlit);
+                        return Task.CompletedTask;
+                    });
+                    continue;
+                }
+
+                if (TryParseNumber(tok, out var lit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(lit);
+                        return Task.CompletedTask;
+                    });
+                    continue;
+                }
+
+                if (TryResolveWord(tok, out var cw) && cw is not null)
+                {
+                    if (cw.IsImmediate)
+                    {
+                        if (cw.BodyTokens is { Count: > 0 })
+                        {
+                            _tokens!.InsertRange(_tokenIndex, cw.BodyTokens);
+                            continue;
+                        }
+
+                        await cw.ExecuteAsync(this);
+                        continue;
+                    }
+
+                    CurrentList().Add(async intr => await cw.ExecuteAsync(intr));
+                    continue;
+                }
+
+                if (_currentLocals != null && _currentLocals.Contains(tok))
+                {
+                    CurrentList().Add(intr => { intr.Push(intr._locals![tok]); return Task.CompletedTask; });
+                    continue;
+                }
+
+                throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word in definition: {tok}");
+            }
+        }
+
+        _tokens = null;
+        return !_exitRequested;
     }
 }

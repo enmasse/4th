@@ -43,19 +43,6 @@ public static class Tokenizer
                 continue;
             }
 
-            // Support C-style // line comments: skip to end-of-line
-            if (c == '/' && i + 1 < input.Length && input[i + 1] == '/')
-            {
-                // flush any pending token
-                if (current.Count > 0) { list.Add(new string(current.ToArray())); current.Clear(); }
-                // advance to end-of-line (\n or \r) or end of input
-                i += 2; // past //
-                while (i < input.Length && input[i] != '\n' && input[i] != '\r') i++;
-                // The for-loop will increment i; adjust so we continue at newline
-                i--;
-                continue;
-            }
-
             // Handle S" ..." string literal
             if (c == 'S' && i + 1 < input.Length && input[i + 1] == '"')
             {

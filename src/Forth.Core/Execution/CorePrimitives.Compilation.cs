@@ -406,25 +406,103 @@ internal static partial class CorePrimitives
     [Primitive("[IF]", IsImmediate = true, HelpString = "[IF] ( flag -- ) - conditional compilation start (interpret/compile)")]
     private static Task Prim_BRACKET_IF(ForthInterpreter i)
     {
+        // If already skipping from outer [IF], just track nesting depth
+        if (i._bracketIfSkipping)
+        {
+            i._bracketIfNestingDepth++;
+            return Task.CompletedTask;
+        }
+
+        // Not currently skipping - evaluate condition
         i.EnsureStack(1, "[IF]");
         var flagObj = i.PopInternal();
         bool cond = ToBool(flagObj);
-        if (cond) return Task.CompletedTask; // keep emitting tokens
-        // Skip until matching [ELSE] or [THEN] at same nesting level
+        
+        // Increment active depth regardless of condition
+        i._bracketIfActiveDepth++;
+        
+        if (cond)
+        {
+            // Condition true - continue processing
+            return Task.CompletedTask;
+        }
+        
+        // Condition false - skip until [ELSE] or [THEN]
+        i._bracketIfNestingDepth = 0;
+        i._bracketIfSeenElse = false;
+        
+        // Skip rest of current token list
         SkipBracketSection(i, skipElse: true);
+        
+        // Check if we found [ELSE] or [THEN] in the current token list
+        // If not (reached end of tokens), set _bracketIfSkipping for multi-line continuation
+        if (i._tokens != null && i._tokenIndex >= i._tokens.Count)
+        {
+            // Reached end of current eval without finding terminator - continue skipping on next line
+            i._bracketIfSkipping = true;
+        }
+        
         return Task.CompletedTask;
     }
 
     [Primitive("[ELSE]", IsImmediate = true, HelpString = "[ELSE] - conditional compilation alternate part")]
     private static Task Prim_BRACKET_ELSE(ForthInterpreter i)
     {
-        // We arrive here only if first part compiled/emitted; now skip until [THEN]
-        SkipBracketSection(i, skipElse: false);
+        // Check if we're inside any [IF] block
+        if (i._bracketIfActiveDepth == 0)
+        {
+            throw new ForthException(ForthErrorCode.CompileError, "[ELSE] without [IF]");
+        }
+
+        // If we're at a nested [ELSE] (inside a skipped block), just continue
+        if (i._bracketIfNestingDepth > 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        // At depth 0: toggle skip state
+        if (i._bracketIfSkipping)
+        {
+            // Was skipping (false [IF]), now execute [ELSE] part
+            i._bracketIfSkipping = false;
+            i._bracketIfSeenElse = true;
+        }
+        else
+        {
+            // Was executing ([IF] was true), now skip [ELSE] part
+            i._bracketIfSeenElse = true;
+            SkipBracketSection(i, skipElse: false);
+            // After skipping within the current token list, we're done skipping for this block
+            // Don't set _bracketIfSkipping since the skip is complete
+        }
+        
         return Task.CompletedTask;
     }
 
     [Primitive("[THEN]", IsImmediate = true, HelpString = "[THEN] - end bracket conditional")]
-    private static Task Prim_BRACKET_THEN(ForthInterpreter i) => Task.CompletedTask; // no-op when reached
+    private static Task Prim_BRACKET_THEN(ForthInterpreter i)
+    {
+        // Check if we're inside any [IF] block
+        if (i._bracketIfActiveDepth == 0)
+        {
+            throw new ForthException(ForthErrorCode.CompileError, "[THEN] without [IF]");
+        }
+
+        // If at nested depth (inside skipped block), just decrement
+        if (i._bracketIfNestingDepth > 0)
+        {
+            i._bracketIfNestingDepth--;
+            return Task.CompletedTask;
+        }
+
+        // At depth 0: end the conditional
+        i._bracketIfSkipping = false;
+        i._bracketIfSeenElse = false;
+        i._bracketIfNestingDepth = 0;
+        i._bracketIfActiveDepth--;  // Decrement active depth
+        
+        return Task.CompletedTask;
+    }
 
     private static void SkipBracketSection(ForthInterpreter i, bool skipElse)
     {
@@ -468,8 +546,11 @@ internal static partial class CorePrimitives
                 idx += 2;
             }
         }
-        // If we reach here, no matching terminator
-        throw new ForthException(ForthErrorCode.CompileError, "Unmatched bracket conditional");
+        
+        // Reached end of line without finding terminator
+        // For multi-line support: skip to end of current token stream
+        // The persistent state (_bracketIfSkipping, _bracketIfNestingDepth) will handle continuation
+        i._tokenIndex = i._tokens.Count;
     }
 
     // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
