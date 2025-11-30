@@ -125,4 +125,14 @@ public class ParsingAndStringsTests
         Assert.Single(forth.Stack);
         Assert.Equal(-1L, (long)forth.Pop()); // true, fail
     }
+
+    [Fact]
+    public async Task SQuote_PushesString()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("S\" world\""));
+        Assert.Single(forth.Stack);
+        Assert.IsType<string>(forth.Stack[0]);
+        Assert.Equal("world", (string)forth.Stack[0]);
+    }
 }

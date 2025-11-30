@@ -1060,6 +1060,28 @@ public class FileIOTests
     }
 
     [Fact]
+    public async Task Included_AcceptsString()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        try
+        {
+            // Write a tiny forth file that prints text and CR
+            File.WriteAllText(path, ".\" INCLUDED-STRING\" CR\n");
+            Assert.True(await forth.EvalAsync($"\"{path}\" INCLUDED"));
+            // INCLUDED executes lines which cause Print and NewLine
+            Assert.True(io.Outputs.Count >= 2);
+            Assert.Equal("INCLUDED-STRING", io.Outputs[0]);
+            Assert.Equal("\n", io.Outputs[1]);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task OpenFile_WithFam_ReadBinary()
     {
         var forth = new ForthInterpreter();

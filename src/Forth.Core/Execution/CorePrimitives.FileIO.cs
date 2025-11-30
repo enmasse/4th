@@ -434,13 +434,21 @@ internal static partial class CorePrimitives
         await i.EvalAsync(text).ConfigureAwait(false);
     }
 
-    [Primitive("INCLUDED", IsImmediate = true, IsAsync = true, HelpString = "INCLUDED ( i*x c-addr u -- j*x ) - interpret file")]
+    [Primitive("INCLUDED", IsImmediate = true, IsAsync = true, HelpString = "INCLUDED ( i*x c-addr u | string -- j*x ) - interpret file")]
     private static async Task Prim_INCLUDED(ForthInterpreter i)
     {
-        i.EnsureStack(2, "INCLUDED");
-        var u = ToLong(i.PopInternal());
-        var addr = ToLong(i.PopInternal());
-        var filename = i.ReadMemoryString(addr, u);
+        string filename;
+        if (i.Stack.Count >= 1 && i.Stack[^1] is string s)
+        {
+            filename = (string)i.PopInternal();
+        }
+        else
+        {
+            i.EnsureStack(2, "INCLUDED");
+            var u = ToLong(i.PopInternal());
+            var addr = ToLong(i.PopInternal());
+            filename = i.ReadMemoryString(addr, u);
+        }
         if (!System.IO.Path.IsPathRooted(filename))
         {
             filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());

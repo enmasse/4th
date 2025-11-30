@@ -16,6 +16,10 @@
 \ Unsigned output (using pictured numeric)
 : U. <# #S #> TYPE SPACE ;
 
+\ Right-justified numeric output
+\ .R ( n width -- ) - print number n right-justified in width characters
+: .R >R DUP ABS 0 <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
+
 \ Comments for documentation
 ( Stack: a b c -- b c a )
 \ ROT is primitive
