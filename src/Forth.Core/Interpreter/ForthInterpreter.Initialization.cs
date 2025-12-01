@@ -48,6 +48,14 @@ public partial class ForthInterpreter
 
         // Add ENV wordlist words
         AddEnvWords();
+
+        // Ensure REPORT-ERRORS exists as a stub so compliance helper files that
+        // expect this word can be loaded and override it if necessary.
+        if (!_dict.ContainsKey((null, "REPORT-ERRORS")))
+        {
+            var rep = new Word(ii => { return Task.CompletedTask; }) { Name = "REPORT-ERRORS", Module = null };
+            _dict = _dict.SetItem((null, "REPORT-ERRORS"), rep);
+        }
     }
 
     private async Task LoadPreludeAsync()

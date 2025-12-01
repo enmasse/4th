@@ -188,15 +188,15 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (TryParseDouble(tok, out var dnum))
-                {
-                    Push(dnum);
-                    continue;
-                }
-
                 if (TryParseNumber(tok, out var num))
                 {
                     Push(num);
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dnum))
+                {
+                    Push(dnum);
                     continue;
                 }
 
@@ -285,22 +285,22 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (TryParseDouble(tok, out var dlit))
+                if (TryParseNumber(tok, out var lit))
                 {
                     CurrentList().Add(intr =>
                     {
-                        intr.Push(dlit);
+                        intr.Push(lit);
                         return Task.CompletedTask;
                     });
 
                     continue;
                 }
 
-                if (TryParseNumber(tok, out var lit))
+                if (TryParseDouble(tok, out var dlit))
                 {
                     CurrentList().Add(intr =>
                     {
-                        intr.Push(lit);
+                        intr.Push(dlit);
                         return Task.CompletedTask;
                     });
 
@@ -572,15 +572,15 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (TryParseDouble(tok, out var dnum))
-                {
-                    Push(dnum);
-                    continue;
-                }
-
                 if (TryParseNumber(tok, out var num))
                 {
                     Push(num);
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dnum))
+                {
+                    Push(dnum);
                     continue;
                 }
 
@@ -615,21 +615,21 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (TryParseDouble(tok, out var dlit))
-                {
-                    CurrentList().Add(intr =>
-                    {
-                        intr.Push(dlit);
-                        return Task.CompletedTask;
-                    });
-                    continue;
-                }
-
                 if (TryParseNumber(tok, out var lit))
                 {
                     CurrentList().Add(intr =>
                     {
                         intr.Push(lit);
+                        return Task.CompletedTask;
+                    });
+                    continue;
+                }
+
+                if (TryParseDouble(tok, out var dlit))
+                {
+                    CurrentList().Add(intr =>
+                    {
+                        intr.Push(dlit);
                         return Task.CompletedTask;
                     });
                     continue;

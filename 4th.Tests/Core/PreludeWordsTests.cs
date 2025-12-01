@@ -274,6 +274,30 @@ public class PreludeWordsTests
         Assert.Equal(Forth.Core.ForthErrorCode.StackUnderflow, ex.Code);
     }
 
+    [Fact]
+    public async Task DotR_RightJustifiedOutput()
+    {
+        var io = new TestIO();
+        var forth = new ForthInterpreter(io);
+        await forth.EvalAsync("42 5 .R");
+        Assert.Single(io.Outputs);
+        Assert.Equal("   42", io.Outputs[0]);
+        
+        // Width smaller than number
+        var io2 = new TestIO();
+        var forth2 = new ForthInterpreter(io2);
+        await forth2.EvalAsync("123 2 .R");
+        Assert.Single(io2.Outputs);
+        Assert.Equal("123", io2.Outputs[0]);
+        
+        // Negative number
+        var io3 = new TestIO();
+        var forth3 = new ForthInterpreter(io3);
+        await forth3.EvalAsync("-5 6 .R");
+        Assert.Single(io3.Outputs);
+        Assert.Equal("    -5", io3.Outputs[0]);
+    }
+
     private sealed class TestIO : Forth.Core.IForthIO
     {
         public readonly List<string> Outputs = new();

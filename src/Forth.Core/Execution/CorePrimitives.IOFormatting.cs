@@ -10,6 +10,25 @@ internal static partial class CorePrimitives
     [Primitive(".", Category = "Arithmetic", HelpString = ". ( n -- ) - print top of stack as a number")]
     private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
 
+    [Primitive(".R", Category = "Arithmetic", HelpString = ".R ( n1 n2 -- ) - print n1 right-justified in field of n2 characters")]
+    private static Task Prim_DotR(ForthInterpreter i)
+    {
+        i.EnsureStack(2, ".R");
+        var width = (int)ToLong(i.PopInternal());
+        var n = ToLong(i.PopInternal());
+        var str = n.ToString();
+        if (str.Length < width)
+        {
+            var spaces = new string(' ', width - str.Length);
+            i.WriteText(spaces + str);
+        }
+        else
+        {
+            i.WriteText(str);
+        }
+        return Task.CompletedTask;
+    }
+
     [Primitive("D.", Category = "Arithmetic", HelpString = "D. ( d -- ) - print double-cell number")]
     private static Task Prim_DDot(ForthInterpreter i)
     {

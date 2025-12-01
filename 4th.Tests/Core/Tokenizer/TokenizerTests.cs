@@ -97,6 +97,20 @@ public class TokenizerTests
     }
 
     [Fact]
+    public void Tokenizer_ShouldHandleCStyleDoubleSlashComments()
+    {
+        var input = "WORD1 // c-style comment\nWORD2";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
+        _output.WriteLine($"Input: '{input.Replace("\n", "\\n")}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+
+        // C-style // comments should be stripped
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal("WORD1", tokens[0]);
+        Assert.Equal("WORD2", tokens[1]);
+    }
+
+    [Fact]
     public void Tokenizer_ShouldHandleParenComments()
     {
         var input = "WORD1 ( comment ) WORD2";

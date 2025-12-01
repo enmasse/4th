@@ -147,6 +147,22 @@ public static class Tokenizer
                 }
                 continue;
             }
+
+            // C-style '//' comment - rest of line is ignored (useful inside IL{ }IL blocks)
+            if (c == '/' && i + 1 < input.Length && input[i + 1] == '/')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                // Skip to end of line or end of input
+                while (i + 1 < input.Length && input[i + 1] != '\n' && input[i + 1] != '\r')
+                {
+                    i++;
+                }
+                continue;
+            }
             if (char.IsWhiteSpace(c))
             {
                 if (current.Count > 0)

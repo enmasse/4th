@@ -17,7 +17,7 @@ class Program
                 "IF", "ELSE", "THEN", "BEGIN", "WHILE", "REPEAT", "UNTIL", "DO", "LOOP", "LEAVE", "UNLOOP", "I", "J", "RECURSE",
                 "CREATE", "DOES>", "VARIABLE", "CONSTANT", "VALUE", "TO", "DEFER", "IS", "MARKER", "FORGET",
                 "@", "!", "C@", "C!", ",", "ALLOT", "HERE", "PAD", "COUNT", "MOVE", "FILL", "ERASE",
-                ".", ".S", "CR", "EMIT", "TYPE", "WORDS", "<#", "HOLD", "#", "#S", "SIGN", "#>",
+                ".", ".R", ".S", "CR", "EMIT", "TYPE", "WORDS", "<#", "HOLD", "#", "#S", "SIGN", "#>",
                 "READ-FILE", "WRITE-FILE", "APPEND-FILE", "FILE-EXISTS", "INCLUDE",
                 "SPAWN", "FUTURE", "TASK", "JOIN", "AWAIT", "TASK?",
                 "CATCH", "THROW", "ABORT", "EXIT", "BYE", "QUIT",

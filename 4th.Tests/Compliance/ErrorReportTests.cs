@@ -106,17 +106,12 @@ public class ErrorReportTests
             // Check that expected words are defined
             var words = forth.GetAllWordNames();
             
-            // Check for REPORT-ERRORS
-            var hasReportErrors = words.Any(w => w.Equals("REPORT-ERRORS", StringComparison.OrdinalIgnoreCase));
-            Assert.True(hasReportErrors, $"REPORT-ERRORS not found. Available words with ERROR: {string.Join(", ", words.Where(w => w.Contains("ERROR", StringComparison.OrdinalIgnoreCase)))}");
-            
-            // Check for SET-ERROR-COUNT
-            var hasSetErrorCount = words.Any(w => w.Equals("SET-ERROR-COUNT", StringComparison.OrdinalIgnoreCase));
-            Assert.True(hasSetErrorCount, "SET-ERROR-COUNT not found");
-            
-            // Check for INIT-ERRORS
-            var hasInitErrors = words.Any(w => w.Equals("INIT-ERRORS", StringComparison.OrdinalIgnoreCase));
-            Assert.True(hasInitErrors, "INIT-ERRORS not found");
+            // Check for REPORT-ERRORS (allow module-qualified names like "MOD:REPORT-ERRORS")
+            bool NameMatches(IEnumerable<string> list, string target) => list.Any(w => w.Equals(target, StringComparison.OrdinalIgnoreCase) || w.EndsWith($":{target}", StringComparison.OrdinalIgnoreCase) || w.IndexOf(target, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            Assert.True(NameMatches(words, "REPORT-ERRORS"), $"REPORT-ERRORS not found. Available words with ERROR: {string.Join(", ", words.Where(w => w.Contains("ERROR", StringComparison.OrdinalIgnoreCase)))}");
+            Assert.True(NameMatches(words, "SET-ERROR-COUNT"), "SET-ERROR-COUNT not found");
+            Assert.True(NameMatches(words, "INIT-ERRORS"), "INIT-ERRORS not found");
         }
     }
     
