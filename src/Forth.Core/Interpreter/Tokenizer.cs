@@ -94,6 +94,34 @@ public static class Tokenizer
                 current.Add('"');
                 continue;
             }
+            
+            // Handle .( ... ) for immediate printing
+            // Note: .( is handled at tokenization time for simplicity
+            // The text is printed to Console immediately during tokenization
+            if (c == '.' && i + 1 < input.Length && input[i + 1] == '(')
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                // Collect text between ( and )
+                var printText = new List<char>();
+                i += 2; // skip past ".("
+                while (i < input.Length && input[i] != ')')
+                {
+                    printText.Add(input[i]);
+                    i++;
+                }
+                if (i >= input.Length)
+                    throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, ".( missing closing )");
+                // Print immediately - this is an immediate word that prints during interpretation/compilation
+                Console.Write(new string(printText.ToArray()));
+                // Don't add any tokens - .( is consumed entirely here
+                // i is now at ')', continue will increment it
+                continue;
+            }
+            
             if (c == '.' && i + 3 < input.Length && input[i + 1] == '[' && input[i + 2] == 'S' && input[i + 3] == ']')
             {
                 if (current.Count > 0)

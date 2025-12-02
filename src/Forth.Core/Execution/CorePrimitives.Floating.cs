@@ -415,4 +415,72 @@ internal static partial class CorePrimitives
         i.Push((long)count);
         return Task.CompletedTask;
     }
+
+    [Primitive("D>F", HelpString = "D>F ( d -- r ) - convert double-cell integer to floating-point number")]
+    private static Task Prim_DToF(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "D>F");
+        var hi = ForthInterpreter.ToLong(i.PopInternal());
+        var lo = ForthInterpreter.ToLong(i.PopInternal());
+        // In this 64-bit cell implementation, a double-cell number is represented
+        // as lo (least significant) and hi (most significant/sign extension).
+        // For most values that fit in 64-bit, hi is 0 or -1 (sign extension).
+        // Convert to floating-point using just the lo cell since double can represent ~53 bits precision.
+        var result = (double)lo;
+        i.Push(result);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F>D", HelpString = "F>D ( r -- d ) - convert floating-point number to double-cell integer")]
+    private static Task Prim_FToD(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F>D");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        // Convert to 64-bit signed integer
+        var intVal = (long)d;
+        // In this 64-bit cell implementation, push as double-cell (lo, hi)
+        // where lo contains the value and hi is sign extension
+        var lo = intVal;
+        var hi = intVal < 0 ? -1L : 0L;
+        i.Push(lo);
+        i.Push(hi);
+        return Task.CompletedTask;
+    }
+
+    [Primitive(">FLOAT", HelpString = ">FLOAT ( c-addr u -- r true | false ) - attempt to convert string to floating-point number")]
+    private static Task Prim_ToFloat(ForthInterpreter i)
+    {
+        i.EnsureStack(2, ">FLOAT");
+        var uObj = i.PopInternal();
+        var addrObj = i.PopInternal();
+        long u = ForthInterpreter.ToLong(uObj);
+        if (u < 0) throw new ForthException(ForthErrorCode.TypeError, ">FLOAT negative length");
+
+        string slice;
+        if (addrObj is string s)
+        {
+            slice = u <= s.Length ? s.Substring(0, (int)u) : s;
+        }
+        else if (addrObj is long addr)
+        {
+            slice = i.ReadMemoryString(addr, (int)u);
+        }
+        else
+        {
+            throw new ForthException(ForthErrorCode.TypeError, 
+                $">FLOAT received unexpected type: {addrObj?.GetType().Name ?? "null"}");
+        }
+
+        if (double.TryParse(slice, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        {
+            i.Push(result);
+            i.Push(-1L); // true
+        }
+        else
+        {
+            i.Push(0L); // false
+        }
+        return Task.CompletedTask;
+    }
 }

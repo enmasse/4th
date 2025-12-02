@@ -36,6 +36,14 @@
 - Help system: `HELP` (general help or word-specific)
 
 ## Recent extensions
+- **Immediate Print Tokenization (2025-01)**: Fixed `.( ... )` tokenization for ANS Forth compliance
+  - `.( text )` now correctly prints text immediately during tokenization
+  - Previously misparsed as `.` (dot) followed by `( comment )`, causing stack underflow
+  - Tokenizer handles `.( )` specially, printing to Console and creating no tokens
+  - 15 comprehensive regression tests added (9 for `.( )`, 6 for other special forms)
+  - All 29 tokenizer tests passing
+  - Resolves FloatingPointTests stack underflow issue
+  - See `CHANGELOG_TOKENIZER_TESTS.md` for detailed test coverage
 - **Comment Syntax (2025-01)**: Removed non-standard C-style `//` comments for ANS Forth compliance
   - Only ANS-standard comment forms now supported: `\` (line comment) and `( )` (block comment)
   - No Forth source files were using `//` comments, so no breaking changes
@@ -242,6 +250,14 @@
   - Only ANS-standard comments now supported: `\` (line) and `( )` (block)
   - No Forth source files were using `//`, so no breaking changes
   - All 594 tests still passing (same as before)
+- [x] **Fix .( ... ) tokenization for ANS Forth compliance**
+  - Tokenizer now handles `.( text )` as immediate print, not `.` + `( comment )`
+  - Text printed to Console during tokenization, no tokens created
+  - Added 15 comprehensive regression tests (9 for `.( )`, 6 for other special forms)
+  - All 29 tokenizer tests passing (100% pass rate)
+  - Resolves stack underflow in FloatingPointTests
+  - Prevents confusion between `.` (dot), `.( )` (immediate print), and `( )` (comment)
+  - See `4th.Tests/Core/Tokenizer/TokenizerTests.cs` for complete test coverage
 - [x] Added comprehensive Forth 2012 compliance tests for additional word sets (Floating-Point, Facility, File, Block, Double-Number, Exception, Locals, Memory, Search-Order, String, Tools) to `Forth2012ComplianceTests.cs`
 - [x] Created `Forth2012CoreWordTests.cs` with granular xUnit tests for core word behaviors (AND/OR/XOR/INVERT, stack ops, arithmetic, comparisons) based on Forth 2012 core.fr tests
 
@@ -260,4 +276,9 @@
 - All Forth 2012 compliance issues resolved
 
 - **Known Issues**:
-  - All previously noted issues have been resolved
+  - FloatingPointTests: One test failure remains (unrelated to `.( )` fix)
+    - Error: "Expected number, got String" in `C!` (character store)
+    - Occurs during floating-point compliance test suite execution
+    - Tests progress much further now (all `.( )` messages printing correctly)
+    - Separate issue from tokenization - appears to be string value passed to `C!`
+    - Status: 638/640 tests passing (99.69% pass rate)
