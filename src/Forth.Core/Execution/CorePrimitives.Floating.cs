@@ -448,7 +448,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive(">FLOAT", HelpString = ">FLOAT ( c-addr u -- r true | false ) - attempt to convert string to floating-point number")]
+    [Primitive(">FLOAT", HelpString = ">FLOAT ( c-addr u -- r true | c-addr u false ) - attempt to convert string to floating-point number")]
     private static Task Prim_ToFloat(ForthInterpreter i)
     {
         i.EnsureStack(2, ">FLOAT");
@@ -472,15 +472,85 @@ internal static partial class CorePrimitives
                 $">FLOAT received unexpected type: {addrObj?.GetType().Name ?? "null"}");
         }
 
-        if (double.TryParse(slice, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        var style = System.Globalization.NumberStyles.AllowLeadingSign |
+                    System.Globalization.NumberStyles.AllowDecimalPoint |
+                    System.Globalization.NumberStyles.AllowExponent;
+
+        // Forth >FLOAT does not allow leading/trailing whitespace, but TryParse does.
+        if (slice.Length > 0 && (char.IsWhiteSpace(slice[0]) || char.IsWhiteSpace(slice[^1])))
+        {
+            i.Push(addrObj);
+            i.Push(uObj);
+            i.Push(0L); // false
+            return Task.CompletedTask;
+        }
+
+        // An empty string is a valid floating point number (0).
+        if (string.IsNullOrWhiteSpace(slice))
+        {
+            i.Push(0.0);
+            i.Push(-1L); // true
+            return Task.CompletedTask;
+        }
+
+        if (double.TryParse(slice, style, System.Globalization.CultureInfo.InvariantCulture, out var result) && slice.Trim() != ".")
         {
             i.Push(result);
             i.Push(-1L); // true
         }
         else
         {
+            i.Push(addrObj);
+            i.Push(uObj);
             i.Push(0L); // false
         }
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SF!", HelpString = "SF! ( r addr -- ) - store single-precision float (32-bit) at address")]
+    private static Task Prim_SFBang(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "SF!");
+        var addr = ForthInterpreter.ToLong(i.PopInternal());
+        var val = i.PopInternal();
+        var d = ToDoubleFromObj(val);
+        var f = (float)d;  // convert to single precision
+        var bits = System.BitConverter.SingleToInt32Bits(f);
+        i.MemSet(addr, (long)bits);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("SF@", HelpString = "SF@ ( addr -- r ) - fetch single-precision float (32-bit) from address")]
+    private static Task Prim_SFAt(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "SF@");
+        var addr = ForthInterpreter.ToLong(i.PopInternal());
+        i.MemTryGet(addr, out var bits);
+        var f = System.BitConverter.Int32BitsToSingle((int)bits);
+        i.Push((double)f);  // promote to double for stack
+        return Task.CompletedTask;
+    }
+
+    [Primitive("DF!", HelpString = "DF! ( r addr -- ) - store double-precision float (64-bit) at address")]
+    private static Task Prim_DFBang(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "DF!");
+        var addr = ForthInterpreter.ToLong(i.PopInternal());
+        var val = i.PopInternal();
+        var d = ToDoubleFromObj(val);
+        var bits = System.BitConverter.DoubleToInt64Bits(d);
+        i.MemSet(addr, bits);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("DF@", HelpString = "DF@ ( addr -- r ) - fetch double-precision float (64-bit) from address")]
+    private static Task Prim_DFAt(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "DF@");
+        var addr = ForthInterpreter.ToLong(i.PopInternal());
+        i.MemTryGet(addr, out var bits);
+        var d = System.BitConverter.Int64BitsToDouble(bits);
+        i.Push(d);
         return Task.CompletedTask;
     }
 }
