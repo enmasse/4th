@@ -274,6 +274,9 @@ internal static partial class CorePrimitives
         }
         else
         {
+            // Use refill buffer so callers can subsequently call SOURCE to
+            // inspect the refill content without it being overwritten by
+            // EvalAsync's own current-source handling.
             i.RefillSource(line);
             i.Push(-1L);
         }

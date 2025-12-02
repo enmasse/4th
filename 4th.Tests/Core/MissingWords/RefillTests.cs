@@ -31,27 +31,30 @@ public class RefillTests
         io.AddLine("second line");
         var forth = new ForthInterpreter(io);
 
-        // First REFILL SOURCE >IN @
-        Assert.True(await forth.EvalAsync("REFILL SOURCE >IN @"));
-        Assert.Equal(4, forth.Stack.Count);
-        Assert.Equal(-1L, (long)forth.Stack[0]); // flag
-        var addr = (long)forth.Stack[1];
-        var len = (long)forth.Stack[2];
-        var inVal = (long)forth.Stack[3];
-        Assert.Equal(11L, len); // "hello world".Length
-        var source = forth.ReadCountedString(addr);
-        Assert.Equal("hello world", source);
-        Assert.Equal(0L, inVal);
+        // First REFILL then inspect SOURCE and >IN
+        Assert.True(await forth.EvalAsync("REFILL"));
+        // Now query SOURCE and >IN
+        Assert.True(await forth.EvalAsync("SOURCE >IN @"));
+        Assert.Equal(3, forth.Stack.Count);
+        var addr1 = (long)forth.Stack[0];
+        var len1 = (long)forth.Stack[1];
+        var in1 = (long)forth.Stack[2];
+        Assert.Equal(11L, len1); // "hello world".Length
+        var src1 = forth.ReadMemoryString(addr1, len1);
+        Assert.Equal("hello world", src1);
+        Assert.Equal(0L, in1);
 
-        // Second REFILL SOURCE
-        Assert.True(await forth.EvalAsync("REFILL SOURCE"));
-        Assert.Equal(7, forth.Stack.Count);
-        Assert.Equal(-1L, (long)forth.Stack[4]); // flag
-        addr = (long)forth.Stack[5];
-        len = (long)forth.Stack[6];
-        Assert.Equal(11L, len); // "second line".Length
-        source = forth.ReadCountedString(addr);
-        Assert.Equal("second line", source);
+        // Second REFILL then inspect SOURCE and >IN
+        Assert.True(await forth.EvalAsync("REFILL"));
+        Assert.True(await forth.EvalAsync("SOURCE >IN @"));
+        Assert.Equal(3, forth.Stack.Count);
+        var addr2 = (long)forth.Stack[0];
+        var len2 = (long)forth.Stack[1];
+        var in2 = (long)forth.Stack[2];
+        Assert.Equal(11L, len2); // "second line".Length
+        var src2 = forth.ReadMemoryString(addr2, len2);
+        Assert.Equal("second line", src2);
+        Assert.Equal(0L, in2);
     }
 
     [Fact]

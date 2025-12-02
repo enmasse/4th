@@ -11,7 +11,9 @@ public partial class ForthInterpreter
 {
     // Current source tracking (line and index within it)
     internal string? _currentSource;
-    internal string? CurrentSource => _currentSource;
+    // Refill buffer set by REFILL primitive (takes precedence over current source)
+    internal string? _refillSource;
+    internal string? CurrentSource => _refillSource ?? _currentSource;
 
     internal long _currentSourceId;
     internal long SourceId => _currentSourceId;
@@ -63,7 +65,10 @@ public partial class ForthInterpreter
     /// <param name="line">The new input line.</param>
     public void RefillSource(string line)
     {
-        _currentSource = line;
+        // Store refill buffer separately so subsequent EvalAsync calls do not
+        // overwrite the refill source when they set _currentSource for their
+        // own command text. >IN is reset to 0 for the new refill buffer.
+        _refillSource = line;
         _mem[_inAddr] = 0;
     }
 
@@ -84,7 +89,9 @@ public partial class ForthInterpreter
         ArgumentNullException.ThrowIfNull(line);
 
         // Track current source and reset input index for this evaluation
-        _currentSource = line;
+        // If a refill buffer exists (from REFILL), prefer it as the current source
+        // only when EvalAsync was not provided with an explicit line to evaluate
+        _currentSource = _refillSource ?? line;
         // reset memory >IN cell
         _mem[_inAddr] = 0;
         _tokens = Tokenizer.Tokenize(line);

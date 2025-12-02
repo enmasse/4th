@@ -196,8 +196,11 @@
   - No Forth source files were using `//`, so no breaking changes
   - All 594 tests still passing (same as before)
 - [ ] Investigate and fix remaining Forth 2012 compliance test failures (114 Core, 110 Core-Ext)
- - [x] Fix REPORT-ERRORS word loading issue in errorreport.fth
- - [x] Restore minimal C-style '//' comment support in tokenizer for IL inline blocks and tests
+  - [x] Fix `Refill_ReadsNextLineAndSetsSource` unit test to be deterministic (sequence REFILL then SOURCE />IN @) — test now passes
+  - [ ] Fix `TtesterIncludeTests` path resolution (DirectoryNotFound for 'tests/ttester.4th') — ensure test data paths are resolved relative to repo root or test assembly
+  - [ ] Triage Forth2012 compliance failures: run the Forth2012 suite locally, collect top failing tests, and create individual fix tasks
+  - [x] Fix `REPORT-ERRORS` word loading issue in errorreport.fth
+  - [x] Restore minimal C-style '//' comment support in tokenizer for IL inline blocks and tests
 
 ## Potential future extensions
 - Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).

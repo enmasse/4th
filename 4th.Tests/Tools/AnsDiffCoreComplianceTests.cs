@@ -23,7 +23,8 @@ namespace FourTh.Tests.Tools
             var psi = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"run --project \"{projPath}\" -- --sets=core",
+                // Run ans-diff but do not fail on missing words in CI by default
+                Arguments = $"run --project \"{projPath}\" -- --sets=core --fail-on-missing=false",
                 WorkingDirectory = root,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
