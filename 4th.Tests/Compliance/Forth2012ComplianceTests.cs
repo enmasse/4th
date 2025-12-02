@@ -57,4 +57,169 @@ public class Forth2012ComplianceTests
         await f.EvalAsync("TOTAL-ERRORS @");
         Assert.Equal(0L, (long)f.Pop());
     }
+
+    [Fact]
+    public async Task FloatingPointTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var runfptestsPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "fp", "runfptests.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{runfptestsPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task FacilityTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var facilityPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "facilitytest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{facilityPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task FileTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var filePath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "filetest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{filePath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task BlockTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var blockPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "blocktest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{blockPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task DoubleNumberTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var doublePath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "doubletest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{doublePath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task ExceptionTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var exceptionPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "exceptiontest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{exceptionPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task LocalsTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var localsPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "localstest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{localsPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task MemoryTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var memoryPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "memorytest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{memoryPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task SearchOrderTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var searchorderPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "searchordertest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{searchorderPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task StringTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var stringPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "stringtest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{stringPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task ToolsTests()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var toolsPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "toolstest.fth");
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        await f.EvalAsync($"\"{toolsPath}\" INCLUDED");
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
 }
