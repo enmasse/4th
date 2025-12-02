@@ -27,12 +27,13 @@ public partial class ForthInterpreter
     /// <summary>
     /// Allocates the current source string in memory for ANS Forth SOURCE primitive.
     /// Unlike AllocateCountedString, this stores the string without a count byte prefix,
-    /// and reuses a fixed memory location (_sourceAddr + 1) to avoid dictionary pollution.
+    /// and reuses a fixed memory location to avoid dictionary pollution.
     /// </summary>
     internal long AllocateSourceString(string str)
     {
-        // Store source string starting at _sourceAddr + 1 (reserve _sourceAddr for metadata)
-        var addr = _sourceAddr + 1;
+        // Store source string starting at a fixed location to avoid overwriting variables
+        // Use a high address in the memory space reserved for source buffer
+        var addr = 900000L; // Fixed location for source buffer, away from variables
         for (int idx = 0; idx < str.Length; idx++)
             _mem[addr + idx] = (long)str[idx];
         // Don't advance _nextAddr - we're reusing a fixed location

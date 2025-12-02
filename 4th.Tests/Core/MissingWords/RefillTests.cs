@@ -32,7 +32,7 @@ public class RefillTests
         var forth = new ForthInterpreter(io);
 
         // First REFILL then inspect SOURCE and >IN
-        Assert.True(await forth.EvalAsync("REFILL"));
+        Assert.True(await forth.EvalAsync("REFILL DROP"));
         // Now query SOURCE and >IN
         Assert.True(await forth.EvalAsync("SOURCE >IN @"));
         Assert.Equal(3, forth.Stack.Count);
@@ -43,9 +43,13 @@ public class RefillTests
         var src1 = forth.ReadMemoryString(addr1, len1);
         Assert.Equal("hello world", src1);
         Assert.Equal(0L, in1);
+        // Pop the values
+        forth.Pop();
+        forth.Pop();
+        forth.Pop();
 
         // Second REFILL then inspect SOURCE and >IN
-        Assert.True(await forth.EvalAsync("REFILL"));
+        Assert.True(await forth.EvalAsync("REFILL DROP"));
         Assert.True(await forth.EvalAsync("SOURCE >IN @"));
         Assert.Equal(3, forth.Stack.Count);
         var addr2 = (long)forth.Stack[0];
