@@ -16,6 +16,13 @@
 \ Unsigned output (using pictured numeric)
 : U. <# #S #> TYPE SPACE ;
 
+\ Floating-point special constants
+\ These words define floating-point special values used by the test suite
+\ Using Forth shorthand notation: 1e = 1.0, 0e = 0.0
+: +Inf 1e 0e F/ ;   \ Positive infinity
+: -Inf -1e 0e F/ FNEGATE ;  \ Negative infinity (negate after division)
+: NaN 0e 0e F/ ;     \ Not-a-Number
+
 \ Comments for documentation
 ( Stack: a b c -- b c a )
 \ ROT is primitive

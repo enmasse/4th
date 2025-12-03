@@ -49,6 +49,8 @@ internal static partial class CorePrimitives
         short s => s != 0,
         byte b8 => b8 != 0,
         char c => c != '\0',
+        double d => d != 0.0,
+        float f => f != 0.0f,
         _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
     };
 

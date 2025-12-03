@@ -62,7 +62,8 @@ internal static partial class CorePrimitives
         var b = i.PopInternal();
         var a = i.PopInternal();
         var dv = ToDoubleFromObj(b);
-        if (dv == 0.0) throw new ForthException(ForthErrorCode.DivideByZero, "Floating divide by zero");
+        // IEEE 754 floating-point division by zero produces Infinity or NaN, not an exception
+        // This matches ANS Forth floating-point semantics and allows tests to verify behavior
         var res = ToDoubleFromObj(a) / dv;
         i.Push(res);
         return Task.CompletedTask;

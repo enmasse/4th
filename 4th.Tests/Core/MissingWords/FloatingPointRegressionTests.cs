@@ -385,19 +385,18 @@ public class FloatingPointRegressionTests
 
     #endregion
 
-    #region Division by Zero Protection
+    #region Division by Zero Protection (IEEE 754 Semantics)
 
     [Fact]
-    public async Task FSlash_DivideByZero_ThrowsException()
+    public async Task FSlash_DivideByZero_ProducesInfinity()
     {
         var forth = new ForthInterpreter();
         
-        var ex = await Assert.ThrowsAsync<ForthException>(async () =>
-        {
-            await forth.EvalAsync("10.0d 0.0d F/");
-        });
+        // IEEE 754: division by zero produces Infinity, not exception
+        Assert.True(await forth.EvalAsync("10.0d 0.0d F/"));
         
-        Assert.Equal(ForthErrorCode.DivideByZero, ex.Code);
+        Assert.Single(forth.Stack);
+        Assert.True(double.IsPositiveInfinity((double)forth.Stack[0]));
     }
 
     [Fact]
@@ -453,36 +452,36 @@ public class FloatingPointRegressionTests
     #region Edge Cases and Boundary Conditions
 
     [Fact]
-    public async Task FloatingPoint_DivideByZero_ThrowsForNaN()
+    public async Task FloatingPoint_DivideByZero_ProducesNaN()
     {
         var forth = new ForthInterpreter();
-        // 0.0 / 0.0 would produce NaN, but implementation throws for safety
-        await Assert.ThrowsAsync<ForthException>(async () =>
-        {
-            await forth.EvalAsync("0.0d 0.0d F/");
-        });
+        // IEEE 754: 0.0 / 0.0 produces NaN
+        Assert.True(await forth.EvalAsync("0.0d 0.0d F/"));
+        
+        Assert.Single(forth.Stack);
+        Assert.True(double.IsNaN((double)forth.Stack[0]));
     }
 
     [Fact]
-    public async Task FloatingPoint_DivideByZero_ThrowsForPositiveInfinity()
+    public async Task FloatingPoint_DivideByZero_ProducesPositiveInfinity()
     {
         var forth = new ForthInterpreter();
-        // 1.0 / 0.0 would produce +infinity, but implementation throws for safety
-        await Assert.ThrowsAsync<ForthException>(async () =>
-        {
-            await forth.EvalAsync("1.0d 0.0d F/");
-        });
+        // IEEE 754: 1.0 / 0.0 produces +infinity
+        Assert.True(await forth.EvalAsync("1.0d 0.0d F/"));
+        
+        Assert.Single(forth.Stack);
+        Assert.True(double.IsPositiveInfinity((double)forth.Stack[0]));
     }
 
     [Fact]
-    public async Task FloatingPoint_DivideByZero_ThrowsForNegativeInfinity()
+    public async Task FloatingPoint_DivideByZero_ProducesNegativeInfinity()
     {
         var forth = new ForthInterpreter();
-        // -1.0 / 0.0 would produce -infinity, but implementation throws for safety
-        await Assert.ThrowsAsync<ForthException>(async () =>
-        {
-            await forth.EvalAsync("-1.0d 0.0d F/");
-        });
+        // IEEE 754: -1.0 / 0.0 produces -infinity
+        Assert.True(await forth.EvalAsync("-1.0d 0.0d F/"));
+        
+        Assert.Single(forth.Stack);
+        Assert.True(double.IsNegativeInfinity((double)forth.Stack[0]));
     }
 
     [Fact]

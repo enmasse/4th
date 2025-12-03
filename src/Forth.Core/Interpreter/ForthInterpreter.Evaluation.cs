@@ -418,10 +418,27 @@ public partial class ForthInterpreter
         value = 0.0;
         if (string.IsNullOrEmpty(token)) return false;
         
-        // ANS Forth compliance: decimal point alone is sufficient for floating-point
-        // Also support: exponent notation (e/E), optional trailing 'd'/'D' suffix, NaN, Infinity
+        // ANS Forth floating-point literal support:
+        // 1. Decimal point: "1.5", "3.14"
+        // 2. Scientific notation: "1.5e2", "3e-1"
+        // 3. Forth shorthand: "1e" = 1.0, "2e" = 2.0 (e/E as type indicator)
+        // 4. Optional trailing 'd'/'D' suffix: "1.5d"
+        // 5. Special values: NaN, Infinity, -Infinity
+        
         bool hasSuffixD = token.EndsWith('d') || token.EndsWith('D');
         string span = hasSuffixD ? token.Substring(0, token.Length - 1) : token;
+        
+        // Check for Forth shorthand notation: <digits>e or <digits>E (without exponent)
+        // Examples: 1e = 1.0, 2e = 2.0, -3e = -3.0, 0e = 0.0
+        if (span.Length >= 2 && (span.EndsWith('e') || span.EndsWith('E')))
+        {
+            var mantissa = span.Substring(0, span.Length - 1);
+            if (long.TryParse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var intValue))
+            {
+                value = (double)intValue;
+                return true;
+            }
+        }
         
         // Check if this looks like a floating-point number
         bool looksFloating = span.Contains('.') 
@@ -430,9 +447,6 @@ public partial class ForthInterpreter
             || span.IndexOf("Infinity", StringComparison.OrdinalIgnoreCase) >= 0;
         
         if (!looksFloating) return false;
-        
-        // Handle Forth floating zero literal forms like 0E or 0e
-        if (span.Equals("0E", StringComparison.OrdinalIgnoreCase)) { value = 0.0; return true; }
         
         // Try to parse as double - ANS Forth allows simple decimal notation like "1.5"
         return double.TryParse(span, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
