@@ -298,6 +298,49 @@ public class PreludeWordsTests
         Assert.Equal("    -5", io3.Outputs[0]);
     }
 
+    [Fact]
+    public async Task Undefined_ChecksForNonExistentWord()
+    {
+        var forth = new ForthInterpreter();
+        // Test with a word that doesn't exist
+        Assert.True(await forth.EvalAsync("[UNDEFINED] NONEXISTENT"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(-1L, (long)forth.Stack[0]); // Should be true (word is undefined)
+        
+        // Test with a word that does exist
+        var forth2 = new ForthInterpreter();
+        Assert.True(await forth2.EvalAsync("[UNDEFINED] DUP"));
+        Assert.Single(forth2.Stack);
+        Assert.Equal(0L, (long)forth2.Stack[0]); // Should be false (word IS defined)
+    }
+
+    [Fact]
+    public async Task Undefined_InConditionalContext()
+    {
+        var forth = new ForthInterpreter();
+        // This is the pattern used in the test files:
+        // [UNDEFINED] MYWORD [IF] : MYWORD 42 ; [THEN]
+        Assert.True(await forth.EvalAsync("[UNDEFINED] MYTEST [IF] : MYTEST 42 ; [THEN]"));
+        // MYTEST should now be defined
+        Assert.True(await forth.EvalAsync("MYTEST"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(42L, (long)forth.Stack[0]);
+        
+        // Try defining it again - [UNDEFINED] should return false now
+        var forth2 = new ForthInterpreter();
+        Assert.True(await forth2.EvalAsync(": MYTEST 42 ;"));
+        // Check that [UNDEFINED] returns false for a defined word
+        Assert.True(await forth2.EvalAsync("[UNDEFINED] MYTEST"));
+        Assert.Single(forth2.Stack);
+        Assert.Equal(0L, (long)forth2.Stack[0]); // FALSE, word is defined
+        
+        // Pop the flag and verify the original word still works
+        forth2.Pop();
+        Assert.True(await forth2.EvalAsync("MYTEST"));
+        Assert.Single(forth2.Stack);
+        Assert.Equal(42L, (long)forth2.Stack[0]);
+    }
+
     private sealed class TestIO : Forth.Core.IForthIO
     {
         public readonly List<string> Outputs = new();

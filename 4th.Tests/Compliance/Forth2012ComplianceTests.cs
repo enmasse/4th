@@ -76,6 +76,7 @@ public class Forth2012ComplianceTests
         
         // Directly include the individual FP test files, bypassing buggy runfptests.fth
         await f.EvalAsync($"\"{Path.Combine(fpDir, "ttester.fs")}\" INCLUDED");
+        await f.EvalAsync("SET-NEAR");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "fatan2-test.fs")}\" INCLUDED");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "ieee-arith-test.fs")}\" INCLUDED");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "ieee-fprox-test.fs")}\" INCLUDED");

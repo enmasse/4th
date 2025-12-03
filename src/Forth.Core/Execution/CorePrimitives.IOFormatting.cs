@@ -177,6 +177,16 @@ internal static partial class CorePrimitives
         i.EnsureStack(1, "WORD");
         var delim = (char)ToLong(i.PopInternal());
         var source = i.CurrentSource ?? string.Empty;
+        
+        // Synchronize >IN with current token position if we're in the middle of token-based parsing
+        if (i._tokens != null && i._tokenCharPositions != null && 
+            i._tokenIndex < i._tokenCharPositions.Count)
+        {
+            // Update >IN to point to the start of the next unparsed token
+            var tokenPos = i._tokenCharPositions[i._tokenIndex];
+            i.MemSet(i.InAddr, (long)tokenPos);
+        }
+        
         i.MemTryGet(i.InAddr, out var inVal);
         var inIndex = (int)(long)inVal;
         // Skip leading delimiters
@@ -188,6 +198,27 @@ internal static partial class CorePrimitives
         // Advance >IN past the delimiter if present
         var newIn = inIndex < source.Length ? inIndex + 1 : inIndex;
         i.MemSet(i.InAddr, (long)newIn);
+        
+        // Advance _tokenIndex to skip past the token we just parsed
+        // This keeps token-based and character-based parsing in sync
+        if (i._tokens != null && i._tokenIndex < i._tokens.Count)
+        {
+            // Check if the word we parsed matches the current token
+            var currentToken = i._tokens[i._tokenIndex];
+            // Handle quoted strings - strip quotes for comparison
+            var tokenToCompare = currentToken;
+            if (currentToken.Length >= 2 && currentToken[0] == '"' && currentToken[^1] == '"')
+            {
+                tokenToCompare = currentToken[1..^1];
+            }
+            
+            // If it matches (or is empty due to being past end), advance the token index
+            if (string.Equals(word, tokenToCompare, StringComparison.Ordinal) || string.IsNullOrEmpty(word))
+            {
+                i._tokenIndex++;
+            }
+        }
+        
         // Store as counted string at HERE
         var addr = i.AllocateCountedString(word);
         i.Push(addr);

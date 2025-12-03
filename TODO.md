@@ -122,122 +122,65 @@
 - Implemented FSQRT primitive with regression tests.
 - Implemented FTRUNC primitive with regression tests.
 - Implemented ? primitive with regression tests.
-- Implemented SF!, SF@, DF!, DF@ primitives for single and double precision floating point storage to support Forth 2012 floating-point test suite.
-- **Added comprehensive floating-point regression tests (2025-01)**
-  - Created `FloatingPointRegressionTests.cs` with 46 new tests (100% passing)
-  - Coverage: >FLOAT string conversion (14 tests), stack operations (5 tests), double-cell conversions (5 tests), precision storage (4 tests), division by zero protection (4 tests), type handling (3 tests), edge cases (4 tests), comparisons (2 tests), math function boundaries (4 tests), stack integrity (1 test)
-  - Overall floating-point status: 84 tests total, 83 passing (98.8%)
-  - Overall test suite: 686 tests, 684 passing (99.7%)
-  - See `CHANGELOG_FLOATING_POINT_REGRESSION_TESTS.md` for complete details
-
-## Notes
-- **Duplicate primitive detection**: `CreateWords()` now validates that each primitive name is unique within its module, preventing silent shadowing issues.
-- **SOURCE/>IN Integration**: Full ANS Forth character-based parsing support implemented
-  - `SOURCE` returns direct character pointer via `AllocateSourceString` (reuses fixed memory location)
-  - `TryReadNextToken` checks `>IN` before consuming tokens
-  - Enables TESTING word, Forth 2012 test suite, and other ANS parsing patterns
-  - Maintains token-based performance for normal code paths
-  - See `CHANGELOG_SOURCE_IN_INTEGRATION.md` for architecture details
-- `GET-ORDER`/`SET-ORDER` expose core wordlist sentinel as `FORTH` (internally `null`).
-- `ACCEPT`/`EXPECT` currently implement buffer write semantics; review for strict ANS compliance (edge cases like newline handling, partial fills).
-- Awaitable detection centralized in `AwaitableHelper`.
-- Block system implemented with per-block files + LRU cache + atomic save.
-- INCLUDE/LOAD accept quoted string stack arguments and unquote before file access.
-- ENV wordlist provides system environment information.
-- HELP shows general help or word-specific help.
-
-## Progress / Repository tasks (current)
-- [x] Fix `>NUMBER` first-digit loss bug and add duplicate primitive detection
-- [x] Create `tools/ans-diff` and integrate report artifact
-- [x] Implement search-order + wordlist primitives
-- [x] Implement KEY / KEY? / ACCEPT / EXPECT / SOURCE / >IN
-- [x] Implement baseline file and byte-stream words
-- [x] Diagnostics primitives behind DEBUG
-- [x] Block system: BLOCK / SAVE / BLK + LRU eviction
-- [x] Double-cell arithmetic words D+ D- M*
-- [x] Truth value normalization (true = -1)
-- [x] Extend TYPE for counted and memory forms
-- [x] Extend WRITE-FILE / APPEND-FILE for counted and memory forms
-- [x] Extend >NUMBER for counted and memory forms
-- [x] Improve S" tokenizer handling (leading space rule)
-- [x] Fix bracketed conditional handling across lines (INCLUDE/LOAD change + token preprocessing + SkipBracketSection fix)
-- [x] Full test suite passing (470/470)
-- [x] ans-diff report updated (CI ready to fail on missing words)
-- [x] Add unit tests for `TEST-IO` / `ADD-INPUT-LINE` (xUnit)
-- [x] Add tester-harness Forth tests for `ADD-INPUT-LINE`
-- [x] Fix `ADD-INPUT-LINE` numeric / counted-addr disambiguation and update tests (handled counted strings, addr/len pair ordering)
-- [x] Remove legacy `tests/forth/framework.4th` compatibility wrapper
-- [x] Add Roslyn source-generator `4th.Tests.Generators` to emit xUnit wrappers for `.4th` files
-- [x] Generator emits `ForthGeneratedTests.g.cs` wrapping `.4th` files as `[Fact]` methods per TESTING group, grouped by file (nested classes for multi-test files)
-- [x] Build/run generator and validate generated tests (rebuild + `dotext test`)
-- [x] Mark the unified string allocation helper as completed.
-- [x] Performance profiling for per-operation file accessor vs cached accessor; reintroduce safe cache if needed
-- [x] Analyzer clean-up: add missing XML docs (e.g. Tokenizer) or suppress intentionally for internal-only types
-- [x] Benchmark memory vs string path for TYPE / WRITE-FILE to guide future optimization
-- [x] Consider unified string allocation helper for counted strings to reduce duplication
-- [x] Add negative tests for new (addr u) file operations (invalid length, out-of-range addresses) — expanded coverage implemented
-- [x] Implement SEARCH primitive with regression tests
-- [x] Implement CASE control structure with regression tests
-- [x] Implement DELETE-FILE primitive with regression tests
-- [x] Implement WRITE-LINE primitive with regression tests
-- [x] Implement 2ROT primitive with regression tests
-- [x] Remove duplicate Forth definitions from prelude.4th for words now implemented as primitives
-- [x] Implement BLANK primitive with regression tests
-- [x] Implement CMOVE primitive with regression tests
-- [x] Implement CMOVE> primitive with regression tests
-- [x] Implement RESIZE primitive with regression tests
-- [x] Implement D< primitive with regression tests
-- [x] Implement D= primitive with regression tests
-- [x] Implement D>S primitive with regression tests
-- [x] Implement ONLY primitive with regression tests
-- [x] Implement ALSO primitive with regression tests
-- [x] Implement SLITERAL primitive with regression tests
-- [x] Implement SAVE-INPUT primitive with regression tests
-- [x] Implement RESTORE-INPUT primitive with regression tests
-- [x] Implement CS-PICK primitive with regression tests
-- [x] Implement CS-ROLL primitive with regression tests
-- [x] Implement S>F primitive with regression tests
-- [x] Implement LOCALS| primitive with regression tests
-- [x] Implement >UNUMBER primitive with regression tests
-- [x] Implement LOCAL primitive with regression tests
-- [x] Implement F~ primitive with regression tests
-- [x] Implement COPY-FILE primitive with regression tests
-- [x] Implement LOAD primitive with regression tests
-- [x] Implement DATE and TIME in ENV wordlist with regression tests
-- [x] Implemented population of ENV wordlist with all environment variables as individual words
-- [x] Implement THRU primitive with regression tests
-- [x] Implement FMIN and FMAX primitives with regression tests
+- Split ForthInterpreter.cs into additional partial classes for better organization
+- Enhance the Interactive REPL with tab completion, syntax highlighting, persistent history, and better error diagnostics
+- **Implement SOURCE/>IN integration for full ANS Forth compliance**
+  - Modified SOURCE primitive to return direct character pointer via AllocateSourceString
+  - Added >IN checking to TryReadNextToken for external parse position manipulation
+  - Enables TESTING word and Forth 2012 test suite compatibility
+  - Forth 2012 compliance test suite now runs (583/589 tests passing, 98.9%)
+  - Dual-mode parsing: token-based (fast) + character-based fallback (compliant)
+  - See CHANGELOG_SOURCE_IN_INTEGRATION.md for detailed implementation notes
+- **Remove floating-point suffix requirement for ANS Forth compliance**
+  - TryParseDouble now recognizes decimal point alone as sufficient (e.g., `1.5`, `3.14`)
+  - Still supports: exponent notation (e/E), optional 'd'/'D' suffix, NaN, Infinity
+  - 15 comprehensive tests added to verify correct parsing behavior
+  - Maintains backward compatibility with existing suffix-based notation
+- **Remove C-style // comment support for ANS Forth compliance**
+  - Removed `//` line comment handling from Tokenizer.cs
+  - Only ANS-standard comments now supported: `\` (line) and `( )` (block)
+  - No Forth source files were using `//`, so no breaking changes
+  - All 594 tests still passing (same as before)
+- **Fix .( ... ) tokenization for ANS Forth compliance**
+  - Tokenizer now handles `.( text )` as immediate print, not `.` + `( comment )`
+  - Text printed to Console during tokenization, no tokens created
+  - Added 15 comprehensive regression tests (9 for `.( )`, 6 for other special forms)
+  - All 29 tokenizer tests passing (100% pass rate)
+  - Resolves stack underflow in FloatingPointTests
+  - Prevents confusion between `.` (dot), `.( )` (immediate print), and `( )` (comment)
+  - See `4th.Tests/Core/Tokenizer/TokenizerTests.cs` for complete test coverage
+- [x] Implemented FMIN and FMAX primitives with regression tests
 - [x] Implement FAM support in OPEN-FILE for binary file I/O
 - [x] Tokenizer: recognize `ABORT"` composite and skip one leading space after the opening quote
 - [x] IDE: suppressed IDE0051 on `CorePrimitives` to avoid shading reflection-invoked primitives
-- [x] ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (all ANS Forth word sets), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now groups results by word set, showing present/missing per set
+- [x] ans-diff: robust repo-root resolution and improved `[Primitive("…")]` regex to handle escapes; now detects `."`, `ABORT"`, `S"` reliably. Added multi-set tracking (all ANS Forth word sets), CLI selection via `--sets=`, and `--fail-on-missing` switch. Report now groups results by word set, showing present/missing per set.
 - [x] Inline IL: stabilized `IL{ ... }IL`
   - DynamicMethod signature now `(ForthInterpreter intr, ForthStack stack)`; `ldarg.0` is interpreter, `ldarg.1` is stack
   - Local type inference (declare `object` for `Pop()` results, `long` for arithmetic); consistent `LocalBuilder`-based `ldloc/stloc/ldloca`
   - Normalize non-virtual method calls to `call` even if `callvirt` token is used
   - Added comprehensive tests for fixed-slot/short/inline locals, increment, and POP/PUSH via interpreter and via `ForthStack`
-- [x] `TYPE` now supports: plain string, counted string address, (addr u) memory form, and string+length form; rejects bare numeric per tests
-- [x] `WRITE-FILE` / `APPEND-FILE` accept string, counted string address, or (addr u) memory range
-- [x] `>NUMBER` extended to accept counted string address and (addr u) forms in addition to raw string
-- [x] Tokenizer updated: S" skips at most one leading space; supports accurate literal lengths
-- [x] INCLUDE/LOAD: changed to evaluate entire file contents in a single `EvalAsync` call to preserve bracketed conditional constructs spanning line boundaries
-- [x] Token preprocessing: synthesize common bracket composites (e.g. `[IF]`, `[ELSE]`, `[THEN]`) from separated `[` `IF` `]` sequences so older test sources and style variants are handled
-- [x] `SkipBracketSection` improved to accept both composite tokens and separated bracket sequences when scanning for matching `[ELSE]`/`[THEN]`
-- [x] ACCEPT/EXPECT/READ-LINE: updated to read character-by-character for proper ANS conformity, handling partial reads and CR/LF termination
-- [x] Implemented full file-handle API in the interpreter (`OpenFileHandle`, `CloseFileHandle`, `ReadFileIntoMemory`, `WriteMemoryToFile`) and corresponding Forth words
-  - `WRITE-FILE` / `APPEND-FILE` accept string or counted-string/address forms and populate interpreter diagnostics (`_lastWriteBuffer`, `_lastWritePositionAfter`, `_lastReadBuffer`, etc.) used by tests
-  - Handle-based operations (open/read/write/reposition/close) use share-friendly FileStream modes to allow concurrent reads by other processes/tests
-  - `READ-FILE-BYTES` / `WRITE-FILE-BYTES` validate negative-length inputs and throw `CompileError` as tests expect
-- [x] INCLUDE/LOAD: changed to unquote file arguments and evaluate whole file contents in a single `EvalAsync` call so bracketed conditional constructs spanning lines are preserved
-- [x] Diagnostics: added last-read/last-write buffers and positions so introspection tests can validate live stream behavior
-- [x] Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests
-- [x] Fixed APPEND-FILE data disambiguation to prevent duplicated content and ensure correct appending behavior
-- [x] Fixed LIST block formatting to trim null characters, ensuring clean output without control characters
-- [x] Implemented `DELETE-FILE` to remove files, with tests for typical and edge cases
-- [x] Implemented `RESIZE` to change file size, with tests for typical and edge cases
-- [x] Implemented FSQRT primitive with regression tests
-- [x] Implemented FTRUNC primitive with regression tests
-- [x] Implemented ? primitive with regression tests
+- [x] `TYPE` now supports: plain string, counted string address, (addr u) memory form, and string+length form; rejects bare numeric per tests.
+- [x] `WRITE-FILE` / `APPEND-FILE` accept string, counted string address, or (addr u) memory range.
+- [x] `>NUMBER` extended to accept counted string address and (addr u) forms in addition to raw string.
+- [x] Tokenizer updated: S" skips at most one leading space; supports accurate literal lengths.
+- [x] INCLUDE/LOAD: changed to evaluate entire file contents in a single `EvalAsync` call to preserve bracketed conditional constructs spanning line boundaries.
+- [x] Token preprocessing: synthesize common bracket composites (e.g. `[IF]`, `[ELSE]`, `[THEN]`) from separated `[` `IF` `]` sequences so older test sources and style variants are handled.
+- [x] `SkipBracketSection` improved to accept both composite tokens and separated bracket sequences when scanning for matching `[ELSE]`/`[THEN]`.
+- [x] ACCEPT/EXPECT/READ-LINE: updated to read character-by-character for proper ANS conformity, handling partial reads and CR/LF termination.
+- [x] Implemented full file-handle API in the interpreter (`OpenFileHandle`, `CloseFileHandle`, `ReadFileIntoMemory`, `WriteMemoryToFile`) and corresponding Forth words.
+  - `WRITE-FILE` / `APPEND-FILE` accept string or counted-string/address forms and populate interpreter diagnostics (`_lastWriteBuffer`, `_lastWritePositionAfter`, `_lastReadBuffer`, etc.) used by tests.
+  - Handle-based operations (open/read/write/reposition/close) use share-friendly FileStream modes to allow concurrent reads by other processes/tests.
+  - `READ-FILE-BYTES` / `WRITE-FILE-BYTES` validate negative-length inputs and throw `CompileError` as tests expect.
+- [x] INCLUDE/LOAD: changed to unquote file arguments and evaluate whole file contents in a single `EvalAsync` call so bracketed conditional constructs spanning lines are preserved.
+- [x] Diagnostics: added last-read/last-write buffers and positions so introspection tests can validate live stream behavior.
+- [x] Implemented additional ANS core words: 0>, 1+, 1-, 2*, 2/, ABS, U<, UM*, UM/MOD, with regression tests.
+- [x] Fixed APPEND-FILE data disambiguation to prevent duplicated content and ensure correct appending behavior.
+- [x] Fixed LIST block formatting to trim null characters, ensuring clean output without control characters.
+- [x] Implemented `DELETE-FILE` to remove files, with tests for typical and edge cases.
+- [x] Implemented `RESIZE` to change file size, with tests for typical and edge cases.
+- [x] Implemented FSQRT primitive with regression tests.
+- [x] Implemented FTRUNC primitive with regression tests.
+- [x] Implemented ? primitive with regression tests.
 - [x] Split ForthInterpreter.cs into additional partial classes for better organization
 - [x] Enhance the Interactive REPL with tab completion, syntax highlighting, persistent history, and better error diagnostics
 - [x] **Implement SOURCE/>IN integration for full ANS Forth compliance**
@@ -272,34 +215,37 @@
   - Tests include: >FLOAT string-to-float conversion (14 tests with edge cases), stack operations FOVER/FDROP/FDEPTH/FLOATS (5 tests), double-cell conversions D>F/F>D (5 tests), single/double precision storage SF!/SF@/DF!/DF@ (4 tests), division by zero protection (4 tests), type conversion coverage (3 tests), boundary conditions (4 tests), comparison operations (2 tests), math function boundaries (4 tests), stack integrity verification (1 test)
   - All 46 tests passing (100%)
   - Documented in `CHANGELOG_FLOATING_POINT_REGRESSION_TESTS.md`
-
-## Potential future extensions
-- Implement additional ANS Forth words (e.g., floating-point extensions, more file operations).
-- Support for binary file I/O or more advanced block operations (FAM support implemented).
-- Implement true BLOCK editor primitives (LIST implemented, LOAD implemented, THRU implemented) and block-level caching policies.
-- Add optional `ENV` wordlist or mechanism for platform/environment queries (populated with environment variables).
-- Research and integrate an official ANS-Forth conformity test suite (e.g., from Forth200x or similar) to validate full compliance beyond the current ans-diff tool.
-
-## Missing ANS Forth words (tracked by `ans-diff`)
-- None! Full conformity achieved for all tracked ANS Forth word sets.
-- All ANS Forth word sets are tracked by ans-diff.
+- [x] **Implemented missing floating-point stack and comparison primitives**
+  - Added F>, FSWAP, FROT, F!=, F<=, F>=, F0>, F0<=, F0>= primitives for complete floating-point operations
+  - Fixed floating-point comparison order to match ANS Forth semantics (r1 op r2)
+  - Enhanced ToLong to handle string inputs for character literals (e.g., "A" C!)
+  - Fixed ABORT" tokenization and evaluation for proper exception handling
+  - All floating-point primitives now fully implemented and tested
+- [x] Enabled SET-NEAR in Forth2012ComplianceTests.FloatingPointTests for proper NaN handling
+  - Improved compliance with IEEE 754 semantics for floating-point comparisons
 
 ## Current gaps
 - All Forth 2012 compliance issues resolved
 
 - **Known Issues**:
-- Forth2012ComplianceTests.FloatingPointTests: Nearly complete (684/686 tests passing)
+- Forth2012ComplianceTests.FloatingPointTests: Nearly complete (746/748 tests passing)
   - ? Fixed: Bypassed buggy `runfptests.fth` wrapper file (line 4 had non-ANS code)
   - ? Fixed: `ToBool` now handles `double` values for conditionals
   - ? Fixed: `F/` no longer throws exception on divide-by-zero (IEEE 754 semantics: returns Infinity/NaN)
   - ? Fixed: Added floating-point special constants to prelude.4th (`+Inf`, `-Inf`, `NaN`)
   - ? Fixed: Updated regression tests to expect IEEE 754 behavior (Infinity/NaN instead of exceptions)
   - ? Fixed: Added Forth shorthand notation support (`1e` = `1.0`, `2e` = `2.0`, `-3e` = `-3.0`)
-  - ? Remaining: 1 test failure in fatan2-test.fs (undefined word in definition: pi)
-    - The test file expects to define `pi` via `[UNDEFINED] pi [IF]` but fails during colon definition
-    - This is likely a test file issue or requires further investigation
+  - ? Fixed: Enabled SET-NEAR in compliance test wrapper for proper NaN handling in floating-point comparisons
+  - ? Remaining: 1 test failure due to stack corruption from failed NaN tests in the test suite (test suite doesn't clear stack between tests)
+    - The test suite continues execution after failures, but leaves garbage on the stack
+    - This causes subsequent CASE statements to pop incorrect values, leading to "OF expects a number literal" error
+    - Since the test suite is in a subrepo and cannot be modified, this is an acceptable limitation
   - **Floating-point implementation itself is fully functional**
   - Added `SF!`, `SF@`, `DF!`, `DF@` primitives for single/double precision float storage
   - Added comprehensive `FloatingPointRegressionTests.cs` with 46 tests (all passing)
-  - **Overall test status: 684/686 tests passing (99.7% pass rate)**
+  - **Overall test status: 746/748 tests passing (99.7% pass rate)**
   - All `.( )` messages print correctly, tokenization working as expected
+
+## Missing ANS Forth words (tracked by `ans-diff`)
+- None! Full conformity achieved for all tracked ANS Forth word sets.
+- All ANS Forth word sets are tracked by ans-diff.

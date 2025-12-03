@@ -232,6 +232,40 @@ public class FloatingPointRegressionTests
         Assert.Equal(5L, (long)forth.Stack[0]);
     }
 
+    [Fact]
+    public async Task FDUP_DuplicatesTopItem()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("3.14d FDUP"));
+        
+        // Should have two copies of 3.14
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(3.14, (double)forth.Stack[0], 5);
+        Assert.Equal(3.14, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FDUP_WorksWithNegative()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("-2.5d FDUP"));
+        
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(-2.5, (double)forth.Stack[0], 5);
+        Assert.Equal(-2.5, (double)forth.Stack[1], 5);
+    }
+
+    [Fact]
+    public async Task FDUP_WorksWithZero()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync("0.0d FDUP"));
+        
+        Assert.Equal(2, forth.Stack.Count);
+        Assert.Equal(0.0, (double)forth.Stack[0], 5);
+        Assert.Equal(0.0, (double)forth.Stack[1], 5);
+    }
+
     #endregion
 
     #region D>F and F>D Tests

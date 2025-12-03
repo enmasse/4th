@@ -26,11 +26,12 @@ public partial class ForthInterpreter
 
     internal List<string>? _tokens; // internal current token stream
     internal int _tokenIndex;       // internal current token index
+    internal List<int>? _tokenCharPositions; // character position of each token in source
 
     // Token reading helpers used by primitives and source-level operations
     internal bool TryReadNextToken(out string token)
     {
-        // Check if >IN has been modified externally (e.g., by TESTING word)
+        // Check if >IN has been modified externally (e.g., by TESTING word or WORD primitive)
         // If >IN points past all tokens, we're done parsing this line
         MemTryGet(_inAddr, out var inVal);
         var inPos = (int)ToLong(inVal);
@@ -47,6 +48,26 @@ public partial class ForthInterpreter
             token = string.Empty;
             return false;
         }
+        
+        // Skip tokens that were consumed by WORD or other character-based parsing
+        // Check if current token starts before >IN position
+        while (_tokenCharPositions != null && _tokenIndex < _tokenCharPositions.Count)
+        {
+            var tokenStartPos = _tokenCharPositions[_tokenIndex];
+            if (tokenStartPos >= inPos)
+            {
+                // This token starts at or after >IN, so it's valid
+                break;
+            }
+            // This token was consumed by character-based parsing, skip it
+            _tokenIndex++;
+            if (_tokenIndex >= _tokens.Count)
+            {
+                token = string.Empty;
+                return false;
+            }
+        }
+        
         token = _tokens[_tokenIndex++];
         return true;
     }
@@ -56,6 +77,36 @@ public partial class ForthInterpreter
         if (!TryReadNextToken(out var t) || string.IsNullOrEmpty(t))
             throw new ForthException(ForthErrorCode.CompileError, message);
         return t;
+    }
+
+    /// <summary>
+    /// Compute character positions of tokens in source line for synchronization with WORD primitive.
+    /// </summary>
+    private List<int>? ComputeTokenPositions(string source, List<string>? tokens)
+    {
+        if (tokens == null || tokens.Count == 0)
+            return null;
+        
+        var positions = new List<int>();
+        int searchStart = 0;
+        
+        foreach (var token in tokens)
+        {
+            // Find this token in the source starting from searchStart
+            int pos = source.IndexOf(token, searchStart, StringComparison.Ordinal);
+            if (pos >= 0)
+            {
+                positions.Add(pos);
+                searchStart = pos + token.Length;
+            }
+            else
+            {
+                // Token not found (shouldn't happen), use approximate position
+                positions.Add(searchStart);
+            }
+        }
+        
+        return positions;
     }
 
     // Public method for REFILL to set the current source
@@ -95,6 +146,8 @@ public partial class ForthInterpreter
         // reset memory >IN cell
         _mem[_inAddr] = 0;
         _tokens = Tokenizer.Tokenize(line);
+        // Track character positions of tokens for WORD/token synchronization
+        _tokenCharPositions = ComputeTokenPositions(line, _tokens);
 
         // ANS Forth bracket conditional multi-line support:
         // If we're currently skipping due to a false [IF], scan this line for
@@ -185,8 +238,13 @@ public partial class ForthInterpreter
                     {
                         throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
                     }
-
                     throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+                }
+
+                if (tok.StartsWith("ABORT\"", StringComparison.OrdinalIgnoreCase))
+                {
+                    var msg = tok[6..^1];
+                    throw new ForthException(ForthErrorCode.Unknown, msg);
                 }
 
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
@@ -585,6 +643,12 @@ public partial class ForthInterpreter
                         throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
                     }
                     throw new ForthException(ForthErrorCode.Unknown, "ABORT");
+                }
+
+                if (tok.StartsWith("ABORT\"", StringComparison.OrdinalIgnoreCase))
+                {
+                    var msg = tok[6..^1];
+                    throw new ForthException(ForthErrorCode.Unknown, msg);
                 }
 
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')

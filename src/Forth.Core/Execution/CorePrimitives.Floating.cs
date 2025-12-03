@@ -89,6 +89,16 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("FS.", HelpString = "FS. ( r -- ) - display floating-point number in scientific notation")]
+    private static Task Prim_FSDot(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FS.");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        i.WriteText(d.ToString("E", CultureInfo.InvariantCulture));
+        return Task.CompletedTask;
+    }
+
     [Primitive("FCONSTANT", IsImmediate = true, HelpString = "FCONSTANT <name> - define a floating constant from top of stack")]
     private static Task Prim_FCONSTANT(ForthInterpreter i)
     {
@@ -161,6 +171,36 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("F0>", HelpString = "F0> ( r -- flag ) true if r > 0")]
+    private static Task Prim_FZeroGreater(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F0>");
+        var a = i.PopInternal();
+        var d = ToDoubleFromObj(a);
+        i.Push(d > 0.0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F0<=", HelpString = "F0<= ( r -- flag ) true if r <= 0")]
+    private static Task Prim_FZeroLessEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F0<=");
+        var a = i.PopInternal();
+        var d = ToDoubleFromObj(a);
+        i.Push(d <= 0.0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F0>=", HelpString = "F0>= ( r -- flag ) true if r >= 0")]
+    private static Task Prim_FZeroGreaterEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "F0>=");
+        var a = i.PopInternal();
+        var d = ToDoubleFromObj(a);
+        i.Push(d >= 0.0 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
     [Primitive("F<", HelpString = "F< ( r1 r2 -- flag ) true if r1 < r2")]
     private static Task Prim_FLess(ForthInterpreter i)
     {
@@ -173,6 +213,18 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("F>", HelpString = "F> ( r1 r2 -- flag ) true if r1 > r2")]
+    private static Task Prim_FGreater(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F>");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 > d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
     [Primitive("F=", HelpString = "F= ( r1 r2 -- flag ) true if r1 == r2")]
     private static Task Prim_FEqual(ForthInterpreter i)
     {
@@ -182,6 +234,42 @@ internal static partial class CorePrimitives
         var d1 = ToDoubleFromObj(a);
         var d2 = ToDoubleFromObj(b);
         i.Push(d1 == d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F!=", HelpString = "F!= ( r1 r2 -- flag ) true if r1 != r2")]
+    private static Task Prim_FNotEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F!=");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 != d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F<=", HelpString = "F<= ( r1 r2 -- flag ) true if r1 <= r2")]
+    private static Task Prim_FLessEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F<=");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 <= d2 ? -1L : 0L);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F>=", HelpString = "F>= ( r1 r2 -- flag ) true if r1 >= r2")]
+    private static Task Prim_FGreaterEqual(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F>=");
+        var b = i.PopInternal();
+        var a = i.PopInternal();
+        var d1 = ToDoubleFromObj(a);
+        var d2 = ToDoubleFromObj(b);
+        i.Push(d1 >= d2 ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -308,13 +396,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("FATAN2", HelpString = "FATAN2 ( y x -- r ) - floating-point arctangent of y/x")]
-    private static Task Prim_FATAN2(ForthInterpreter i)
+    [Primitive("FATAN2", HelpString = "FATAN2 ( f: y x -- radians ) - arc tangent of y/x")]
+    private static Task Prim_FAtan2(ForthInterpreter i)
     {
         i.EnsureStack(2, "FATAN2");
         var x = i.PopInternal();
         var y = i.PopInternal();
-        var res = Math.Atan2(ToDoubleFromObj(y), ToDoubleFromObj(x));
+        var dx = ToDoubleFromObj(x);
+        var dy = ToDoubleFromObj(y);
+        var res = Math.Atan2(dy, dx);
         i.Push(res);
         return Task.CompletedTask;
     }
@@ -392,6 +482,41 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "FDROP");
         _ = i.PopInternal();
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FDUP", HelpString = "FDUP ( r -- r r ) - duplicate top floating item")]
+    private static Task Prim_FDUP(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "FDUP");
+        var r = i.PopInternal();
+        var d = ToDoubleFromObj(r);
+        i.Push(d);
+        i.Push(d);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FSWAP", HelpString = "FSWAP ( r1 r2 -- r2 r1 ) - swap top two floating items")]
+    private static Task Prim_FSWAP(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "FSWAP");
+        var r2 = i.PopInternal();
+        var r1 = i.PopInternal();
+        i.Push(r2);
+        i.Push(r1);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("FROT", HelpString = "FROT ( r1 r2 r3 -- r2 r3 r1 ) - rotate top three floating items")]
+    private static Task Prim_FROT(ForthInterpreter i)
+    {
+        i.EnsureStack(3, "FROT");
+        var r3 = i.PopInternal();
+        var r2 = i.PopInternal();
+        var r1 = i.PopInternal();
+        i.Push(r2);
+        i.Push(r3);
+        i.Push(r1);
         return Task.CompletedTask;
     }
 
@@ -552,6 +677,19 @@ internal static partial class CorePrimitives
         i.MemTryGet(addr, out var bits);
         var d = System.BitConverter.Int64BitsToDouble(bits);
         i.Push(d);
+        return Task.CompletedTask;
+    }
+
+    [Primitive("F**", HelpString = "F** ( r1 r2 -- r1^r2 ) - floating-point exponentiation")]
+    private static Task Prim_FPow(ForthInterpreter i)
+    {
+        i.EnsureStack(2, "F**");
+        var r2 = i.PopInternal();
+        var r1 = i.PopInternal();
+        var d1 = ToDoubleFromObj(r1);
+        var d2 = ToDoubleFromObj(r2);
+        var res = Math.Pow(d1, d2);
+        i.Push(res);
         return Task.CompletedTask;
     }
 }

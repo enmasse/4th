@@ -39,7 +39,21 @@ internal static partial class CorePrimitives
         _words.Value;
 
     // Helpers used across groups
-    private static long ToLong(object v) => ForthInterpreter.ToLong(v);
+    private static long ToLong(object o)
+    {
+        return o switch
+        {
+            long l => l,
+            int ii => ii,
+            short s => s,
+            byte b => b,
+            double d => (long)d,
+            char c => c,
+            bool bo => bo ? -1 : 0,
+            string str => str.Length > 0 ? (long)str[0] : throw new ForthException(ForthErrorCode.TypeError, "Empty string for number conversion"),
+            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {o?.GetType().Name ?? "null"}")
+        };
+    }
 
     private static bool ToBool(object v) => v switch
     {

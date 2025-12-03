@@ -16,12 +16,24 @@
 \ Unsigned output (using pictured numeric)
 : U. <# #S #> TYPE SPACE ;
 
-\ Floating-point special constants
-\ These words define floating-point special values used by the test suite
-\ Using Forth shorthand notation: 1e = 1.0, 0e = 0.0
-: +Inf 1e 0e F/ ;   \ Positive infinity
-: -Inf -1e 0e F/ FNEGATE ;  \ Negative infinity (negate after division)
-: NaN 0e 0e F/ ;     \ Not-a-Number
+FVARIABLE +Inf
+FVARIABLE -Inf
+FVARIABLE NaN
+
+\ Initialize special values
+1.0d 0.0d F/ +Inf F!
+-1.0d 0.0d F/ -Inf F!
+0.0d 0.0d F/ NaN F!
+
+\ Mathematical constants
+3.141592653589793d CONSTANT pi
+
+\ Conditional compilation helper
+\ [UNDEFINED] tests if a word is NOT defined (returns true if undefined)
+\ Takes a word name as input: [UNDEFINED] <name>
+\ FIND returns ( c-addr -- c-addr 0 ) if not found, or ( c-addr -- xt 1|-1 ) if found
+\ NIP drops the address/xt, 0= inverts the flag (0 becomes -1 for undefined)
+: [UNDEFINED] BL WORD FIND NIP 0= ; IMMEDIATE
 
 \ Comments for documentation
 ( Stack: a b c -- b c a )
@@ -33,3 +45,4 @@
 ( Stack: n lo hi -- flag )
 \ WITHIN tests if lo <= n < hi
 \ Example: 5 3 10 WITHIN gives true (non-zero)
+
