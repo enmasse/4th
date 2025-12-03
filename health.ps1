@@ -3,6 +3,13 @@
 
 Write-Host "Running health check for Forth.Core..." -ForegroundColor Green
 
+# Check submodule status
+Write-Host "Checking submodule status..." -ForegroundColor Yellow
+$submoduleStatus = git submodule status tests\forth2012-test-suite
+if ($submoduleStatus -match "^\+") {
+    Write-Host "Warning: Submodule tests\forth2012-test-suite has local modifications!" -ForegroundColor Yellow
+}
+
 # Build the project
 Write-Host "Building project..." -ForegroundColor Yellow
 dotnet build
