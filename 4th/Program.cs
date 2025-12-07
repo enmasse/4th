@@ -36,46 +36,51 @@ class Program
                 return;
             }
 
-            var lines = await File.ReadAllLinesAsync(path);
-            foreach (var rawLine in lines)
+            // Load entire file as one string to preserve multi-line constructs
+            // like multi-line comments: ( ... )
+            var content = await File.ReadAllTextAsync(path);
+            
+            try
             {
-                var line = rawLine?.Trim();
-                if (string.IsNullOrEmpty(line)) continue;
-
-                try
+                interp.SetSourceId(0); // user input
+                var keepGoing = await interp.EvalAsync(content);
+                Console.WriteLine(" ok");
+                if (!keepGoing)
                 {
-                    interp.SetSourceId(0); // user input
-                    var keepGoing = await interp.EvalAsync(line);
-                    Console.WriteLine(" ok");
-                    if (!keepGoing) break;
+                    Console.WriteLine("Script terminated with BYE or QUIT");
                 }
-                catch (ForthException ex)
+            }
+            catch (ForthException ex)
+            {
+                Console.WriteLine($"Error: {ex.Code}: {ex.Message}");
+                // Show stack on error
+                var stack = interp.Stack;
+                if (stack.Count > 0)
                 {
-                    Console.WriteLine($"Error: {ex.Code}: {ex.Message}");
-                    Console.WriteLine($"Line: {line}");
-                    // Show stack on error
-                    var stack = interp.Stack;
-                    if (stack.Count > 0)
+                    Console.Write("Stack: ");
+                    Console.WriteLine(string.Join(" ", stack.Select(o => o?.ToString() ?? "null")));
+                }
+                // Suggest if unknown word
+                if (ex.Message.Contains("unknown", StringComparison.OrdinalIgnoreCase))
+                {
+                    var words = content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var word in words)
                     {
-                        Console.Write("Stack: ");
-                        Console.WriteLine(string.Join(" ", stack.Select(o => o?.ToString() ?? "null")));
-                    }
-                    // Suggest if unknown word
-                    if (ex.Message.Contains("unknown", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var suggestions = GetSuggestions(line, completions);
-                        if (suggestions.Any())
+                        if (!completions.ContainsKey(word))
                         {
-                            Console.WriteLine($"Did you mean: {string.Join(", ", suggestions)}");
+                            var suggestions = GetSuggestions(word, completions);
+                            if (suggestions.Any())
+                            {
+                                Console.WriteLine($"Did you mean: {string.Join(", ", suggestions)}");
+                                break;
+                            }
                         }
                     }
-                    break;
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                    break;
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
 
             return;

@@ -32,6 +32,11 @@ public partial class ForthInterpreter
         _scrAddr = _nextAddr++;
         _mem[_scrAddr] = 0; // SCR initial value
 
+        // Allocate stable PAD buffer address (ANS Forth compliant)
+        // PAD should return a stable address above the dictionary space
+        // Place it at a high address (900000) well below heap (1000000)
+        _padAddr = 900000L;
+
         // No per-module lazy dictionaries anymore; use tuple-keyed _dict directly
         _baselineCount = _definitions.Count; // record baseline for core/compiler words
         _loadPrelude = LoadPreludeAsync(); // Load pure Forth definitions

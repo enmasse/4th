@@ -83,8 +83,33 @@ public class Forth2012ComplianceTests
         await f.EvalAsync($"\"{Path.Combine(fpDir, "fpzero-test.4th")}\" INCLUDED");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "fpio-test.4th")}\" INCLUDED");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "to-float-test.4th")}\" INCLUDED");
-        // await f.EvalAsync($"\"{Path.Combine(fpDir, "paranoia.4th")}\" INCLUDED");
+        await f.EvalAsync($"\"{Path.Combine(fpDir, "paranoia.4th")}\" INCLUDED");
         await f.EvalAsync($"\"{Path.Combine(fpDir, "ak-fp-test.fth")}\" INCLUDED");
+        
+        await f.EvalAsync("TOTAL-ERRORS @");
+        Assert.Equal(0L, (long)f.Pop());
+    }
+
+    [Fact]
+    public async Task ParanoiaTest()
+    {
+        var repoRoot = GetRepoRoot();
+        var f = New();
+        var fpDir = Path.Combine(repoRoot, "tests", "forth2012-test-suite-local", "src", "fp");
+        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite-local", "src", "tester.fr");
+        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite-local", "src", "errorreport.fth");
+        
+        // Load tester and error reporting
+        await f.EvalAsync($"\"{testerPath}\" INCLUDED");
+        await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
+        
+        // Define [undefined] word that runfptests.fth tried to check for
+        await f.EvalAsync(": [undefined] bl word find nip 0= ; immediate");
+        
+        // Directly include the individual FP test files, bypassing buggy runfptests.fth
+        await f.EvalAsync($"\"{Path.Combine(fpDir, "ttester.fs")}\" INCLUDED");
+        await f.EvalAsync("SET-NEAR");
+        await f.EvalAsync($"\"{Path.Combine(fpDir, "paranoia.4th")}\" INCLUDED");
         
         await f.EvalAsync("TOTAL-ERRORS @");
         Assert.Equal(0L, (long)f.Pop());

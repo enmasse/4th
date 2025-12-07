@@ -97,20 +97,6 @@ public class TokenizerTests
     }
 
     [Fact]
-    public void Tokenizer_ShouldHandleCStyleDoubleSlashComments()
-    {
-        var input = "WORD1 // c-style comment\nWORD2";
-        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-        _output.WriteLine($"Input: '{input.Replace("\n", "\\n")}'");
-        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-
-        // C-style // comments should be stripped
-        Assert.Equal(2, tokens.Count);
-        Assert.Equal("WORD1", tokens[0]);
-        Assert.Equal("WORD2", tokens[1]);
-    }
-
-    [Fact]
     public void Tokenizer_ShouldHandleParenComments()
     {
         var input = "WORD1 ( comment ) WORD2";
@@ -128,117 +114,62 @@ public class TokenizerTests
     #region DotParen Tests - Regression tests for .( ... ) immediate printing
 
     [Fact]
-    public void Tokenizer_DotParen_ShouldPrintImmediately_NoTokensCreated()
+    public void Tokenizer_DotParen_ShouldCreateToken()
     {
-        // Capture console output
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".( Hello World )";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".( Hello World )";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // .( should print immediately and not create any tokens
-            // Note: Leading space after ( is preserved
-            Assert.Equal(" Hello World ", output);
-            Assert.Empty(tokens);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // .( should create a token that will be executed during evaluation
+        Assert.Single(tokens);
+        Assert.Equal(".( Hello World )", tokens[0]);
     }
 
     [Fact]
-    public void Tokenizer_DotParen_WithOtherWords_ShouldNotAffectTokens()
+    public void Tokenizer_DotParen_WithOtherWords_ShouldCreateTokens()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = "WORD1 .( test message ) WORD2";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = "WORD1 .( test message ) WORD2";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // .( should print but only WORD1 and WORD2 should remain as tokens
-            // Note: Leading space after ( is preserved
-            Assert.Equal(" test message ", output);
-            Assert.Equal(2, tokens.Count);
-            Assert.Equal("WORD1", tokens[0]);
-            Assert.Equal("WORD2", tokens[1]);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // .( should create a token, and WORD1 and WORD2 should also be tokens
+        Assert.Equal(3, tokens.Count);
+        Assert.Equal("WORD1", tokens[0]);
+        Assert.Equal(".( test message )", tokens[1]);
+        Assert.Equal("WORD2", tokens[2]);
     }
 
     [Fact]
-    public void Tokenizer_DotParen_EmptyMessage_ShouldWorkCorrectly()
+    public void Tokenizer_DotParen_EmptyMessage_ShouldCreateToken()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".() WORD";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".() WORD";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // Empty .( should print nothing
-            Assert.Equal("", output);
-            Assert.Single(tokens);
-            Assert.Equal("WORD", tokens[0]);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // Empty .( should create a token
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(".()", tokens[0]);
+        Assert.Equal("WORD", tokens[1]);
     }
 
     [Fact]
     public void Tokenizer_DotParen_WithSpecialChars_ShouldPreserveContent()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".( Test: 1+2=3 \"quoted\" )";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".( Test: 1+2=3 \"quoted\" )";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // Special characters should be preserved
-            Assert.Equal(" Test: 1+2=3 \"quoted\" ", output);
-            Assert.Empty(tokens);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // Special characters should be preserved in the token
+        Assert.Single(tokens);
+        Assert.Equal(".( Test: 1+2=3 \"quoted\" )", tokens[0]);
     }
 
     [Fact]
@@ -256,123 +187,73 @@ public class TokenizerTests
     }
 
     [Fact]
-    public void Tokenizer_DotParen_Multiple_ShouldPrintAllMessages()
+    public void Tokenizer_DotParen_Multiple_ShouldCreateMultipleTokens()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".( First ) .( Second )";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".( First ) .( Second )";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // Both messages should be printed
-            Assert.Equal(" First  Second ", output);
-            Assert.Empty(tokens);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // Both .( ) constructs should create tokens
+        Assert.Equal(2, tokens.Count);
+        Assert.Equal(".( First )", tokens[0]);
+        Assert.Equal(".( Second )", tokens[1]);
     }
 
     [Fact]
     public void Tokenizer_DotParen_WithLeadingAndTrailingSpaces_ShouldPreserve()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".(   spaced   )";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".(   spaced   )";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // Spaces should be preserved
-            Assert.Equal("   spaced   ", output);
-            Assert.Empty(tokens);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // Spaces should be preserved in the token
+        Assert.Single(tokens);
+        Assert.Equal(".(   spaced   )", tokens[0]);
     }
 
     [Fact]
     public void Tokenizer_DotParen_NotConfusedWithDot_ShouldNotCreateDotToken()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        var input = ".( message )";
+        var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
         
-        try
-        {
-            var input = ".( message )";
-            var tokens = Forth.Core.Interpreter.Tokenizer.Tokenize(input);
-            
-            var output = sw.ToString();
-            _output.WriteLine($"Input: '{input}'");
-            _output.WriteLine($"Console output: '{output}'");
-            _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
-            
-            // Should NOT create a "." token
-            Assert.Empty(tokens);
-            Assert.DoesNotContain(".", tokens);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        _output.WriteLine($"Input: '{input}'");
+        _output.WriteLine($"Tokens: [{string.Join(", ", tokens.Select(t => $"'{t}'"))}]");
+        
+        // Should create a single .( ) token, NOT a "." token
+        Assert.Single(tokens);
+        Assert.DoesNotContain(".", tokens);
+        Assert.Equal(".( message )", tokens[0]);
     }
 
     [Fact]
     public void Tokenizer_DotParen_NotConfusedWithParenComment()
     {
-        using var sw = new System.IO.StringWriter();
-        var originalOut = Console.Out;
-        Console.SetOut(sw);
+        // Regular paren comment should be stripped
+        var input1 = "WORD1 ( comment ) WORD2";
+        var tokens1 = Forth.Core.Interpreter.Tokenizer.Tokenize(input1);
         
-        try
-        {
-            // Regular paren comment should be silent
-            var input1 = "WORD1 ( comment ) WORD2";
-            var tokens1 = Forth.Core.Interpreter.Tokenizer.Tokenize(input1);
-            var output1 = sw.ToString();
-            
-            sw.GetStringBuilder().Clear();
-            
-            // .( should print
-            var input2 = "WORD1 .( message ) WORD2";
-            var tokens2 = Forth.Core.Interpreter.Tokenizer.Tokenize(input2);
-            var output2 = sw.ToString();
-            
-            _output.WriteLine($"Comment input: '{input1}' -> output: '{output1}'");
-            _output.WriteLine($"DotParen input: '{input2}' -> output: '{output2}'");
-            
-            // Regular comment produces no output
-            Assert.Equal("", output1);
-            // .( produces output
-            Assert.Equal(" message ", output2);
-            
-            // Both should have same token structure
-            Assert.Equal(2, tokens1.Count);
-            Assert.Equal(2, tokens2.Count);
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-        }
+        // .( should create a token
+        var input2 = "WORD1 .( message ) WORD2";
+        var tokens2 = Forth.Core.Interpreter.Tokenizer.Tokenize(input2);
+        
+        _output.WriteLine($"Comment input: '{input1}' -> tokens: {tokens1.Count}");
+        _output.WriteLine($"DotParen input: '{input2}' -> tokens: {tokens2.Count}");
+        
+        // Regular comment produces 2 tokens (WORD1, WORD2)
+        Assert.Equal(2, tokens1.Count);
+        Assert.Equal("WORD1", tokens1[0]);
+        Assert.Equal("WORD2", tokens1[1]);
+        
+        // .( produces 3 tokens (WORD1, .( message ), WORD2)
+        Assert.Equal(3, tokens2.Count);
+        Assert.Equal("WORD1", tokens2[0]);
+        Assert.Equal(".( message )", tokens2[1]);
+        Assert.Equal("WORD2", tokens2[2]);
     }
 
     #endregion

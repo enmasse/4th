@@ -304,14 +304,15 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("FLOOR", HelpString = "FLOOR ( r -- n ) - convert floating-point number to integer by flooring")]
+    [Primitive("FLOOR", HelpString = "FLOOR ( r1 -- r2 ) - round r1 to integral value not greater than r1 (ANS Forth returns float)")]
     private static Task Prim_FLOOR(ForthInterpreter i)
     {
         i.EnsureStack(1, "FLOOR");
         var r = i.PopInternal();
         var d = ToDoubleFromObj(r);
-        var n = (long)Math.Floor(d);
-        i.Push(n);
+        // ANS Forth FLOOR returns a floating-point result, not an integer
+        var result = Math.Floor(d);
+        i.Push(result);
         return Task.CompletedTask;
     }
 
@@ -376,6 +377,13 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
+    [Primitive("FLN", HelpString = "FLN ( r -- r ) - floating-point natural logarithm (alias for FLOG)")]
+    private static Task Prim_FLN(ForthInterpreter i)
+    {
+        // FLN is a common alias for FLOG in many Forth systems
+        return Prim_FLOG(i);
+    }
+
     [Primitive("FACOS", HelpString = "FACOS ( r -- r ) - floating-point arccosine")]
     private static Task Prim_FACOS(ForthInterpreter i)
     {
@@ -409,15 +417,45 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("F~", HelpString = "F~ ( r1 r2 r3 -- flag ) - true if |r1 - r2| < r3")]
+    [Primitive("F~", HelpString = "F~ ( r1 r2 r3 -- flag ) - approximate equality with tolerance r3")]
     private static Task Prim_FTilde(ForthInterpreter i)
     {
         i.EnsureStack(3, "F~");
         var r3 = ToDoubleFromObj(i.PopInternal());
         var r2 = ToDoubleFromObj(i.PopInternal());
         var r1 = ToDoubleFromObj(i.PopInternal());
-        var diff = Math.Abs(r1 - r2);
-        i.Push(diff < r3 ? -1L : 0L);
+        
+        bool result;
+        if (r3 > 0.0)
+        {
+            // Positive r3: absolute tolerance test
+            result = Math.Abs(r1 - r2) < r3;
+        }
+        else if (r3 == 0.0)
+        {
+            // Zero r3: exact equality
+            result = r1 == r2;
+        }
+        else
+        {
+            // Negative r3: relative tolerance test
+            // |r1 - r2| < |r3 * (r1 + r2) / 2|
+            var diff = Math.Abs(r1 - r2);
+            
+            // Special case: if values are exactly equal, return true regardless of tolerance
+            if (diff == 0.0)
+            {
+                result = true;
+            }
+            else
+            {
+                var avgMagnitude = Math.Abs((r1 + r2) / 2.0);
+                var tolerance = Math.Abs(r3) * avgMagnitude;
+                result = diff < tolerance;
+            }
+        }
+        
+        i.Push(result ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -520,13 +558,14 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("FLOATS", HelpString = "FLOATS ( n -- n' ) - scale by float-cell size")]
+    [Primitive("FLOATS", HelpString = "FLOATS ( n -- n' ) - scale by float-cell size (8 bytes for double precision)")]
     private static Task Prim_FLOATS(ForthInterpreter i)
     {
         i.EnsureStack(1, "FLOATS");
         var n = ForthInterpreter.ToLong(i.PopInternal());
-        // In this system, one float occupies one cell
-        i.Push(n);
+        // Double precision floats are 8 bytes each
+        // This matches ANS Forth expectation that 1 FLOATS returns float-cell size
+        i.Push(n * 8L);
         return Task.CompletedTask;
     }
 

@@ -253,7 +253,7 @@ internal static partial class CorePrimitives
     private static Task Prim_UNUSED(ForthInterpreter i) { i.Push(1000000L - i._nextAddr); return Task.CompletedTask; }
 
     [Primitive("PAD", HelpString = "PAD ( -- addr ) - push address of scratch pad buffer")]
-    private static Task Prim_PAD(ForthInterpreter i) { i.Push(i._nextAddr + 256); return Task.CompletedTask; }
+    private static Task Prim_PAD(ForthInterpreter i) { i.Push(i.PadAddr); return Task.CompletedTask; }
 
     [Primitive("SOURCE", HelpString = "SOURCE ( -- addr u ) - return address and length of current input buffer")]
     private static Task Prim_SOURCE(ForthInterpreter i)

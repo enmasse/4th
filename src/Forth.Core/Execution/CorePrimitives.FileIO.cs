@@ -396,7 +396,9 @@ internal static partial class CorePrimitives
         }
 
         var text = await System.IO.File.ReadAllTextAsync(pathToken).ConfigureAwait(false);
-        // Evaluate the entire file content in one go so multi-line constructs are preserved
+        // Evaluate the entire file content in one go so multi-line constructs are preserved.
+        // .( ... ) constructs are now tokenized as special tokens and executed during evaluation,
+        // allowing them to be properly skipped by bracket conditionals.
         await i.EvalAsync(text).ConfigureAwait(false);
     }
 

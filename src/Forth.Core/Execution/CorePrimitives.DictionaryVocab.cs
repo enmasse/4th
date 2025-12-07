@@ -412,12 +412,14 @@ internal static partial class CorePrimitives
         // ANS-style S" produces c-addr u (tokenizer already handles leading-space rule)
         if (!i._isCompiling)
         {
+            // In interpret mode: allocate string and push (c-addr u) immediately
             var addr = i.AllocateCountedString(str);
             i.Push(addr + 1);
             i.Push((long)str.Length);
         }
         else
         {
+            // In compile mode: compile code that will push (c-addr u) at runtime
             i.CurrentList().Add(ii =>
             {
                 var addr = ii.AllocateCountedString(str);

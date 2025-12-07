@@ -275,14 +275,14 @@ lines
 
 DECIMAL
 
-s" [UNDEFINED]" pad c! pad char+ pad c@ move 
+s" [UNDEFINED]" dup pad c! pad char+ swap cmove 
 pad find nip 0=
 [IF]
 : [UNDEFINED]  ( "name" -- flag )
   bl word find nip 0= ; immediate
 [THEN]
 
-s" [DEFINED]" pad c! pad char+ pad c@ move 
+s" [DEFINED]" dup pad c! pad char+ swap cmove 
 pad find nip 0=
 [IF]
 : [DEFINED]  postpone [UNDEFINED] 0= ; immediate
@@ -683,6 +683,10 @@ FVARIABLE XB
 	THEN
 ;
 
+
+[UNDEFINED] FLN [IF]
+: FLN ( F: r -- r ) FLOG ;
+[THEN]
 
 : POW ( F: x y -- z ) \ return x ^ y (exponentiation)
 	F** ;

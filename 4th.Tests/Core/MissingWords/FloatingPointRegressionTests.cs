@@ -227,9 +227,9 @@ public class FloatingPointRegressionTests
         var forth = new ForthInterpreter();
         Assert.True(await forth.EvalAsync("5 FLOATS"));
         
-        // In this implementation, FLOATS returns n unchanged
+        // FLOATS returns n * 8 (8 bytes per double-precision float)
         Assert.Single(forth.Stack);
-        Assert.Equal(5L, (long)forth.Stack[0]);
+        Assert.Equal(40L, (long)forth.Stack[0]); // 5 * 8 bytes
     }
 
     [Fact]

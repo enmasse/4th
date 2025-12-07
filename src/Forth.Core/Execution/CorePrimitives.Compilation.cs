@@ -406,10 +406,12 @@ internal static partial class CorePrimitives
     [Primitive("[IF]", IsImmediate = true, HelpString = "[IF] ( flag -- ) - conditional compilation start (interpret/compile)")]
     private static Task Prim_BRACKET_IF(ForthInterpreter i)
     {
+        // [IF] works in both interpret and compile mode - it's a compile-time conditional
         // If already skipping from outer [IF], just track nesting depth
         if (i._bracketIfSkipping)
         {
             i._bracketIfNestingDepth++;
+            i._bracketIfActiveDepth++;
             return Task.CompletedTask;
         }
 
@@ -418,29 +420,25 @@ internal static partial class CorePrimitives
         var flagObj = i.PopInternal();
         bool cond = ToBool(flagObj);
         
-        // Increment active depth regardless of condition
+        // ALWAYS increment active depth when processing [IF], regardless of condition
+        // This ensures [ELSE] and [THEN] can track they're inside a bracket conditional
+        // even across line boundaries (when file is loaded line-by-line)
         i._bracketIfActiveDepth++;
         
         if (cond)
         {
-            // Condition true - continue processing
+            // Condition true - continue processing normally
+            // We're not skipping, but we ARE inside a bracket conditional block
             return Task.CompletedTask;
         }
         
         // Condition false - skip until [ELSE] or [THEN]
         i._bracketIfNestingDepth = 0;
         i._bracketIfSeenElse = false;
+        i._bracketIfSkipping = true;
         
         // Skip rest of current token list
         SkipBracketSection(i, skipElse: true);
-        
-        // Check if we found [ELSE] or [THEN] in the current token list
-        // If not (reached end of tokens), set _bracketIfSkipping for multi-line continuation
-        if (i._tokens != null && i._tokenIndex >= i._tokens.Count)
-        {
-            // Reached end of current eval without finding terminator - continue skipping on next line
-            i._bracketIfSkipping = true;
-        }
         
         return Task.CompletedTask;
     }
@@ -449,8 +447,12 @@ internal static partial class CorePrimitives
     private static Task Prim_BRACKET_ELSE(ForthInterpreter i)
     {
         // Check if we're inside any [IF] block
-        if (i._bracketIfActiveDepth == 0)
+        // Note: With the fix to [IF], _bracketIfActiveDepth should always be > 0 when we reach [ELSE]
+        // However, we keep a lenient check to avoid breaking edge cases
+        if (i._bracketIfActiveDepth == 0 && !i._bracketIfSkipping)
         {
+            // Only throw error if we're not skipping AND depth is 0
+            // If we're skipping, we might be inside a nested [IF] that spans multiple lines
             throw new ForthException(ForthErrorCode.CompileError, "[ELSE] without [IF]");
         }
 
@@ -469,11 +471,10 @@ internal static partial class CorePrimitives
         }
         else
         {
-            // Was executing ([IF] was true), now skip [ELSE] part
+            // Was executing ([IF] was true), now need to skip [ELSE] part until [THEN]
             i._bracketIfSeenElse = true;
-            SkipBracketSection(i, skipElse: false);
-            // After skipping within the current token list, we're done skipping for this block
-            // Don't set _bracketIfSkipping since the skip is complete
+            i._bracketIfSkipping = true;  // Enable skipping for subsequent lines
+            SkipBracketSection(i, skipElse: false);  // Skip rest of current line
         }
         
         return Task.CompletedTask;
@@ -483,8 +484,10 @@ internal static partial class CorePrimitives
     private static Task Prim_BRACKET_THEN(ForthInterpreter i)
     {
         // Check if we're inside any [IF] block
-        if (i._bracketIfActiveDepth == 0)
+        // With the [IF] fix, this should always be > 0, but keep lenient check
+        if (i._bracketIfActiveDepth == 0 && !i._bracketIfSkipping)
         {
+            // Only throw error if we're not skipping AND depth is 0
             throw new ForthException(ForthErrorCode.CompileError, "[THEN] without [IF]");
         }
 
@@ -499,7 +502,12 @@ internal static partial class CorePrimitives
         i._bracketIfSkipping = false;
         i._bracketIfSeenElse = false;
         i._bracketIfNestingDepth = 0;
-        i._bracketIfActiveDepth--;  // Decrement active depth
+        
+        // Decrement active depth (should go back to 0 after this [THEN])
+        if (i._bracketIfActiveDepth > 0)
+        {
+            i._bracketIfActiveDepth--;
+        }
         
         return Task.CompletedTask;
     }
@@ -508,11 +516,14 @@ internal static partial class CorePrimitives
     {
         if (i._tokens is null) return; // nothing to skip
         int depth = 0;
+        
         for (int idx = i._tokenIndex; idx < i._tokens.Count; idx++)
         {
             var t = i._tokens[idx];
+            var upper = t.ToUpperInvariant();
+            
             // Normalize possible separated bracket tokens into a single composite representation when present: "[" "IF" "]"
-            string comp = t.ToUpperInvariant();
+            string comp = upper;
             bool consumedComposite = false;
             if (t == "[" && idx + 2 < i._tokens.Count && i._tokens[idx + 2] == "]")
             {
@@ -525,7 +536,11 @@ internal static partial class CorePrimitives
             {
                 if (depth == 0)
                 {
-                    // Found terminating [THEN]
+                    // Found terminating [THEN] - end the skip
+                    i._bracketIfSkipping = false;
+                    i._bracketIfSeenElse = false;
+                    i._bracketIfNestingDepth = 0;
+                    i._bracketIfActiveDepth--;
                     // If we consumed a composite, idx already advanced to the closing bracket index; set token index to next
                     i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume
                     return;
@@ -536,7 +551,9 @@ internal static partial class CorePrimitives
             }
             if (skipElse && comp == "[ELSE]" && depth == 0)
             {
-                // Stop before ELSE so ELSE body executes
+                // Found [ELSE] at our depth - resume execution of ELSE part
+                i._bracketIfSkipping = false;
+                i._bracketIfSeenElse = true;
                 i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume [ELSE]
                 return;
             }
@@ -555,7 +572,7 @@ internal static partial class CorePrimitives
 
     // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
 
-    [Primitive("CASE", IsImmediate = true, HelpString = "CASE - start a case structure")]
+    [Primitive("CASE", IsImmediate = true, HelpString = "CASE - start a case structure ( sel -- sel )")]
     private static Task Prim_CASE(ForthInterpreter i)
     {
         if (!i._isCompiling)
@@ -564,7 +581,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("OF", IsImmediate = true, HelpString = "OF - start a case branch")]
+    [Primitive("OF", IsImmediate = true, HelpString = "OF - compare and branch ( sel test -- sel | )")]
     private static Task Prim_OF(ForthInterpreter i)
     {
         if (!i._isCompiling)
@@ -572,14 +589,25 @@ internal static partial class CorePrimitives
         var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
         if (cf is null)
             throw new ForthException(ForthErrorCode.CompileError, "OF without CASE");
-        var litTok = i.ReadNextTokenOrThrow("OF expects a literal value");
-        long lit;
-        i.MemTryGet(i.BaseAddr, out var baseVal);
-        long baseNum = baseVal <= 0 ? 10 : baseVal;
-        if (!NumberParser.TryParse(litTok, def => baseNum, out lit))
-            throw new ForthException(ForthErrorCode.CompileError, "OF expects a number literal");
-        cf.CurrentLiteral = lit;
+        
+        // ANS Forth: at compile time, code before OF pushes the test value
+        // At runtime: ( selector test -- selector | )
+        // OF compares: if equal, drops both and executes branch; else drops test and continues
+        
+        // The test value was compiled into DefaultPart (or previous branch's tail)
+        // Move it to a new branch as the test value action
         cf.CurrentBranch = new List<Func<ForthInterpreter, Task>>();
+        
+        // Transfer the last action from DefaultPart to this branch as the test value
+        if (cf.DefaultPart.Count > 0)
+        {
+            var testAction = cf.DefaultPart[cf.DefaultPart.Count - 1];
+            cf.DefaultPart.RemoveAt(cf.DefaultPart.Count - 1);
+            cf.CurrentBranch.Add(testAction);
+        }
+        
+        cf.OfFrame = new ForthInterpreter.OfFrame { ParentBranch = cf.CurrentBranch };
+        i._controlStack.Push(cf.OfFrame);
         return Task.CompletedTask;
     }
 
@@ -588,15 +616,25 @@ internal static partial class CorePrimitives
     {
         if (!i._isCompiling)
             throw new ForthException(ForthErrorCode.CompileError, "ENDOF outside compilation");
+        
+        // Pop the OfFrame
+        if (i._controlStack.Count == 0 || i._controlStack.Peek() is not ForthInterpreter.OfFrame)
+            throw new ForthException(ForthErrorCode.CompileError, "ENDOF without OF");
+        i._controlStack.Pop();
+        
+        // Find the CaseFrame
         var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
         if (cf is null || cf.CurrentBranch is null)
-            throw new ForthException(ForthErrorCode.CompileError, "ENDOF without OF");
-        cf.Branches.Add((cf.CurrentLiteral, cf.CurrentBranch));
+            throw new ForthException(ForthErrorCode.CompileError, "ENDOF without CASE");
+        
+        // Add the branch to the list
+        cf.Branches.Add(cf.CurrentBranch);
         cf.CurrentBranch = null;
+        cf.OfFrame = null;
         return Task.CompletedTask;
     }
 
-    [Primitive("ENDCASE", IsImmediate = true, HelpString = "ENDCASE - end a case structure")]
+    [Primitive("ENDCASE", IsImmediate = true, HelpString = "ENDCASE - end case structure, drop selector ( sel -- )")]
     private static Task Prim_ENDCASE(ForthInterpreter i)
     {
         if (!i._isCompiling)
@@ -604,27 +642,57 @@ internal static partial class CorePrimitives
         var cf = i._controlStack.OfType<ForthInterpreter.CaseFrame>().LastOrDefault();
         if (cf is null)
             throw new ForthException(ForthErrorCode.CompileError, "ENDCASE without CASE");
-        // Remove the CaseFrame from control stack
+        
+        // Remove CaseFrame
         while (i._controlStack.Count > 0 && i._controlStack.Peek() != cf)
             i._controlStack.Pop();
         if (i._controlStack.Count > 0)
             i._controlStack.Pop();
-        // Compile the case execution
-        var branches = cf.Branches.ToList(); // copy
+        
+        // Compile CASE execution with ANS semantics
+        // At runtime: selector is on stack when CASE execution begins
+        // For each OF branch: test value was compiled before OF, branch body between OF and ENDOF
+        var branches = cf.Branches.ToList();
         var defaultPart = cf.DefaultPart.ToList();
+        
         i.CurrentList().Add(async ii =>
         {
             ii.EnsureStack(1, "CASE");
-            var caseVal = ToLong(ii.PopInternal());
-            foreach (var (lit, branch) in branches)
+            
+            // Try each OF branch
+            // Each branch contains: [test-value-action] [body-actions...]
+            // The test value action pushes the test value onto the stack
+            
+            foreach (var branch in branches)
             {
-                if (caseVal == lit)
+                if (branch.Count == 0) continue;
+                
+                // Peek at selector (don't pop yet)
+                var selector = ToLong(ii.Peek());
+                
+                // Execute the first action in the branch (pushes test value)
+                await branch[0](ii);
+                
+                // Now we have: ( selector test-value -- )
+                ii.EnsureStack(2, "OF comparison");
+                
+                var testVal = ToLong(ii.PopInternal());
+                
+                if (selector == testVal)
                 {
-                    foreach (var a in branch) await a(ii);
-                    return;
+                    // Match! Drop the selector and execute branch body
+                    ii.PopInternal(); // drop selector
+                    for (int k = 1; k < branch.Count; k++)
+                        await branch[k](ii);
+                    return; // Exit CASE after executing matching branch
                 }
+                // No match - test value already dropped, selector still on stack, continue to next branch
             }
-            foreach (var a in defaultPart) await a(ii);
+            
+            // No OF branch matched - drop selector and execute default code
+            ii.PopInternal();
+            foreach (var action in defaultPart)
+                await action(ii);
         });
         return Task.CompletedTask;
     }

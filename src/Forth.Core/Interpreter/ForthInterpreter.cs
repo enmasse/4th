@@ -46,6 +46,9 @@ public partial class ForthInterpreter : IForthInterpreter
     private readonly long _scrAddr;
     internal long ScrAddr => _scrAddr;
 
+    private readonly long _padAddr;
+    internal long PadAddr => _padAddr;
+
     private StringBuilder? _picBuf;
 
     // Diagnostics for cell stores (debug)

@@ -73,16 +73,27 @@ public partial class ForthInterpreter
     /// </summary>
     internal sealed class CaseFrame : CompileFrame
     {
-        /// <summary>List of branches: (literal, actions)</summary>
-        public List<(long Literal, List<Func<ForthInterpreter, Task>> Branch)> Branches { get; } = new();
+        /// <summary>List of branches: each branch gets the test value compiled in</summary>
+        public List<List<Func<ForthInterpreter, Task>>> Branches { get; } = new();
         /// <summary>Instructions for the default case (after all OF branches).</summary>
         public List<Func<ForthInterpreter, Task>> DefaultPart { get; } = new();
         /// <summary>Current branch being compiled.</summary>
         public List<Func<ForthInterpreter, Task>>? CurrentBranch { get; set; }
-        /// <summary>Literal for current branch.</summary>
-        public long CurrentLiteral { get; set; }
+        /// <summary>Current OF frame (for nested control structure).</summary>
+        public OfFrame? OfFrame { get; set; }
         /// <inheritdoc />
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => CurrentBranch ?? DefaultPart;
+    }
+
+    /// <summary>
+    /// Frame representing an OF ... ENDOF branch within a CASE structure.
+    /// </summary>
+    internal sealed class OfFrame : CompileFrame
+    {
+        /// <summary>Reference to the parent CaseFrame's CurrentBranch for code emission.</summary>
+        public List<Func<ForthInterpreter, Task>>? ParentBranch { get; set; }
+        /// <inheritdoc />
+        public override List<Func<ForthInterpreter, Task>> GetCurrentList() => ParentBranch ?? new();
     }
 
     /// <summary>

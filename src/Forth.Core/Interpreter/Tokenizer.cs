@@ -43,16 +43,16 @@ public static class Tokenizer
                 continue;
             }
 
-            // Handle S" ..." string literal
-            if (c == 'S' && i + 1 < input.Length && input[i + 1] == '"')
+            // Handle S" ..." string literal (case-insensitive: s" or S")
+            if ((c == 'S' || c == 's') && i + 1 < input.Length && input[i + 1] == '"')
             {
                 if (current.Count > 0)
                 {
                     list.Add(new string(current.ToArray()));
                     current.Clear();
                 }
-                list.Add("S\"");
-                i += 2; // move past S"
+                list.Add("S\"");  // Normalize to uppercase for primitive lookup
+                i += 2; // move past S" or s"
                 // Skip at most one leading space (but preserve newlines or tabs) per Forth convention
                 if (i < input.Length && input[i] == ' ') i++;
                 var lit = new List<char>();
@@ -80,6 +80,50 @@ public static class Tokenizer
                 continue;
             }
 
+            // Handle [IF], [ELSE], [THEN] as single tokens for bracket conditionals
+            if (c == '[' && i + 3 < input.Length)
+            {
+                var next2 = input.Substring(i + 1, 2).ToUpperInvariant();
+                if (next2 == "IF" && i + 3 < input.Length && input[i + 3] == ']')
+                {
+                    if (current.Count > 0)
+                    {
+                        list.Add(new string(current.ToArray()));
+                        current.Clear();
+                    }
+                    list.Add("[IF]");
+                    i += 3;
+                    continue;
+                }
+            }
+            if (c == '[' && i + 5 < input.Length)
+            {
+                var next4 = input.Substring(i + 1, 4).ToUpperInvariant();
+                if (next4 == "ELSE" && i + 5 < input.Length && input[i + 5] == ']')
+                {
+                    if (current.Count > 0)
+                    {
+                        list.Add(new string(current.ToArray()));
+                        current.Clear();
+                    }
+                    list.Add("[ELSE]");
+                    i += 5;
+                    continue;
+                }
+                if (next4 == "THEN" && i + 5 < input.Length && input[i + 5] == ']')
+                {
+                    if (current.Count > 0)
+                    {
+                        list.Add(new string(current.ToArray()));
+                        current.Clear();
+                    }
+                    list.Add("[THEN]");
+                    i += 5;
+                    continue;
+                }
+            }
+
+            // Handle ." ..." (already case-insensitive since we check character not built word)
             if (c == '.' && i + 1 < input.Length && input[i + 1] == '"')
             {
                 if (current.Count > 0)
@@ -87,7 +131,7 @@ public static class Tokenizer
                     list.Add(new string(current.ToArray()));
                     current.Clear();
                 }
-                list.Add(".\"");
+                list.Add(".\"");  // Normalize to uppercase for primitive lookup
                 i++; // skip opening '"'
                 while (i + 1 < input.Length && char.IsWhiteSpace(input[i + 1])) i++;
                 inString = true;
@@ -96,8 +140,7 @@ public static class Tokenizer
             }
             
             // Handle .( ... ) for immediate printing
-            // Note: .( is handled at tokenization time for simplicity
-            // The text is printed to Console immediately during tokenization
+            // Create a special token that will be handled during evaluation
             if (c == '.' && i + 1 < input.Length && input[i + 1] == '(')
             {
                 if (current.Count > 0)
@@ -115,9 +158,9 @@ public static class Tokenizer
                 }
                 if (i >= input.Length)
                     throw new Forth.Core.ForthException(Forth.Core.ForthErrorCode.CompileError, ".( missing closing )");
-                // Print immediately - this is an immediate word that prints during interpretation/compilation
-                Console.Write(new string(printText.ToArray()));
-                // Don't add any tokens - .( is consumed entirely here
+                // Create a token for the .( ) construct with the text embedded
+                // Format: ".( text )" - this will be recognized and handled during evaluation
+                list.Add(".(" + new string(printText.ToArray()) + ")");
                 // i is now at ')', continue will increment it
                 continue;
             }
@@ -176,6 +219,15 @@ public static class Tokenizer
                 continue;
             }
 
+            if (char.IsWhiteSpace(c))
+            {
+                if (current.Count > 0)
+                {
+                    list.Add(new string(current.ToArray()));
+                    current.Clear();
+                }
+                continue;
+            }
             // C-style '//' comment - rest of line is ignored (useful inside IL{ }IL blocks)
             if (c == '/' && i + 1 < input.Length && input[i + 1] == '/')
             {
@@ -188,15 +240,6 @@ public static class Tokenizer
                 while (i + 1 < input.Length && input[i + 1] != '\n' && input[i + 1] != '\r')
                 {
                     i++;
-                }
-                continue;
-            }
-            if (char.IsWhiteSpace(c))
-            {
-                if (current.Count > 0)
-                {
-                    list.Add(new string(current.ToArray()));
-                    current.Clear();
                 }
                 continue;
             }

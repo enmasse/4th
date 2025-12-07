@@ -145,6 +145,7 @@ public partial class ForthInterpreter
         _currentSource = _refillSource ?? line;
         // reset memory >IN cell
         _mem[_inAddr] = 0;
+        // Tokenize the line - .( ... ) constructs become tokens that are processed during evaluation
         _tokens = Tokenizer.Tokenize(line);
         // Track character positions of tokens for WORD/token synchronization
         _tokenCharPositions = ComputeTokenPositions(line, _tokens);
@@ -232,6 +233,13 @@ public partial class ForthInterpreter
 
             if (!_isCompiling)
             {
+                // Handle .( ... ) immediate printing
+                if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
+                {
+                    WriteText(tok.Substring(2, tok.Length - 3));
+                    continue;
+                }
+
                 if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
@@ -247,6 +255,10 @@ public partial class ForthInterpreter
                     throw new ForthException(ForthErrorCode.Unknown, msg);
                 }
 
+                // Automatic pushing of quoted string tokens
+                // This allows standalone quoted strings like "path.4th" INCLUDED to work
+                // Immediate parsing words like S" consume their tokens via ReadNextTokenOrThrow
+                // before this code sees them, so there's no interference
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     Push(tok[1..^1]);
@@ -318,6 +330,7 @@ public partial class ForthInterpreter
                                 _bracketIfSeenElse = true;
                                 break;
                             }
+                            // All other tokens are skipped
                         }
                     }
                     
@@ -328,6 +341,13 @@ public partial class ForthInterpreter
             }
             else
             {
+                // Handle .( ... ) immediate printing even in compile mode
+                if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
+                {
+                    WriteText(tok.Substring(2, tok.Length - 3));
+                    continue;
+                }
+
                 if (tok != ";")
                 {
                     _currentDefTokens?.Add(tok);
@@ -433,6 +453,7 @@ public partial class ForthInterpreter
                                     _bracketIfSeenElse = true;
                                     break;
                                 }
+                                // All other tokens are skipped
                             }
                         }
                         
@@ -478,22 +499,29 @@ public partial class ForthInterpreter
         
         // ANS Forth floating-point literal support:
         // 1. Decimal point: "1.5", "3.14"
-        // 2. Scientific notation: "1.5e2", "3e-1"
-        // 3. Forth shorthand: "1e" = 1.0, "2e" = 2.0 (e/E as type indicator)
+        // 2. Scientific notation: "1.5e2", "3e-1", "1.5E+2"
+        // 3. Forth shorthand: "1e" = 1.0, "2e" = 2.0, "1.0E" = 1.0 (e/E as type indicator)
         // 4. Optional trailing 'd'/'D' suffix: "1.5d"
         // 5. Special values: NaN, Infinity, -Infinity
         
         bool hasSuffixD = token.EndsWith('d') || token.EndsWith('D');
         string span = hasSuffixD ? token.Substring(0, token.Length - 1) : token;
         
-        // Check for Forth shorthand notation: <digits>e or <digits>E (without exponent)
-        // Examples: 1e = 1.0, 2e = 2.0, -3e = -3.0, 0e = 0.0
+        // Check for Forth shorthand notation: <number>e or <number>E (without exponent)
+        // Examples: 1e = 1.0, 2e = 2.0, -3e = -3.0, 0e = 0.0, 1.0E = 1.0
+        // This is when 'E' or 'e' is at the end with no digits after it
         if (span.Length >= 2 && (span.EndsWith('e') || span.EndsWith('E')))
         {
             var mantissa = span.Substring(0, span.Length - 1);
+            // Try to parse the mantissa as an integer first (common case: "1e", "2e")
             if (long.TryParse(mantissa, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var intValue))
             {
                 value = (double)intValue;
+                return true;
+            }
+            // If that fails, try to parse as a floating-point number (e.g., "1.0E", "3.14E")
+            if (double.TryParse(mantissa, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value))
+            {
                 return true;
             }
         }
@@ -512,7 +540,8 @@ public partial class ForthInterpreter
 
     /// <summary>
     /// Process a line while in bracket conditional skip mode.
-    /// Scans for [IF], [ELSE], [THEN] to track nesting depth and potentially resume execution.
+    /// Scans ONLY for [IF], [ELSE], [THEN] to track nesting depth and potentially resume execution.
+    /// All other tokens are completely skipped.
     /// </summary>
     private async Task<bool> ProcessSkippedLine()
     {
@@ -581,6 +610,9 @@ public partial class ForthInterpreter
                 // Nested [ELSE] - just skip it
                 continue;
             }
+
+            // All other tokens: just skip them (don't process)
+            // This includes regular IF, THEN, ELSE, :, ;, and any other words
         }
 
         // Entire line skipped
@@ -609,11 +641,66 @@ public partial class ForthInterpreter
                 {
                     await word.ExecuteAsync(this);
                     
-                    // If we started skipping again, stop processing this line
+                    // If we transitioned to skip mode, switch to skip processing for rest of line
                     if (_bracketIfSkipping)
                     {
-                        _tokens = null;
-                        return !_exitRequested;
+                        // Don't call ProcessSkippedLine - it would restart from tokenIndex=0
+                        // Instead, manually skip remaining tokens on this line with proper nesting tracking
+                        while (TryReadNextToken(out var skipTok))
+                        {
+                            var skipUpper = skipTok.ToUpperInvariant();
+                            
+                            // Handle composite bracket forms
+                            if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
+                            {
+                                var inner = _tokens[_tokenIndex].ToUpperInvariant();
+                                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
+                                {
+                                    skipUpper = "[" + inner + "]";
+                                    _tokenIndex += 2;
+                                }
+                            }
+                            
+                            // Track bracket conditional nesting
+                            if (skipUpper == "[IF]")
+                            {
+                                _bracketIfNestingDepth++;
+                                _bracketIfActiveDepth++;
+                            }
+                            else if (skipUpper == "[THEN]")
+                            {
+                                if (_bracketIfNestingDepth > 0)
+                                {
+                                    _bracketIfNestingDepth--;
+                                    _bracketIfActiveDepth--;
+                                }
+                                else
+                                {
+                                    // Found matching [THEN] - end skip mode
+                                    _bracketIfSkipping = false;
+                                    _bracketIfSeenElse = false;
+                                    _bracketIfNestingDepth = 0;
+                                    _bracketIfActiveDepth--;
+                                    break; // Resume normal processing
+                                }
+                            }
+                            else if (skipUpper == "[ELSE]" && _bracketIfNestingDepth == 0)
+                            {
+                                // Found [ELSE] at our depth - resume execution
+                                _bracketIfSkipping = false;
+                                _bracketIfSeenElse = true;
+                                break; // Resume normal processing
+                            }
+                            // All other tokens are skipped
+                        }
+                        
+                        // If still skipping, we're done with this line
+                        if (_bracketIfSkipping)
+                        {
+                            _tokens = null;
+                            return !_exitRequested;
+                        }
+                        // Otherwise continue processing remaining tokens normally
                     }
                     continue;
                 }
@@ -636,6 +723,13 @@ public partial class ForthInterpreter
 
             if (!_isCompiling)
             {
+                // Handle .( ... ) immediate printing
+                if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
+                {
+                    WriteText(tok.Substring(2, tok.Length - 3));
+                    continue;
+                }
+
                 if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
                 {
                     if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
@@ -651,6 +745,10 @@ public partial class ForthInterpreter
                     throw new ForthException(ForthErrorCode.Unknown, msg);
                 }
 
+                // Automatic pushing of quoted string tokens
+                // This allows standalone quoted strings like "path.4th" INCLUDED to work
+                // Immediate parsing words like S" consume their tokens via ReadNextTokenOrThrow
+                // before this code sees them, so there's no interference
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     Push(tok[1..^1]);
@@ -741,6 +839,13 @@ public partial class ForthInterpreter
                 if (_currentLocals != null && _currentLocals.Contains(tok))
                 {
                     CurrentList().Add(intr => { intr.Push(intr._locals![tok]); return Task.CompletedTask; });
+                    continue;
+                }
+
+                // Handle .( ... ) immediate printing even in compile mode
+                if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
+                {
+                    WriteText(tok.Substring(2, tok.Length - 3));
                     continue;
                 }
 
