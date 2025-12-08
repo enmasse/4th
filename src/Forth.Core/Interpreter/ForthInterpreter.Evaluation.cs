@@ -31,8 +31,7 @@ public partial class ForthInterpreter
     // Token reading helpers used by primitives and source-level operations
     internal bool TryReadNextToken(out string token)
     {
-        // Check if >IN has been modified externally (e.g., by TESTING word or WORD primitive)
-        // If >IN points past all tokens, we're done parsing this line
+        // Check if >IN has been modified externally (e.g., by >IN ! to skip input)
         MemTryGet(_inAddr, out var inVal);
         var inPos = (int)ToLong(inVal);
         
@@ -49,8 +48,8 @@ public partial class ForthInterpreter
             return false;
         }
         
-        // Skip tokens that were consumed by WORD or other character-based parsing
-        // Check if current token starts before >IN position
+        // Skip tokens that start before the current >IN position
+        // This handles both WORD-based character parsing and >IN ! manipulation
         while (_tokenCharPositions != null && _tokenIndex < _tokenCharPositions.Count)
         {
             var tokenStartPos = _tokenCharPositions[_tokenIndex];
@@ -59,7 +58,7 @@ public partial class ForthInterpreter
                 // This token starts at or after >IN, so it's valid
                 break;
             }
-            // This token was consumed by character-based parsing, skip it
+            // This token was consumed or skipped, advance past it
             _tokenIndex++;
             if (_tokenIndex >= _tokens.Count)
             {
