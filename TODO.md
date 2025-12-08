@@ -632,7 +632,7 @@ The hybrid token/character-based parser has **fundamental synchronization issues
 4. ? Verified INCLUDED tests now pass (49 file I/O tests fixed)
 5. ? Full test suite confirms fix (836/839 passing)
 
-## Session Summary (2025-01-15): Character Parser Migration Preparation
+## Session Summary (2025-01-15): Character Parser Migration Preparation & Code Reorganization
 
 ### Files Created This Session
 1. **`src/Forth.Core/Interpreter/CharacterParser.cs`** ?
@@ -640,17 +640,34 @@ The hybrid token/character-based parser has **fundamental synchronization issues
    - ANS Forth compliant parsing
    - Ready for integration
 
-2. **`CHARACTER_PARSER_MIGRATION_STATUS.md`**
+2. **`src/Forth.Core/Interpreter/ForthInterpreter.Parsing.cs`** ? NEW
+   - Extracted parsing and tokenization logic (~190 lines)
+   - Source tracking fields and methods
+   - Token-based parsing (DEPRECATED)
+   - Character-based parsing methods
+   - RefillSource method
+
+3. **`src/Forth.Core/Interpreter/ForthInterpreter.NumberParsing.cs`** ? NEW
+   - Extracted number parsing logic (~75 lines)
+   - TryParseNumber - Integer parsing with base support
+   - TryParseDouble - Floating-point parsing with ANS Forth compliance
+
+4. **`src/Forth.Core/Interpreter/ForthInterpreter.BracketConditionals.cs`** ? NEW
+   - Extracted bracket conditional logic (~350 lines)
+   - ProcessSkippedLine - Handle skip mode for [IF] conditionals
+   - ContinueEvaluation - Resume evaluation after [ELSE]/[THEN]
+
+5. **`CHARACTER_PARSER_MIGRATION_STATUS.md`**
    - Analysis of migration options (A, B, C)
    - Risk assessment and recommendations
    - Detailed implementation plan
 
-3. **`SESSION_SUMMARY_SYNCHRONIZATION_FIX.md`**
+6. **`SESSION_SUMMARY_SYNCHRONIZATION_FIX.md`**
    - Hybrid parser fix attempt documentation
    - Analysis of what worked and what didn't
    - Key insights about synchronization issues
 
-4. **`PRE_MIGRATION_STATE.md`**
+7. **`PRE_MIGRATION_STATE.md`**
    - Backup of current state before migration
    - Test results snapshot (861/876)
    - Migration strategy and rollback plan
@@ -660,25 +677,34 @@ The hybrid token/character-based parser has **fundamental synchronization issues
    - Enhanced WORD primitive with better token/character synchronization
    - Skips all tokens that start before new >IN position
 
-2. **`src/Forth.Core/Interpreter/ForthInterpreter.Evaluation.cs`**
-   - Added TryParseNextWord() and ParseNextWordOrThrow() methods
-   - Marked token-based fields as DEPRECATED
-   - Added explanation of why >IN is not advanced during token parsing
+2. **`src/Forth.Core/Interpreter/ForthInterpreter.Evaluation.cs`** ? REORGANIZED
+   - Reduced from 1100+ lines to ~390 lines
+   - Now contains only core evaluation loop logic
+   - Parsing, number parsing, and bracket conditionals moved to separate files
+   - Maintains all functionality with no regressions
 
 3. **`src/Forth.Core/Interpreter/ForthInterpreter.cs`**
    - Added _parser field for CharacterParser instance
+
+### Code Organization Benefits
+? **Better File Structure** - Related code grouped logically  
+? **Easier Navigation** - 4 focused files instead of 1 large file  
+? **No Regressions** - All 861 tests still passing (98.3%)  
+? **Clearer Responsibilities** - Each file has a clear, specific purpose  
+? **Maintainability** - Smaller files easier to understand and modify  
 
 ### Key Decisions Made
 1. **Option C (Hybrid Fix) attempted** - Improved WORD but insufficient for full fix
 2. **Full migration required** - Hybrid approach has fundamental limitations
 3. **Foundation completed** - CharacterParser ready, 9-step plan documented
-4. **Ready to proceed** - Step 2 (EvalInternalAsync refactor) is next
+4. **File reorganization completed** - Large evaluation file split into 4 logical units
+5. **Ready to proceed** - Step 2 (EvalInternalAsync refactor) is next
 
 ### Current State
 - **Test Pass Rate**: 861/876 (98.3%)
-- **Code State**: Stable, no regressions
-- **Migration Status**: Foundation complete, core refactor ready
-- **Next Action**: Refactor EvalInternalAsync to use CharacterParser
+- **Code State**: Stable, no regressions, better organized
+- **Migration Status**: Foundation complete, code reorganized, core refactor ready
+- **Next Action**: Refactor EvalInternalAsync to use CharacterParser (when resumed)
 
 ## Missing ANS Forth words (tracked by `ans-diff`)
 - None! Full conformity achieved for all tracked ANS Forth word sets.
