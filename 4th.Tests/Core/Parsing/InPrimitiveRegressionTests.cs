@@ -82,7 +82,7 @@ public class InPrimitiveRegressionTests
         Assert.Equal(0L, value); // New line starts at 0
     }
 
-    [Fact(Skip = "Advanced >IN manipulation within same line not fully supported - requires character-based parsing")]
+    [Fact(Skip = "Requires character-based parsing - WORD must update >IN based on characters consumed")]
     public async Task In_WithWord()
     {
         var forth = new ForthInterpreter();
@@ -98,7 +98,7 @@ public class InPrimitiveRegressionTests
         Assert.True(posAfter > posBefore);
     }
 
-    [Fact(Skip = "Advanced >IN manipulation within same line not fully supported - requires character-based parsing")]
+    [Fact(Skip = "Requires character-based parsing - rescan pattern needs token stream reset")]
     public async Task In_Rescan_Pattern()
     {
         var forth = new ForthInterpreter();
@@ -115,7 +115,7 @@ public class InPrimitiveRegressionTests
         Assert.Equal(345L, (long)forth.Stack[2]);
     }
 
-    [Fact(Skip = "Advanced >IN manipulation within same line not fully supported - requires character-based parsing")]
+    [Fact(Skip = "Requires character-based parsing - SOURCE >IN ! needs to skip to end")]
     public async Task In_SkipRestOfLine()
     {
         var forth = new ForthInterpreter();
@@ -125,7 +125,7 @@ public class InPrimitiveRegressionTests
         Assert.Empty(forth.Stack);
     }
 
-    [Fact(Skip = ">IN @ with EVALUATE requires proper source stack management")]
+    [Fact(Skip = "Requires proper source stack management with EVALUATE")]
     public async Task In_WithEvaluate()
     {
         var forth = new ForthInterpreter();
@@ -138,7 +138,7 @@ public class InPrimitiveRegressionTests
         Assert.Equal(0L, pos); // After EVALUATE, back to outer source
     }
 
-    [Fact(Skip = ">IN @ persistence across words requires character-based tracking")]
+    [Fact(Skip = "Requires character-based parsing - >IN must persist across word calls")]
     public async Task In_Persistence_AcrossWords()
     {
         var forth = new ForthInterpreter();
@@ -156,7 +156,7 @@ public class InPrimitiveRegressionTests
         Assert.True(pos2 > pos1);
     }
 
-    [Fact(Skip = "Advanced >IN manipulation with SAVE-INPUT/RESTORE-INPUT not fully integrated")]
+    [Fact(Skip = "Requires full SAVE-INPUT/RESTORE-INPUT integration with >IN")]
     public async Task In_WithSaveRestore()
     {
         var forth = new ForthInterpreter();
@@ -199,7 +199,7 @@ public class InPrimitiveRegressionTests
         Assert.Empty(forth.Stack);
     }
 
-    [Fact(Skip = "Advanced >IN manipulation within same line not fully supported - requires character-based parsing")]
+    [Fact(Skip = "Requires character-based parsing - /STRING and TYPE with >IN")]
     public async Task In_WithSourceAndType()
     {
         var forth = new ForthInterpreter();
@@ -211,7 +211,7 @@ public class InPrimitiveRegressionTests
         Assert.True(await forth.EvalAsync("SHOW-REST hello world"));
     }
 
-    [Fact(Skip = ">IN @ in colon definitions requires character-based position tracking")]
+    [Fact(Skip = "Requires character-based parsing - >IN @ in colon definitions")]
     public async Task In_WithColon_Definition()
     {
         var forth = new ForthInterpreter();

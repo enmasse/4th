@@ -142,7 +142,7 @@ public partial class ForthInterpreter
         // If a refill buffer exists (from REFILL), prefer it as the current source
         // only when EvalAsync was not provided with an explicit line to evaluate
         _currentSource = _refillSource ?? line;
-        // reset memory >IN cell
+        // Reset >IN to 0 for new evaluation (ANS Forth requirement)
         _mem[_inAddr] = 0;
         // Tokenize the line - .( ... ) constructs become tokens that are processed during evaluation
         _tokens = Tokenizer.Tokenize(line);

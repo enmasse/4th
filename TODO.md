@@ -194,11 +194,13 @@
 
 ## Current Test Results (2025-01-15)
 
-**Pass Rate**: 861/876 tests (98.3%)
+**Pass Rate**: 861/876 tests (98.3%) ?? **NEEDS FIXES**
 - **Passing**: 861 tests
-- **Failing**: 6 tests (2 paranoia.4th edge cases + 4 advanced >IN manipulation tests)
-- **Skipped**: 9 tests (advanced >IN features)
-- **Recent Work**: Basic >IN primitive support implemented; advanced manipulation patterns documented as limitations
+- **Failing**: 6 tests (MUST BE FIXED)
+  - 2 paranoia.4th tests - "IF outside compilation" error
+  - 4 >IN manipulation tests - need proper character-level tracking
+- **Skipped**: 9 tests - need to be unskipped and fixed
+- **Goal**: Achieve 100% test pass rate with full ANS Forth compliance
 
 ### Recent Fixes
 
@@ -224,8 +226,36 @@
   - `4th.Tests/Core/ControlFlow/BracketConditionalsTests.cs` - Comprehensive coverage
   - `4th.Tests/Compliance/TtesterSimpleLoadTest.cs` - Whole-file loading verification
 
-## Current gaps
-- Only 2 known test failures remaining (test file issues, not interpreter bugs)
+## Current gaps - TO BE FIXED
+
+### Priority 1: Fix paranoia.4th Synchronization Issue (2 failing tests)
+**Root Cause**: Token index and character position (>IN) become desynchronized when WORD primitive is called during bracket conditional skipping.
+
+**Solution Approach**:
+1. Enhance WORD primitive to properly synchronize token index with >IN position
+2. When WORD updates >IN, also update _tokenIndex to skip past consumed tokens
+3. Test with paranoia.4th to verify synchronization works with many `[undefined]` checks
+4. Ensure no regressions in 861 passing tests
+
+**Files to Modify**:
+- `src/Forth.Core/Execution/CorePrimitives.IOFormatting.cs` - WORD primitive
+- `src/Forth.Core/Interpreter/ForthInterpreter.Evaluation.cs` - TryReadNextToken
+
+### Priority 2: Fix >IN Manipulation Tests (4 failing + 9 skipped = 13 tests)
+**Root Cause**: >IN is not properly maintained during token evaluation - it's reset but not advanced as tokens are consumed.
+
+**Solution Approach**:
+1. Update TryReadNextToken to advance >IN as tokens are consumed
+2. Ensure >IN persists across word calls within same evaluation
+3. Handle >IN ! to skip/rescan tokens properly
+4. Implement character-level position tracking for advanced patterns
+
+**Files to Modify**:
+- `src/Forth.Core/Interpreter/ForthInterpreter.Evaluation.cs` - TryReadNextToken, EvalInternalAsync
+- `src/Forth.Core/Execution/CorePrimitives.Memory.cs` - >IN primitive
+- `4th.Tests/Core/Parsing/InPrimitiveRegressionTests.cs` - Unskip tests
+
+### Target: 876/876 tests passing (100%)
 
 - **Known Issues**:
 - **Bracket conditionals `[IF]` `[ELSE]` `[THEN]` - FIXED (2025-01-13)**
@@ -275,24 +305,41 @@
     - **Token index**: Interpreter tracks tokens by index, expects sequential processing
     - **Synchronization loss**: After many `[undefined]` executions in skipped sections, indices drift
     - **Error manifestation**: Regular `IF` token (from inside skipped colon definition) encountered at top level
-  - **Decision: Accept as Known Limitation**:
-    - **Risk/Benefit Analysis**: Further fixes could break 857 passing tests for 2 edge-case failures
-    - **Test Coverage**: 99.7% pass rate (857/860) is excellent
-    - **Specialized Test**: paranoia.4th is an extreme 2400-line floating-point validation suite
-    - **Real-World Impact**: Minimal - normal Forth code (including complex FP code) works perfectly
-    - **Workaround Available**: All other floating-point tests validate FP correctness
+  - **Action Required**: Fix the synchronization between token-based and character-based parsing
+    - Need to properly handle WORD primitive's >IN updates during bracket conditional skipping
+    - When `[undefined]` calls `bl word`, it modifies >IN which desynchronizes token index
+    - Solution approach: Keep token index and character position synchronized
+    - Test `test_minimal_paranoia.4th` shows individual patterns work - need to handle accumulation
   - **Verification Files Created**:
     - `test_minimal_paranoia.4th` - Demonstrates patterns work in isolation
+    - `test_paranoia_trace.4th` - Traces the failure pattern
     - Multiple bracket conditional regression tests - All passing
-  - **Conclusion**: This is a known edge case in our hybrid token/character parsing architecture. The issue only manifests in extreme cases (2400+ line files with heavy character-based parsing in skipped sections). The interpreter is ANS Forth compliant and production-ready.
-- **Test Suite Status (2025-01-15)**:
-- **Overall**: 857/860 tests passing (99.7% pass rate)
+  - **Next Steps**:
+    1. Fix WORD primitive to maintain token/character synchronization
+    2. Ensure bracket conditional skip mode respects >IN changes
+    3. Test with paranoia.4th to verify fix
+    4. Ensure no regressions in existing 861 passing tests
+- **Test Suite Status (2025-01-15)** - WORK IN PROGRESS:
+- **Overall**: 861/876 tests passing (98.3% pass rate) - TARGET: 100%
 - **Floating-Point Tests**: 7 of 8 FP compliance tests passing
 - **Passing FP Tests**: fatan2-test.fs, ieee-arith-test.fs, ieee-fprox-test.fs, fpzero-test.4th, fpio-test.4th, to-float-test.4th, ak-fp-test.fth
-- **Failing Tests (2 total)**:
-  1. `Forth2012ComplianceTests.FloatingPointTests` - "IF outside compilation" error (edge case: character-based parsing in skipped sections)
-  2. `Forth2012ComplianceTests.ParanoiaTest` - "IF outside compilation" error (same root cause as above)
-- **Skipped**: 1 test
+- **Failing Tests (6 total)** - ALL NEED FIXES:
+  1. `Forth2012ComplianceTests.FloatingPointTests` - "IF outside compilation" error (synchronization issue)
+  2. `Forth2012ComplianceTests.ParanoiaTest` - "IF outside compilation" error (synchronization issue)
+  3. `InPrimitiveRegressionTests.In_AdvancesAfterParsing` - >IN not advancing properly
+  4. `InPrimitiveRegressionTests.In_CanBeWritten` - >IN ! not working correctly
+  5. `InPrimitiveRegressionTests.In_ResetsOnNewLine` - >IN not resetting between lines
+  6. `InPrimitiveRegressionTests.In_BoundaryCondition_Negative` - >IN negative values not persisting
+- **Skipped Tests (9 total)** - NEED TO BE UNSKIPPED AND FIXED:
+  1. `InPrimitiveRegressionTests.In_WithWord` - WORD and >IN synchronization
+  2. `InPrimitiveRegressionTests.In_Rescan_Pattern` - Rescan via >IN ! 0
+  3. `InPrimitiveRegressionTests.In_SkipRestOfLine` - SOURCE >IN ! pattern
+  4. `InPrimitiveRegressionTests.In_WithEvaluate` - >IN with EVALUATE
+  5. `InPrimitiveRegressionTests.In_Persistence_AcrossWords` - >IN persistence
+  6. `InPrimitiveRegressionTests.In_WithSaveRestore` - SAVE-INPUT/RESTORE-INPUT
+  7. `InPrimitiveRegressionTests.In_WithSourceAndType` - /STRING and TYPE with >IN
+  8. `InPrimitiveRegressionTests.In_WithColon_Definition` - >IN @ in definitions
+  9. (One more skipped test to identify)
 - **Recent Code Cleanup (2025-01-15)**:
   - Simplified bracket conditional skip logic by removing unnecessary colon depth tracking
   - Skip handlers now only track bracket conditional nesting (`[IF]`, `[ELSE]`, `[THEN]`)
