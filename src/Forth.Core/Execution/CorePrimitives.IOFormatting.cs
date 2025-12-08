@@ -208,43 +208,51 @@ internal static partial class CorePrimitives
         var delim = (char)ToLong(i.PopInternal());
         var source = i.CurrentSource ?? string.Empty;
         
+        // Get current >IN position (or synchronize from token position)
+        i.MemTryGet(i.InAddr, out var inVal);
+        var inIndex = (int)(long)inVal;
+        
         // Synchronize >IN with current token position if we're in the middle of token-based parsing
+        // This ensures WORD starts parsing from the correct position
         if (i._tokens != null && i._tokenCharPositions != null && 
             i._tokenIndex < i._tokenCharPositions.Count)
         {
-            // Update >IN to point to the start of the next unparsed token
             var tokenPos = i._tokenCharPositions[i._tokenIndex];
-            i.MemSet(i.InAddr, (long)tokenPos);
+            // Only update >IN if it's behind the token position (normal case)
+            if (inIndex < tokenPos)
+            {
+                inIndex = tokenPos;
+                i.MemSet(i.InAddr, (long)inIndex);
+            }
         }
         
-        i.MemTryGet(i.InAddr, out var inVal);
-        var inIndex = (int)(long)inVal;
+        // Remember starting position for synchronization
+        var startPos = inIndex;
+        
         // Skip leading delimiters
         while (inIndex < source.Length && source[inIndex] == delim) inIndex++;
-        var start = inIndex;
+        var wordStart = inIndex;
         // Collect until delimiter or end
         while (inIndex < source.Length && source[inIndex] != delim) inIndex++;
-        var word = source.Substring(start, inIndex - start);
+        var word = source.Substring(wordStart, inIndex - wordStart);
         // Advance >IN past the delimiter if present
         var newIn = inIndex < source.Length ? inIndex + 1 : inIndex;
         i.MemSet(i.InAddr, (long)newIn);
         
-        // Advance _tokenIndex to skip past the token we just parsed
-        // This keeps token-based and character-based parsing in sync
-        if (i._tokens != null && i._tokenIndex < i._tokens.Count)
+        // Synchronize token index with the new >IN position
+        // Skip all tokens that start before the new >IN position
+        if (i._tokens != null && i._tokenCharPositions != null)
         {
-            // Check if the word we parsed matches the current token
-            var currentToken = i._tokens[i._tokenIndex];
-            // Handle quoted strings - strip quotes for comparison
-            var tokenToCompare = currentToken;
-            if (currentToken.Length >= 2 && currentToken[0] == '"' && currentToken[^1] == '"')
+            while (i._tokenIndex < i._tokens.Count && 
+                   i._tokenIndex < i._tokenCharPositions.Count)
             {
-                tokenToCompare = currentToken[1..^1];
-            }
-            
-            // If it matches (or is empty due to being past end), advance the token index
-            if (string.Equals(word, tokenToCompare, StringComparison.Ordinal) || string.IsNullOrEmpty(word))
-            {
+                var tokenPos = i._tokenCharPositions[i._tokenIndex];
+                if (tokenPos >= newIn)
+                {
+                    // This token starts at or after >IN, stop skipping
+                    break;
+                }
+                // This token was consumed by WORD, skip it
                 i._tokenIndex++;
             }
         }

@@ -102,6 +102,9 @@ public partial class ForthInterpreter : IForthInterpreter
         public override List<Func<ForthInterpreter, Task>> GetCurrentList() => _list;
     }
 
+    // Character-based parsing state (replaces token-based parsing)
+    internal CharacterParser? _parser;          // Current character parser instance
+    
     // Persistent bracket conditional state for multi-line support (ANS Forth compliant)
     internal int _bracketIfNestingDepth = 0;   // Track [IF] nesting depth across lines
     internal bool _bracketIfSkipping = false;   // Are we currently skipping due to false [IF]?

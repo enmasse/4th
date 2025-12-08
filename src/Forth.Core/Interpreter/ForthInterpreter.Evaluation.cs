@@ -24,10 +24,58 @@ public partial class ForthInterpreter
     /// <param name="id">The source ID.</param>
     public void SetSourceId(long id) => _currentSourceId = id;
 
+    // DEPRECATED: Token-based parsing (being replaced by character-based parsing)
+    // These fields are kept temporarily for backward compatibility during migration
     internal List<string>? _tokens; // internal current token stream
     internal int _tokenIndex;       // internal current token index
     internal List<int>? _tokenCharPositions; // character position of each token in source
 
+    // Character-based parsing helpers (NEW - replaces token-based parsing)
+    /// <summary>
+    /// Tries to parse the next word from the current source using character-based parsing.
+    /// Returns false if no more words available.
+    /// Automatically updates >IN as characters are consumed.
+    /// </summary>
+    internal bool TryParseNextWord(out string word)
+    {
+        if (_parser == null || _parser.IsAtEnd)
+        {
+            word = string.Empty;
+            return false;
+        }
+
+        // Synchronize parser position with >IN (in case >IN was modified externally)
+        MemTryGet(_inAddr, out var inVal);
+        var inPos = (int)ToLong(inVal);
+        if (_parser.Position != inPos)
+        {
+            _parser.SetPosition(inPos);
+        }
+
+        var result = _parser.ParseNext();
+        if (result == null)
+        {
+            word = string.Empty;
+            return false;
+        }
+
+        // Update >IN to reflect consumed characters
+        _mem[_inAddr] = (long)_parser.Position;
+        word = result;
+        return true;
+    }
+
+    /// <summary>
+    /// Parses the next word or throws an exception if none available.
+    /// </summary>
+    internal string ParseNextWordOrThrow(string message)
+    {
+        if (!TryParseNextWord(out var word) || string.IsNullOrEmpty(word))
+            throw new ForthException(ForthErrorCode.CompileError, message);
+        return word;
+    }
+
+    // DEPRECATED: Token-based parsing (kept for backward compatibility during migration)
     // Token reading helpers used by primitives and source-level operations
     internal bool TryReadNextToken(out string token)
     {
@@ -67,7 +115,15 @@ public partial class ForthInterpreter
             }
         }
         
+        // Get the token
         token = _tokens[_tokenIndex++];
+        
+        // NOTE: We do NOT advance >IN here during normal token-based parsing
+        // >IN is only meaningful for character-based parsing (like WORD primitive)
+        // When WORD is called, it will synchronize >IN with its character-level parsing
+        // and update _tokenIndex to match. This keeps the two parsing modes in sync
+        // without breaking immediate words like S" that expect tokens to be available.
+        
         return true;
     }
 
