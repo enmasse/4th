@@ -101,12 +101,13 @@ public class ParsingAndStringsTests
         var n = (long)forth.Pop();
         Assert.Equal(4L, n);
         var source = (string)forth.Pop();
-        var index = (long)forth.Pop();
+        var position = (long)forth.Pop(); // Character position (not token index)
         var inVal = forth.Pop();
         var id = (long)forth.Pop();
         Assert.Equal(-1L, id); // string eval
-        Assert.Equal(0L, (long)inVal);
-        Assert.Equal(1L, index); // after consuming SAVE-INPUT
+        Assert.Equal(10L, (long)inVal); // >IN is at position 10 after parsing "SAVE-INPUT"
+        // After parsing "SAVE-INPUT" (10 chars), position should be 10
+        Assert.Equal(10L, position);
         Assert.Equal("SAVE-INPUT", source);
     }
 

@@ -206,59 +206,46 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "WORD");
         var delim = (char)ToLong(i.PopInternal());
-        var source = i.CurrentSource ?? string.Empty;
         
-        // Get current >IN position (or synchronize from token position)
-        i.MemTryGet(i.InAddr, out var inVal);
-        var inIndex = (int)(long)inVal;
+        string parsedWord;
         
-        // Synchronize >IN with current token position if we're in the middle of token-based parsing
-        // This ensures WORD starts parsing from the correct position
-        if (i._tokens != null && i._tokenCharPositions != null && 
-            i._tokenIndex < i._tokenCharPositions.Count)
+        // Use the character parser if available (preferred method)
+        if (i._parser != null)
         {
-            var tokenPos = i._tokenCharPositions[i._tokenIndex];
-            // Only update >IN if it's behind the token position (normal case)
-            if (inIndex < tokenPos)
+            // IMPORTANT: Skip whitespace first unless the delimiter IS whitespace
+            // This handles the case where WORD is called from inside a compiled word
+            // and the parser is positioned after the previous word but before trailing whitespace
+            if (delim != ' ' && delim != '\t' && delim != '\n' && delim != '\r')
             {
-                inIndex = tokenPos;
-                i.MemSet(i.InAddr, (long)inIndex);
+                i._parser.SkipWhitespace();
             }
+            
+            parsedWord = i._parser.ParseWord(delim);
+            // Update >IN to reflect the new position
+            i.MemSet(i.InAddr, (long)i._parser.Position);
         }
-        
-        // Remember starting position for synchronization
-        var startPos = inIndex;
-        
-        // Skip leading delimiters
-        while (inIndex < source.Length && source[inIndex] == delim) inIndex++;
-        var wordStart = inIndex;
-        // Collect until delimiter or end
-        while (inIndex < source.Length && source[inIndex] != delim) inIndex++;
-        var word = source.Substring(wordStart, inIndex - wordStart);
-        // Advance >IN past the delimiter if present
-        var newIn = inIndex < source.Length ? inIndex + 1 : inIndex;
-        i.MemSet(i.InAddr, (long)newIn);
-        
-        // Synchronize token index with the new >IN position
-        // Skip all tokens that start before the new >IN position
-        if (i._tokens != null && i._tokenCharPositions != null)
+        else
         {
-            while (i._tokenIndex < i._tokens.Count && 
-                   i._tokenIndex < i._tokenCharPositions.Count)
-            {
-                var tokenPos = i._tokenCharPositions[i._tokenIndex];
-                if (tokenPos >= newIn)
-                {
-                    // This token starts at or after >IN, stop skipping
-                    break;
-                }
-                // This token was consumed by WORD, skip it
-                i._tokenIndex++;
-            }
+            // Fallback: parse from SOURCE using >IN
+            var source = i.CurrentSource ?? string.Empty;
+            i.MemTryGet(i.InAddr, out var inVal);
+            var inIndex = (int)(long)inVal;
+            
+            // Skip leading delimiters
+            while (inIndex < source.Length && source[inIndex] == delim) inIndex++;
+            var wordStart = inIndex;
+            
+            // Collect until delimiter or end
+            while (inIndex < source.Length && source[inIndex] != delim) inIndex++;
+            parsedWord = source.Substring(wordStart, inIndex - wordStart);
+            
+            // Advance >IN past the delimiter if present
+            var newIn = inIndex < source.Length ? inIndex + 1 : inIndex;
+            i.MemSet(i.InAddr, (long)newIn);
         }
         
         // Store as counted string at HERE
-        var addr = i.AllocateCountedString(word);
+        var addr = i.AllocateCountedString(parsedWord);
         i.Push(addr);
         return Task.CompletedTask;
     }
@@ -430,7 +417,7 @@ internal static partial class CorePrimitives
         i.MemTryGet(i.InAddr, out var inVal);
         i.Push(i.SourceId);
         i.Push(inVal);
-        i.Push((long)i._tokenIndex);
+        i.Push((long)(i._parser?.Position ?? 0));
         i.Push(i._currentSource ?? "");
         i.Push(4L);
         return Task.CompletedTask;
@@ -447,7 +434,7 @@ internal static partial class CorePrimitives
             return Task.CompletedTask;
         }
         var source = (string)i.PopInternal();
-        var index = (int)ToLong(i.PopInternal());
+        var position = (int)ToLong(i.PopInternal());
         var inVal = i.PopInternal();
         var id = ToLong(i.PopInternal());
         if (id != i.SourceId)
@@ -456,8 +443,8 @@ internal static partial class CorePrimitives
             return Task.CompletedTask;
         }
         i._currentSource = source;
-        i._tokenIndex = index;
-        i._tokens = Tokenizer.Tokenize(source);
+        i._parser = new CharacterParser(source);
+        i._parser.SetPosition(position);
         i._mem[i.InAddr] = ToLong(inVal);
         i.Push(0L);
         return Task.CompletedTask;

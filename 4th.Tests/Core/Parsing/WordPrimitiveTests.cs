@@ -33,8 +33,14 @@ public class WordPrimitiveTests
     {
         var forth = new ForthInterpreter();
         // Parse comma-delimited: 44 is comma
-        Assert.True(await forth.EvalAsync(": TEST 44 WORD ; TEST foo,bar"));
-        Assert.Single(forth.Stack);
+        // Known issue: When WORD uses non-space delimiter, tokenizer's space-skipping
+        // causes >IN to point to a space before the word, resulting in " foo" instead of "foo"
+        Assert.True(await forth.EvalAsync("99 CONSTANT bar"));
+        Assert.True(await forth.EvalAsync(": TEST 44 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST foo,bar"));
+        // Stack should have: address from WORD, then 99 from bar constant
+        Assert.Equal(2, forth.Stack.Count);
+        forth.Pop(); // discard 99 from bar
         var addr = (long)forth.Pop();
         
         var parsed = ReadCountedString(forth, addr);
@@ -73,8 +79,14 @@ public class WordPrimitiveTests
     {
         var forth = new ForthInterpreter();
         // Parse using colon as delimiter (ASCII 58)
-        Assert.True(await forth.EvalAsync(": TEST 58 WORD ; TEST name:value"));
-        Assert.Single(forth.Stack);
+        // Known issue: When WORD uses non-space delimiter, tokenizer's space-skipping
+        // causes >IN to point to a space before the word, resulting in " name" instead of "name"
+        Assert.True(await forth.EvalAsync("123 CONSTANT value"));
+        Assert.True(await forth.EvalAsync(": TEST 58 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST name:value"));
+        // Stack should have: address from WORD, then 123 from value constant
+        Assert.Equal(2, forth.Stack.Count);
+        forth.Pop(); // discard 123 from value
         var addr = (long)forth.Pop();
         
         var parsed = ReadCountedString(forth, addr);
@@ -148,18 +160,30 @@ public class WordPrimitiveTests
     {
         var forth = new ForthInterpreter();
         // Test parsing with different delimiters
+        // Known issue: When WORD uses non-space delimiter, tokenizer's space-skipping
+        // causes >IN to point to a space before the word
+        
         // First test: comma delimiter
-        Assert.True(await forth.EvalAsync(": TEST1 44 WORD ; TEST1 foo,bar"));
+        Assert.True(await forth.EvalAsync("1 CONSTANT bar"));
+        Assert.True(await forth.EvalAsync(": TEST1 44 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST1 foo,bar"));
+        forth.Pop(); // discard 1 from bar
         var addr1 = (long)forth.Pop();
         Assert.Equal("foo", ReadCountedString(forth, addr1));
         
         // Second test: period delimiter
-        Assert.True(await forth.EvalAsync(": TEST2 46 WORD ; TEST2 hello.world"));
+        Assert.True(await forth.EvalAsync("2 CONSTANT world"));
+        Assert.True(await forth.EvalAsync(": TEST2 46 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST2 hello.world"));
+        forth.Pop(); // discard 2 from world
         var addr2 = (long)forth.Pop();
         Assert.Equal("hello", ReadCountedString(forth, addr2));
         
         // Third test: hyphen delimiter (ASCII 45)
-        Assert.True(await forth.EvalAsync(": TEST3 45 WORD ; TEST3 test-name"));
+        Assert.True(await forth.EvalAsync("3 CONSTANT name"));
+        Assert.True(await forth.EvalAsync(": TEST3 45 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST3 test-name"));
+        forth.Pop(); // discard 3 from name
         var addr3 = (long)forth.Pop();
         Assert.Equal("test", ReadCountedString(forth, addr3));
     }
@@ -193,8 +217,15 @@ public class WordPrimitiveTests
     {
         var forth = new ForthInterpreter();
         // Tab character is ASCII 9 - but tokenizer might not preserve tabs
-        // Test with a simpler delimiter instead
-        Assert.True(await forth.EvalAsync(": TEST 45 WORD ; TEST before-after"));
+        // Test with hyphen delimiter (ASCII 45)
+        // Known issue: When WORD uses non-space delimiter, tokenizer's space-skipping
+        // causes >IN to point to a space before the word, resulting in " before" instead of "before"
+        Assert.True(await forth.EvalAsync("42 CONSTANT after"));
+        Assert.True(await forth.EvalAsync(": TEST 45 WORD ;"));
+        Assert.True(await forth.EvalAsync("TEST before-after"));
+        // Stack should have: address from WORD, then 42 from after constant
+        Assert.Equal(2, forth.Stack.Count);
+        forth.Pop(); // discard 42 from after
         var addr = (long)forth.Pop();
         
         var parsed = ReadCountedString(forth, addr);

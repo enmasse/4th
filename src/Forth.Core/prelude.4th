@@ -46,3 +46,11 @@ FVARIABLE NaN
 \ WITHIN tests if lo <= n < hi
 \ Example: 5 3 10 WITHIN gives true (non-zero)
 
+\ Floating point test compatibility
+\ SET-NEAR and SET-EXACT control FP comparison tolerance in test suites
+\ Our FP implementation uses System.Double with inherent precision
+\ These are stubs for test suite compatibility
+: SET-NEAR ; \ Enable approximate FP equality (no-op for us)
+: SET-EXACT ; \ Enable exact FP equality (no-op for us)
+
+

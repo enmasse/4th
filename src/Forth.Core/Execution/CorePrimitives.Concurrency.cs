@@ -259,7 +259,7 @@ internal static partial class CorePrimitives
     [Primitive("RUN-NEXT", IsAsync = true, HelpString = "RUN-NEXT ( -- ) - read next token, run it in isolated child (SPAWN/JOIN)")]
     private static async Task Prim_RUN_NEXT(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("RUN-NEXT expects a following word");
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "RUN-NEXT expects a following word");
         if (!i.TryResolveWord(name, out var xt) || xt is null)
             throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
         var snap = i.CreateMarkerSnapshot();

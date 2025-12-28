@@ -15,7 +15,7 @@ internal static partial class CorePrimitives
     private static Task Prim_IL_BEGIN(ForthInterpreter i)
     {
         var tokens = new List<string>();
-        while (i.TryReadNextToken(out var tok)) { if (tok == "}IL") break; tokens.Add(tok); }
+        while (i.TryParseNextWord(out var tok)) { if (tok == "}IL") break; tokens.Add(tok); }
         if (tokens.Count == 0) throw new ForthException(ForthErrorCode.CompileError, "Empty IL block");
 
         // Signature: (ForthInterpreter intr, ForthStack stack)

@@ -23,74 +23,39 @@ public partial class ForthInterpreter
         _currentSourceId = -1; // string evaluation
         ArgumentNullException.ThrowIfNull(line);
 
-        // Track current source and reset input index for this evaluation
-        // If a refill buffer exists (from REFILL), prefer it as the current source
-        // only when EvalAsync was not provided with an explicit line to evaluate
-        _currentSource = _refillSource ?? line;
+        // Always parse from the parameter line
+        // _refillSource is kept separate and only used by SOURCE primitive via CurrentSource property
+        _currentSource = line;
+        
+        // Create fresh parser for the source
+        _parser = new CharacterParser(_currentSource);
+        
         // Reset >IN to 0 for new evaluation (ANS Forth requirement)
         _mem[_inAddr] = 0;
-        // Tokenize the line - .( ... ) constructs become tokens that are processed during evaluation
-        _tokens = Tokenizer.Tokenize(line);
-        // Track character positions of tokens for WORD/token synchronization
-        _tokenCharPositions = ComputeTokenPositions(line, _tokens);
+        _parser.SetPosition(0);
 
         // ANS Forth bracket conditional multi-line support:
-        // If we're currently skipping due to a false [IF], scan this line for
-        // [IF], [ELSE], [THEN] to track nesting and potentially resume execution
+        // If we're currently skipping due to a false [IF], scan for bracket conditionals
+        // to track nesting and potentially resume execution
         if (_bracketIfSkipping)
         {
-            return await ProcessSkippedLine();
-        }
-
-        // Preprocess idiomatic compound tokens like "['] name" or "[']name" into
-        // the equivalent sequence: "[" "'" name "]" so existing primitives
-        // ([, ', ]) handle the compile-time behaviour without adding new words.
-        if (_tokens is not null && _tokens.Count > 0)
-        {
-            var processed = new List<string>();
-            for (int ti = 0; ti < _tokens.Count; ti++)
+            // Process skipped tokens until we exit skip mode or reach end of source
+            await ProcessSkippedLine();
+            
+            // If still skipping (reached end while in skip mode), return early
+            if (_bracketIfSkipping)
             {
-                var t = _tokens[ti];
-                if (t == "[']")
-                {
-                    // If a following token exists, consume it as the target name.
-                    if (ti + 1 < _tokens.Count)
-                    {
-                        processed.Add("[");
-                        processed.Add("'");
-                        processed.Add(_tokens[ti + 1]);
-                        processed.Add("]");
-                        ti++; // skip the consumed name
-                        continue;
-                    }
-                    // Fallback: expand to [ and ' tokens and continue
-                    processed.Add("[");
-                    processed.Add("'");
-                    continue;
-                }
-
-                // Handle generic bracketed composite like: [ IF ] -> "[IF]"
-                if (t == "[" && ti + 2 < _tokens.Count && _tokens[ti + 2] == "]")
-                {
-                    var inner = _tokens[ti + 1];
-                    // Only synthesize known bracketed forms to avoid changing other uses
-                    var upper = inner.ToUpperInvariant();
-                    if (upper == "IF" || upper == "ELSE" || upper == "THEN")
-                    {
-                        processed.Add("[" + upper + "]");
-                        ti += 2; // consume inner and closing bracket
-                        continue;
-                    }
-                }
-
-                processed.Add(t);
+                return !_exitRequested;
             }
-            _tokens = processed;
+            
+            // Exited skip mode - fall through to process remaining tokens normally
         }
 
-        _tokenIndex = 0;
+        // REMOVED: Token preprocessing no longer needed
+        // CharacterParser handles bracket forms (['], [IF], [ELSE], [THEN]) directly during parsing
 
-        while (TryReadNextToken(out var tok))
+        // NEW: Character-based parsing loop (replaces token-based loop)
+        while (TryParseNextWord(out var tok))
         {
             if (tok.Length == 0)
             {
@@ -124,20 +89,9 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
-                    {
-                        throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
-                    }
-                    throw new ForthException(ForthErrorCode.Unknown, "ABORT");
-                }
-
-                if (tok.StartsWith("ABORT\"", StringComparison.OrdinalIgnoreCase))
-                {
-                    var msg = tok[6..^1];
-                    throw new ForthException(ForthErrorCode.Unknown, msg);
-                }
+                // REMOVED: ABORT special handling - CharacterParser and ABORT"/ABORT primitives handle this
+                // ABORT is a regular word that will be looked up and executed
+                // ABORT" is handled by CharacterParser as a composite token and by the ABORT" primitive
 
                 // Automatic pushing of quoted string tokens
                 // This allows standalone quoted strings like "path.4th" INCLUDED to work
@@ -165,57 +119,20 @@ public partial class ForthInterpreter
                 {
                     await word.ExecuteAsync(this);
                     
-                    // Check if bracket conditional changed state to skipping
-                    // If so, process remaining tokens in skip mode inline
+                    // Check if executing the word triggered skip mode (e.g., [ELSE] after TRUE [IF])
+                    // If so, switch to ProcessSkippedLine to handle remaining tokens
                     if (_bracketIfSkipping)
                     {
-                        // Skip tokens until we find matching [THEN] or [ELSE]
-                        while (TryReadNextToken(out var skipTok))
+                        // Enter skip mode - process remaining source in skip mode
+                        await ProcessSkippedLine();
+                        
+                        // If still skipping after processing, done with this source
+                        if (_bracketIfSkipping)
                         {
-                            var skipUpper = skipTok.ToUpperInvariant();
-                            
-                            // Handle composite bracket forms
-                            if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
-                            {
-                                var inner = _tokens[_tokenIndex].ToUpperInvariant();
-                                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
-                                {
-                                    skipUpper = "[" + inner + "]";
-                                    _tokenIndex += 2;
-                                }
-                            }
-                            
-                            if (skipUpper == "[IF]")
-                            {
-                                _bracketIfNestingDepth++;
-                                _bracketIfActiveDepth++;
-                            }
-                            else if (skipUpper == "[THEN]")
-                            {
-                                if (_bracketIfNestingDepth > 0)
-                                {
-                                    _bracketIfNestingDepth--;
-                                    _bracketIfActiveDepth--;
-                                }
-                                else
-                                {
-                                    // End of skipped section - resume normal processing
-                                    _bracketIfSkipping = false;
-                                    _bracketIfSeenElse = false;
-                                    _bracketIfNestingDepth = 0;
-                                    _bracketIfActiveDepth--;
-                                    break;
-                                }
-                            }
-                            else if (skipUpper == "[ELSE]" && _bracketIfNestingDepth == 0)
-                            {
-                                // At our depth - resume execution
-                                _bracketIfSkipping = false;
-                                _bracketIfSeenElse = true;
-                                break;
-                            }
-                            // All other tokens are skipped
+                            return !_exitRequested;
                         }
+                        
+                        // Otherwise, exited skip mode - continue with remaining tokens
                     }
                     
                     continue;
@@ -282,63 +199,31 @@ public partial class ForthInterpreter
                     {
                         if (cw.BodyTokens is { Count: > 0 })
                         {
-                            _tokens!.InsertRange(_tokenIndex, cw.BodyTokens);
+                            // NEW: Use parse buffer for immediate word body expansion
+                            _parseBuffer ??= new Queue<string>();
+                            foreach (var token in cw.BodyTokens)
+                            {
+                                _parseBuffer.Enqueue(token);
+                            }
                             continue;
                         }
-
+                        
                         await cw.ExecuteAsync(this);
                         
-                        // Check if bracket conditional changed state to skipping
-                        // If so, we need to process remaining tokens in skip mode inline
+                        // Check if executing immediate word triggered skip mode (e.g., [ELSE] after TRUE [IF])
+                        // If so, switch to ProcessSkippedLine to handle remaining tokens
                         if (_bracketIfSkipping)
                         {
-                            // Skip tokens until we find matching [THEN] or [ELSE]
-                            while (TryReadNextToken(out var skipTok))
+                            // Enter skip mode - process remaining source in skip mode
+                            await ProcessSkippedLine();
+                            
+                            // If still skipping after processing, done with this source
+                            if (_bracketIfSkipping)
                             {
-                                var skipUpper = skipTok.ToUpperInvariant();
-                                
-                                // Handle composite bracket forms
-                                if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
-                                {
-                                    var inner = _tokens[_tokenIndex].ToUpperInvariant();
-                                    if (inner == "IF" || inner == "ELSE" || inner == "THEN")
-                                    {
-                                        skipUpper = "[" + inner + "]";
-                                        _tokenIndex += 2;
-                                    }
-                                }
-                                
-                                if (skipUpper == "[IF]")
-                                {
-                                    _bracketIfNestingDepth++;
-                                    _bracketIfActiveDepth++;
-                                }
-                                else if (skipUpper == "[THEN]")
-                                {
-                                    if (_bracketIfNestingDepth > 0)
-                                    {
-                                        _bracketIfNestingDepth--;
-                                        _bracketIfActiveDepth--;
-                                    }
-                                    else
-                                    {
-                                        // End of skipped section - resume normal processing
-                                        _bracketIfSkipping = false;
-                                        _bracketIfSeenElse = false;
-                                        _bracketIfNestingDepth = 0;
-                                        _bracketIfActiveDepth--;
-                                        break;
-                                    }
-                                }
-                                else if (skipUpper == "[ELSE]" && _bracketIfNestingDepth == 0)
-                                {
-                                    // At our depth - resume execution
-                                    _bracketIfSkipping = false;
-                                    _bracketIfSeenElse = true;
-                                    break;
-                                }
-                                // All other tokens are skipped
+                                return !_exitRequested;
                             }
+                            
+                            // Otherwise, exited skip mode - continue with remaining tokens
                         }
                         
                         continue;
@@ -361,7 +246,9 @@ public partial class ForthInterpreter
         // DOES> finalization now happens in FinishDefinition() when semicolon is encountered,
         // not at end of evaluation. This allows multiple CREATE-DOES> pairs in one file.
 
-        _tokens = null; // clear stream
+        _parseBuffer = null; // clear parse buffer (NEW - prevents token carryover between evaluations)
+        // NOTE: Do NOT clear _refillSource here! It should persist until the next REFILL
+        // This allows SOURCE to access the refilled content across multiple EvalAsync calls
         return !_exitRequested;
     }
 }

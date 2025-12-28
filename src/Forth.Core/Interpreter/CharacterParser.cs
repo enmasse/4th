@@ -12,11 +12,13 @@ internal class CharacterParser
 {
     private readonly string _source;
     private int _position;
+    private string? _nextToken; // Buffered token for multi-token constructs (S", .", ABORT")
 
     public CharacterParser(string source, int startPosition = 0)
     {
         _source = source ?? string.Empty;
         _position = startPosition;
+        _nextToken = null;
     }
 
     /// <summary>
@@ -36,6 +38,7 @@ internal class CharacterParser
 
     /// <summary>
     /// Sets the parse position.
+    /// Positions are clamped to valid range [0, source.Length].
     /// </summary>
     public void SetPosition(int position)
     {
@@ -62,6 +65,14 @@ internal class CharacterParser
         {
             _position++;
         }
+    }
+
+    /// <summary>
+    /// Skips to end of source (for bracket conditional skip mode).
+    /// </summary>
+    public void SkipToEnd()
+    {
+        _position = _source.Length;
     }
 
     /// <summary>
@@ -123,6 +134,14 @@ internal class CharacterParser
     /// </summary>
     public string? ParseNext()
     {
+        // Check if we have a buffered token from a multi-token construct
+        if (_nextToken != null)
+        {
+            var token = _nextToken;
+            _nextToken = null;
+            return token;
+        }
+
         SkipWhitespace();
 
         if (IsAtEnd)
@@ -198,7 +217,9 @@ internal class CharacterParser
                 textBuilder.Append('"');
                 _position++; // skip closing '"'
             }
-            return ".\"";  // Return the prefix, string will be consumed by primitive
+            // FIXED: Buffer the string token for next ParseNext() call
+            _nextToken = textBuilder.ToString();
+            return ".\"";
         }
 
         // Handle S" string literal (case-insensitive)
@@ -222,7 +243,12 @@ internal class CharacterParser
                 textBuilder.Append('"');
                 _position++; // skip closing '"'
             }
-            return "S\"";  // Return normalized uppercase, string will be consumed by primitive
+            // FIXED: Return S" followed by the quoted string token (two tokens in sequence)
+            // The evaluation loop will see S" first, then the quoted string
+            // This matches how the Tokenizer works
+            // Store the string token for the next ParseNext() call
+            _nextToken = textBuilder.ToString();
+            return "S\"";
         }
 
         // Handle ABORT" (case-insensitive)
@@ -250,11 +276,14 @@ internal class CharacterParser
                     textBuilder.Append('"');
                     _position++; // skip closing '"'
                 }
+                // FIXED: Buffer the string token for next ParseNext() call
+                _nextToken = textBuilder.ToString();
                 return "ABORT\"";
             }
         }
 
         // Handle bracket conditionals as composite tokens
+        // Supports both compact ([IF]) and separated ([ IF ]) forms
         if (ch == '[')
         {
             // [']
@@ -266,32 +295,99 @@ internal class CharacterParser
                 return "[']";
             }
 
-            // [IF]
-            if (_position + 3 < _source.Length &&
-                _source.Substring(_position + 1, 2).Equals("IF", StringComparison.OrdinalIgnoreCase) &&
-                _source[_position + 3] == ']')
+            // Try to parse separated forms first: [ IF ], [ ELSE ], [ THEN ]
+            // Save position for potential backtrack
+            var savedPos = _position;
+            _position++; // skip '['
+            
+            // Skip optional whitespace after '['
+            while (_position < _source.Length && char.IsWhiteSpace(_source[_position]))
             {
-                _position += 4;
+                _position++;
+            }
+            
+            // Check for IF/ELSE/THEN keyword
+            string? keyword = null;
+            int keywordLength = 0;
+            
+            if (_position + 2 <= _source.Length)
+            {
+                var twoChar = _source.Substring(_position, Math.Min(2, _source.Length - _position));
+                if (twoChar.Equals("IF", StringComparison.OrdinalIgnoreCase))
+                {
+                    keyword = "IF";
+                    keywordLength = 2;
+                }
+            }
+            
+            if (keyword == null && _position + 4 <= _source.Length)
+            {
+                var fourChar = _source.Substring(_position, Math.Min(4, _source.Length - _position));
+                if (fourChar.Equals("ELSE", StringComparison.OrdinalIgnoreCase))
+                {
+                    keyword = "ELSE";
+                    keywordLength = 4;
+                }
+                else if (fourChar.Equals("THEN", StringComparison.OrdinalIgnoreCase))
+                {
+                    keyword = "THEN";
+                    keywordLength = 4;
+                }
+            }
+            
+            // If we found a keyword, check for closing ]
+            if (keyword != null)
+            {
+                var afterKeyword = _position + keywordLength;
+                
+                // Skip optional whitespace after keyword
+                while (afterKeyword < _source.Length && char.IsWhiteSpace(_source[afterKeyword]))
+                {
+                    afterKeyword++;
+                }
+                
+                // Check for closing ]
+                if (afterKeyword < _source.Length && _source[afterKeyword] == ']')
+                {
+                    // Success! This is a separated form bracket conditional
+                    _position = afterKeyword + 1; // consume through ]
+                    return $"[{keyword}]";
+                }
+            }
+            
+            // Not a separated form, backtrack and try compact forms
+            _position = savedPos + 1; // restore position after '['
+            
+            // [IF] (compact form)
+            if (_position + 2 < _source.Length &&
+                _source.Substring(_position, 2).Equals("IF", StringComparison.OrdinalIgnoreCase) &&
+                _source[_position + 2] == ']')
+            {
+                _position += 3;
                 return "[IF]";
             }
 
-            // [ELSE], [THEN]
-            if (_position + 5 < _source.Length)
+            // [ELSE], [THEN] (compact forms)
+            if (_position + 4 < _source.Length)
             {
-                var inner = _source.Substring(_position + 1, 4);
+                var inner = _source.Substring(_position, 4);
                 if (inner.Equals("ELSE", StringComparison.OrdinalIgnoreCase) &&
-                    _source[_position + 5] == ']')
+                    _source[_position + 4] == ']')
                 {
-                    _position += 6;
+                    _position += 5;
                     return "[ELSE]";
                 }
                 if (inner.Equals("THEN", StringComparison.OrdinalIgnoreCase) &&
-                    _source[_position + 5] == ']')
+                    _source[_position + 4] == ']')
                 {
-                    _position += 6;
+                    _position += 5;
                     return "[THEN]";
                 }
             }
+            
+            // Not a recognized bracket conditional, backtrack completely
+            _position = savedPos;
+            // Fall through to parse '[' as a regular token
         }
 
         // Handle quoted strings
@@ -333,9 +429,31 @@ internal class CharacterParser
     /// Peeks at the next character without advancing position.
     /// Returns '\0' if at end.
     /// </summary>
-    public char Peek()
+    public char PeekChar()
     {
         return _position < _source.Length ? _source[_position] : '\0';
+    }
+
+    /// <summary>
+    /// Peeks at the next word/token without consuming it.
+    /// Returns null if no more words available.
+    /// This is essential for immediate parsing words like S", .", CREATE, etc.
+    /// that need to look ahead at the next token without consuming it.
+    /// </summary>
+    public string? PeekNext()
+    {
+        // Save current position
+        var savedPosition = _position;
+        var savedNextToken = _nextToken;
+        
+        // Parse next token
+        var token = ParseNext();
+        
+        // Restore position and buffered token
+        _position = savedPosition;
+        _nextToken = savedNextToken;
+        
+        return token;
     }
 
     /// <summary>

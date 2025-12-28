@@ -114,8 +114,6 @@ public partial class ForthInterpreter
         _doesTokens = null;
         _lastCreatedName = null;
         _lastCreatedAddr = 0;
-        _tokens = null;
-        _tokenIndex = 0;
         _dict = snap.Dict;
         _usingModules.Clear();
         _usingModules.AddRange(snap.UsingModules);

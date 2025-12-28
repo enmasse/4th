@@ -6,35 +6,26 @@ namespace Forth.Core.Interpreter;
 public partial class ForthInterpreter
 {
     /// <summary>
-    /// Process a line while in bracket conditional skip mode.
+    /// Process tokens while in bracket conditional skip mode.
     /// Scans ONLY for [IF], [ELSE], [THEN] to track nesting depth and potentially resume execution.
     /// All other tokens are completely skipped.
+    /// Returns false if exit was requested, true otherwise.
+    /// After calling this, check _bracketIfSkipping to see if still in skip mode.
     /// </summary>
-    private async Task<bool> ProcessSkippedLine()
+    private Task<bool> ProcessSkippedLine()
     {
-        if (_tokens is null) return !_exitRequested;
-
-        for (_tokenIndex = 0; _tokenIndex < _tokens.Count; _tokenIndex++)
+        // Skip mode - scan for bracket conditionals only
+        while (_bracketIfSkipping && TryParseNextWord(out var tok))
         {
-            var tok = _tokens[_tokenIndex];
+            if (tok.Length == 0) continue;
+            
             var upper = tok.ToUpperInvariant();
-
-            // Handle composite bracket forms like "[" "IF" "]"
-            if (tok == "[" && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 2] == "]")
-            {
-                var inner = _tokens[_tokenIndex + 1].ToUpperInvariant();
-                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
-                {
-                    upper = "[" + inner + "]";
-                    _tokenIndex += 2; // consume the composite
-                }
-            }
 
             // Track [IF] nesting
             if (upper == "[IF]")
             {
                 _bracketIfNestingDepth++;
-                _bracketIfActiveDepth++;  // Track active depth even when skipping
+                _bracketIfActiveDepth++;
                 continue;
             }
 
@@ -44,7 +35,7 @@ public partial class ForthInterpreter
                 if (_bracketIfNestingDepth > 0)
                 {
                     _bracketIfNestingDepth--;
-                    _bracketIfActiveDepth--;  // Decrement active depth
+                    _bracketIfActiveDepth--;
                 }
                 else
                 {
@@ -52,11 +43,10 @@ public partial class ForthInterpreter
                     _bracketIfSkipping = false;
                     _bracketIfSeenElse = false;
                     _bracketIfNestingDepth = 0;
-                    _bracketIfActiveDepth--;  // Decrement active depth
+                    _bracketIfActiveDepth--;
                     
-                    // Process remaining tokens on this line
-                    _tokenIndex++;
-                    return await ContinueEvaluation();
+                    // Exit skip mode - caller will continue with main loop
+                    break;
                 }
                 continue;
             }
@@ -70,21 +60,17 @@ public partial class ForthInterpreter
                     _bracketIfSkipping = false;
                     _bracketIfSeenElse = true;
                     
-                    // Process remaining tokens on this line
-                    _tokenIndex++;
-                    return await ContinueEvaluation();
+                    // Exit skip mode - caller will continue with main loop
+                    break;
                 }
                 // Nested [ELSE] - just skip it
                 continue;
             }
 
-            // All other tokens: just skip them (don't process)
-            // This includes regular IF, THEN, ELSE, :, ;, and any other words
+            // All other tokens: just skip them
         }
 
-        // Entire line skipped
-        _tokens = null;
-        return !_exitRequested;
+        return Task.FromResult(!_exitRequested);
     }
 
     /// <summary>
@@ -92,7 +78,8 @@ public partial class ForthInterpreter
     /// </summary>
     private async Task<bool> ContinueEvaluation()
     {
-        while (TryReadNextToken(out var tok))
+        // UPDATED: Use character-based parsing instead of token-based
+        while (TryParseNextWord(out var tok))
         {
             if (tok.Length == 0)
             {
@@ -108,25 +95,13 @@ public partial class ForthInterpreter
                 {
                     await word.ExecuteAsync(this);
                     
-                    // If we transitioned to skip mode, switch to skip processing for rest of line
+                    // If we transitioned to skip mode, skip rest of line
                     if (_bracketIfSkipping)
                     {
-                        // Don't call ProcessSkippedLine - it would restart from tokenIndex=0
-                        // Instead, manually skip remaining tokens on this line with proper nesting tracking
-                        while (TryReadNextToken(out var skipTok))
+                        // Skip remaining tokens on this line with proper nesting tracking
+                        while (TryParseNextWord(out var skipTok))
                         {
                             var skipUpper = skipTok.ToUpperInvariant();
-                            
-                            // Handle composite bracket forms
-                            if (skipTok == "[" && _tokenIndex + 1 < _tokens!.Count && _tokenIndex + 2 < _tokens.Count && _tokens[_tokenIndex + 1] == "]")
-                            {
-                                var inner = _tokens[_tokenIndex].ToUpperInvariant();
-                                if (inner == "IF" || inner == "ELSE" || inner == "THEN")
-                                {
-                                    skipUpper = "[" + inner + "]";
-                                    _tokenIndex += 2;
-                                }
-                            }
                             
                             // Track bracket conditional nesting
                             if (skipUpper == "[IF]")
@@ -164,7 +139,6 @@ public partial class ForthInterpreter
                         // If still skipping, we're done with this line
                         if (_bracketIfSkipping)
                         {
-                            _tokens = null;
                             return !_exitRequested;
                         }
                         // Otherwise continue processing remaining tokens normally
@@ -197,20 +171,7 @@ public partial class ForthInterpreter
                     continue;
                 }
 
-                if (tok.Equals("ABORT", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (TryReadNextToken(out var maybeMsg) && maybeMsg.Length >= 2 && maybeMsg[0] == '"' && maybeMsg[^1] == '"')
-                    {
-                        throw new ForthException(ForthErrorCode.Unknown, maybeMsg[1..^1]);
-                    }
-                    throw new ForthException(ForthErrorCode.Unknown, "ABORT");
-                }
-
-                if (tok.StartsWith("ABORT\"", StringComparison.OrdinalIgnoreCase))
-                {
-                    var msg = tok[6..^1];
-                    throw new ForthException(ForthErrorCode.Unknown, msg);
-                }
+                // REMOVED: ABORT special handling - CharacterParser and primitives handle this
 
                 // Automatic pushing of quoted string tokens
                 // This allows standalone quoted strings like "path.4th" INCLUDED to work
@@ -291,7 +252,12 @@ public partial class ForthInterpreter
                     {
                         if (cw.BodyTokens is { Count: > 0 })
                         {
-                            _tokens!.InsertRange(_tokenIndex, cw.BodyTokens);
+                            // NEW: Use parse buffer for immediate word body expansion
+                            _parseBuffer ??= new Queue<string>();
+                            foreach (var token in cw.BodyTokens)
+                            {
+                                _parseBuffer.Enqueue(token);
+                            }
                             continue;
                         }
 
@@ -320,7 +286,6 @@ public partial class ForthInterpreter
             }
         }
 
-        _tokens = null;
         return !_exitRequested;
     }
 }

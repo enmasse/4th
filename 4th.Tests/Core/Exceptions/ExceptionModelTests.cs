@@ -30,10 +30,12 @@ public class ExceptionModelTests
     public async Task Abort_AbortQuote()
     {
         var forth = new ForthInterpreter();
-        var ex = await Assert.ThrowsAsync<Forth.Core.ForthException>(async () => await forth.EvalAsync("ABORT \"failed\""));
+        // Test ABORT" (composite token - no space)
+        var ex = await Assert.ThrowsAsync<Forth.Core.ForthException>(async () => await forth.EvalAsync("ABORT\"failed\""));
         Assert.Equal(Forth.Core.ForthErrorCode.Unknown, ex.Code);
         Assert.Equal("failed", ex.Message);
 
+        // Test plain ABORT (no message)
         var ex2 = await Assert.ThrowsAsync<Forth.Core.ForthException>(async () => await forth.EvalAsync("ABORT"));
         Assert.Equal(Forth.Core.ForthErrorCode.Unknown, ex2.Code);
     }

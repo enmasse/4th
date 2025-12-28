@@ -20,33 +20,50 @@ public partial class ForthInterpreter
     /// <param name="id">The source ID.</param>
     public void SetSourceId(long id) => _currentSourceId = id;
 
-    // DEPRECATED: Token-based parsing (being replaced by character-based parsing)
-    // These fields are kept temporarily for backward compatibility during migration
-    internal List<string>? _tokens; // internal current token stream
-    internal int _tokenIndex;       // internal current token index
-    internal List<int>? _tokenCharPositions; // character position of each token in source
+    // Parse buffer for immediate word body expansion (character parser feature)
+    internal Queue<string>? _parseBuffer;
 
     // Character-based parsing helpers (NEW - replaces token-based parsing)
     /// <summary>
     /// Tries to parse the next word from the current source using character-based parsing.
     /// Returns false if no more words available.
     /// Automatically updates >IN as characters are consumed.
+    /// Checks parse buffer first (for immediate word body expansion).
     /// </summary>
     internal bool TryParseNextWord(out string word)
     {
-        if (_parser == null || _parser.IsAtEnd)
+        // Check parse buffer first (for immediate word body expansion)
+        if (_parseBuffer != null && _parseBuffer.Count > 0)
+        {
+            word = _parseBuffer.Dequeue();
+            // Parse buffer words don't advance >IN (they're pre-parsed)
+            return true;
+        }
+        
+        if (_parser == null)
         {
             word = string.Empty;
             return false;
         }
+        
+        // IMPORTANT: Don't check IsAtEnd here! The parser might have a buffered token
+        // even if it's at the end of the source. Let ParseNext() handle this.
 
-        // Synchronize parser position with >IN (in case >IN was modified externally)
+        // Synchronize parser position with >IN before parsing
+        // Allow forward skipping (>IN ahead of parser) but prevent backward rewinding
+        // This enables >IN ! to skip input but prevents infinite loops from negative >IN
         MemTryGet(_inAddr, out var inVal);
         var inPos = (int)ToLong(inVal);
-        if (_parser.Position != inPos)
+        var currentPos = _parser.Position;
+        
+        // Synchronize if:
+        // 1. >IN is ahead (forward skip via >IN !)
+        // 2. At start of line (currentPos == 0, allow any >IN including negative)
+        if (inPos > currentPos || currentPos == 0)
         {
-            _parser.SetPosition(inPos);
+            _parser.SetPosition(Math.Max(0, inPos)); // Clamp negative to 0 for parsing
         }
+        // Otherwise keep current parser position (don't rewind during active parse)
 
         var result = _parser.ParseNext();
         if (result == null)
@@ -56,7 +73,9 @@ public partial class ForthInterpreter
         }
 
         // Update >IN to reflect consumed characters
+        // This keeps >IN synchronized with parse position for read operations
         _mem[_inAddr] = (long)_parser.Position;
+        
         word = result;
         return true;
     }
@@ -71,93 +90,11 @@ public partial class ForthInterpreter
         return word;
     }
 
-    // DEPRECATED: Token-based parsing (kept for backward compatibility during migration)
-    // Token reading helpers used by primitives and source-level operations
-    internal bool TryReadNextToken(out string token)
-    {
-        // Check if >IN has been modified externally (e.g., by >IN ! to skip input)
-        MemTryGet(_inAddr, out var inVal);
-        var inPos = (int)ToLong(inVal);
-        
-        // If >IN points to or past the end of source, no more tokens
-        if (_currentSource != null && inPos >= _currentSource.Length)
-        {
-            token = string.Empty;
-            return false;
-        }
-        
-        if (_tokens is null || _tokenIndex >= _tokens.Count)
-        {
-            token = string.Empty;
-            return false;
-        }
-        
-        // Skip tokens that start before the current >IN position
-        // This handles both WORD-based character parsing and >IN ! manipulation
-        while (_tokenCharPositions != null && _tokenIndex < _tokenCharPositions.Count)
-        {
-            var tokenStartPos = _tokenCharPositions[_tokenIndex];
-            if (tokenStartPos >= inPos)
-            {
-                // This token starts at or after >IN, so it's valid
-                break;
-            }
-            // This token was consumed or skipped, advance past it
-            _tokenIndex++;
-            if (_tokenIndex >= _tokens.Count)
-            {
-                token = string.Empty;
-                return false;
-            }
-        }
-        
-        // Get the token
-        token = _tokens[_tokenIndex++];
-        
-        // NOTE: We do NOT advance >IN here during normal token-based parsing
-        // >IN is only meaningful for character-based parsing (like WORD primitive)
-        // When WORD is called, it will synchronize >IN with its character-level parsing
-        // and update _tokenIndex to match. This keeps the two parsing modes in sync
-        // without breaking immediate words like S" that expect tokens to be available.
-        
-        return true;
-    }
-
     internal string ReadNextTokenOrThrow(string message)
     {
-        if (!TryReadNextToken(out var t) || string.IsNullOrEmpty(t))
+        if (!TryParseNextWord(out var word) || string.IsNullOrEmpty(word))
             throw new ForthException(ForthErrorCode.CompileError, message);
-        return t;
-    }
-
-    /// <summary>
-    /// Compute character positions of tokens in source line for synchronization with WORD primitive.
-    /// </summary>
-    private List<int>? ComputeTokenPositions(string source, List<string>? tokens)
-    {
-        if (tokens == null || tokens.Count == 0)
-            return null;
-        
-        var positions = new List<int>();
-        int searchStart = 0;
-        
-        foreach (var token in tokens)
-        {
-            // Find this token in the source starting from searchStart
-            int pos = source.IndexOf(token, searchStart, StringComparison.Ordinal);
-            if (pos >= 0)
-            {
-                positions.Add(pos);
-                searchStart = pos + token.Length;
-            }
-            else
-            {
-                // Token not found (shouldn't happen), use approximate position
-                positions.Add(searchStart);
-            }
-        }
-        
-        return positions;
+        return word;
     }
 
     // Public method for REFILL to set the current source
@@ -167,9 +104,7 @@ public partial class ForthInterpreter
     /// <param name="line">The new input line.</param>
     public void RefillSource(string line)
     {
-        // Store refill buffer separately so subsequent EvalAsync calls do not
-        // overwrite the refill source when they set _currentSource for their
-        // own command text. >IN is reset to 0 for the new refill buffer.
+        // Store refill buffer - next EvalAsync will consume it as the parse source
         _refillSource = line;
         _mem[_inAddr] = 0;
     }

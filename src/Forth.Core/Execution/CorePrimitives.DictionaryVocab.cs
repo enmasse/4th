@@ -74,7 +74,7 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("MODULE", IsImmediate = true, HelpString = "MODULE <name> - start a module namespace")]
-    private static Task Prim_MODULE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after MODULE"); i._currentModule = name; if (string.IsNullOrWhiteSpace(i._currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name"); return Task.CompletedTask; }
+    private static Task Prim_MODULE(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after MODULE"); i._currentModule = name; if (string.IsNullOrWhiteSpace(i._currentModule)) throw new ForthException(ForthErrorCode.CompileError, "Invalid module name"); return Task.CompletedTask; }
 
     [Primitive("END-MODULE", IsImmediate = true, HelpString = "END-MODULE - end the current module namespace")]
     private static Task Prim_ENDMODULE(ForthInterpreter i) { i._currentModule = null; return Task.CompletedTask; }
@@ -82,18 +82,18 @@ internal static partial class CorePrimitives
     [Primitive("USING", IsImmediate = true, HelpString = "USING <name> - add module to search order")]
     private static Task Prim_USING(ForthInterpreter i)
     {
-        var module = i.ReadNextTokenOrThrow("Expected module name after USING");
+        if (!i.TryParseNextWord(out var module)) throw new ForthException(ForthErrorCode.CompileError, "Expected module name after USING");
         i._usingModules.Add(module);
         return Task.CompletedTask;
     }
 
     [Primitive("LOAD-ASM", IsImmediate = true, HelpString = "LOAD-ASM <path> - load assembly words from file")]
-    private static Task Prim_LOADASM(ForthInterpreter i) { var path = i.ReadNextTokenOrThrow("Expected path after LOAD-ASM"); var count = AssemblyWordLoader.Load(i, path); i.Push((long)count); return Task.CompletedTask; }
+    private static Task Prim_LOADASM(ForthInterpreter i) { if (!i.TryParseNextWord(out var path)) throw new ForthException(ForthErrorCode.CompileError, "Expected path after LOAD-ASM"); var count = AssemblyWordLoader.Load(i, path); i.Push((long)count); return Task.CompletedTask; }
 
     [Primitive("LOAD-ASM-TYPE", IsImmediate = true, HelpString = "LOAD-ASM-TYPE <type> - load assembly words from a type's assembly")]
     private static Task Prim_LOADASMTYPE(ForthInterpreter i)
     {
-        var tn = i.ReadNextTokenOrThrow("Expected type after LOAD-ASM-TYPE");
+        if (!i.TryParseNextWord(out var tn)) throw new ForthException(ForthErrorCode.CompileError, "Expected type after LOAD-ASM-TYPE");
         Type? t = Type.GetType(tn, false, false);
         if (t == null)
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
@@ -114,89 +114,42 @@ internal static partial class CorePrimitives
         // CREATE is state-smart: immediate during interpretation, compiled during compilation
         if (i._isCompiling)
         {
-            // In compile mode: check if there's a next token that looks like a name
-            // If yes, read it now and create the word at compile-time (e.g., ": FOO CREATE BAR ...")
-            // If no or it doesn't look like a name, compile runtime behavior (e.g., ": MAKER CREATE ...")
-            string? nameAtCompileTime = null;
-            if (i.TryReadNextToken(out var nextTok) && !string.IsNullOrWhiteSpace(nextTok))
+            // Compile runtime behavior that reads the name when executed
+            // This allows dynamic patterns like: ": MAKER CREATE DUP , ;" then "100 MAKER VALUE-HOLDER"
+            // Note: This breaks the pattern ": TESTER 10 20 CREATE DUMMY 30 ;" (documented limitation)
+            // The limitation exists because we cannot distinguish at compile-time between:
+            //   1. Static names that are part of the definition: ": FOO CREATE BAR ;"
+            //   2. Dynamic names provided at runtime: ": MAKER CREATE ;" then "100 MAKER NAME"
+            // We choose to support (2) as it's more common in real Forth code.
+            i.CurrentList().Add(ii =>
             {
-                // Check if this token looks like a word name (not a number, not an operator already defined)
-                // For simplicity, if it's not a number and not an existing word, treat it as a name for CREATE
-                bool looksLikeNumber = long.TryParse(nextTok, out _) || double.TryParse(nextTok, out _);
-                bool isExistingWord = i.TryResolveWord(nextTok, out _);
+                // Read name from runtime source using character parser
+                if (!ii.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CREATE");
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
                 
-                if (!looksLikeNumber && !isExistingWord)
-                {
-                    // This looks like a name for CREATE - consume it and create at compile-time
-                    nameAtCompileTime = nextTok;
-                }
-                else
-                {
-                    // This doesn't look like a name - put it back and compile runtime behavior
-                    i._tokenIndex--; // put token back
-                }
-            }
-            else
-            {
-                // No next token or it's whitespace - compile runtime behavior
-                if (nextTok != null) i._tokenIndex--; // put token back if we got one
-            }
-            
-            if (nameAtCompileTime != null)
-            {
-                // Create the word NOW at compile-time
-                var name = nameAtCompileTime;
-                var addr = i._nextAddr;
-                i._lastCreatedName = name;
-                i._lastCreatedAddr = addr;
+                var addr = ii._nextAddr;
+                ii._lastCreatedName = name;
+                ii._lastCreatedAddr = addr;
                 
                 var created = new Word(iii => { iii.Push(addr); return Task.CompletedTask; }) 
                 { 
                     Name = name, 
-                    Module = i._currentModule, 
+                    Module = ii._currentModule, 
                     BodyAddr = addr 
                 };
-                i._dict = i._dict.SetItem((i._currentModule, name), created);
-                i.RegisterDefinition(name);
-                i._lastDefinedWord = created;
-                i._decompile[name] = $": {name} ;";
+                ii._dict = ii._dict.SetItem((ii._currentModule, name), created);
+                ii.RegisterDefinition(name);
+                ii._lastDefinedWord = created;
+                ii._decompile[name] = $": {name} ;";
                 return Task.CompletedTask;
-            }
-            else
-            {
-                // Compile an action that reads the name at RUNTIME
-                // This allows patterns like ": MAKER CREATE DUP , ;" then "100 MAKER VALUE-HOLDER"
-                i.CurrentList().Add(ii =>
-                {
-                    // Read name from runtime token stream
-                    var name = ii.ReadNextTokenOrThrow("Expected name after CREATE");
-                    if (string.IsNullOrWhiteSpace(name))
-                        throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
-                    
-                    var addr = ii._nextAddr;
-                    ii._lastCreatedName = name;
-                    ii._lastCreatedAddr = addr;
-                    
-                    // Create the word directly - do NOT call BeginDefinition
-                    var created = new Word(iii => { iii.Push(addr); return Task.CompletedTask; }) 
-                    { 
-                        Name = name, 
-                        Module = ii._currentModule, 
-                        BodyAddr = addr 
-                    };
-                    ii._dict = ii._dict.SetItem((ii._currentModule, name), created);
-                    ii.RegisterDefinition(name);
-                    ii._lastDefinedWord = created;
-                    ii._decompile[name] = $": {name} ;";
-                    return Task.CompletedTask;
-                });
-                return Task.CompletedTask;
-            }
+            });
+            return Task.CompletedTask;
         }
         else
         {
             // In interpret mode: execute immediately (stack unchanged)
-            var name = i.ReadNextTokenOrThrow("Expected name after CREATE");
+            if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CREATE");
             if (string.IsNullOrWhiteSpace(name))
                 throw new ForthException(ForthErrorCode.CompileError, "Invalid name for CREATE");
             var addr = i._nextAddr;
@@ -235,8 +188,8 @@ internal static partial class CorePrimitives
                 throw new ForthException(ForthErrorCode.CompileError, "DOES> used without preceding CREATE");
             
             var doesTokens = new List<string>();
-            // Collect all remaining tokens on the current line
-            while (i.TryReadNextToken(out var tok))
+            // Collect all remaining words from the current input
+            while (i.TryParseNextWord(out var tok))
             {
                 doesTokens.Add(tok);
             }
@@ -273,18 +226,18 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("VARIABLE", IsImmediate = true, HelpString = "VARIABLE <name> - define a named storage cell")]
-    private static Task Prim_VARIABLE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
+    private static Task Prim_VARIABLE(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after VARIABLE"); var addr = i._nextAddr++; i._mem[addr] = 0; var createdVar = new Word(ii => { ii.Push(addr); return Task.CompletedTask; }) { Name = name, Module = i._currentModule, BodyAddr = addr }; i._dict = i._dict.SetItem((i._currentModule, name), createdVar); i.RegisterDefinition(name); i._lastDefinedWord = createdVar; return Task.CompletedTask; }
 
     [Primitive("CONSTANT", IsImmediate = true, HelpString = "CONSTANT <name> - define a constant with top value")]
-    private static Task Prim_CONSTANT(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; i._decompile[name] = $": {name} {val} ;"; return Task.CompletedTask; }
+    private static Task Prim_CONSTANT(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; i._decompile[name] = $": {name} {val} ;"; return Task.CompletedTask; }
 
     [Primitive("VALUE", IsImmediate = true, HelpString = "VALUE <name> - define a named variable-like value (consumes stack)")]
-    private static Task Prim_VALUE(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected text after VALUE"); i.EnsureStack(1, "VALUE"); var val = ToLong(i.PopInternal()); i._values[name] = val; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
+    private static Task Prim_VALUE(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after VALUE"); i.EnsureStack(1, "VALUE"); var val = ToLong(i.PopInternal()); i._values[name] = val; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
 
     [Primitive("TO", IsImmediate = true, HelpString = "TO <name> - set a VALUE to the top of stack")]
     private static Task Prim_TO(ForthInterpreter i) 
     { 
-        var name = i.ReadNextTokenOrThrow("Expected name after TO"); 
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after TO"); 
         if (!i._isCompiling)
         {
             // Interpret mode: execute immediately
@@ -309,7 +262,7 @@ internal static partial class CorePrimitives
     [Primitive("DEFER", IsImmediate = true, HelpString = "DEFER <name> - define a deferred execution token")]
     private static Task Prim_DEFER(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("Expected name after DEFER");
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after DEFER");
         i._deferred[name] = null;
         var created = new Word(async ii =>
         {
@@ -326,7 +279,7 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("IS", IsImmediate = true, HelpString = "IS <name> - set a deferred to an execution token")]
-    private static Task Prim_IS(ForthInterpreter i) { i.EnsureStack(1, "IS"); var name = i.ReadNextTokenOrThrow("Expected deferred name after IS"); var xtObj = i.PopInternal(); if (xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "IS expects an execution token"); if (!i._deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord, $"No such deferred: {name}"); i._deferred[name] = xt; return Task.CompletedTask; }
+    private static Task Prim_IS(ForthInterpreter i) { i.EnsureStack(1, "IS"); if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected deferred name after IS"); var xtObj = i.PopInternal(); if (xtObj is not Word xt) throw new ForthException(ForthErrorCode.TypeError, "IS expects an execution token"); if (!i._deferred.ContainsKey(name)) throw new ForthException(ForthErrorCode.UndefinedWord, $"No such deferred: {name}"); i._deferred[name] = xt; return Task.CompletedTask; }
 
     [Primitive("DEFER!", HelpString = "DEFER! ( xt -- ) - set the execution token of the most recently defined deferred word")]
     private static Task Prim_DEFERSTORE(ForthInterpreter i)
@@ -352,7 +305,7 @@ internal static partial class CorePrimitives
     [Primitive("SEE", IsImmediate = true, HelpString = "SEE <name> - display decompiled definition or placeholder")]
     private static Task Prim_SEE(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("Expected name after SEE");
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after SEE");
         // First try to resolve the actual word (handles module-qualified names)
         if (i.TryResolveWord(name, out var resolved) && resolved is not null)
         {
@@ -380,12 +333,12 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("CHAR", IsImmediate = true, HelpString = "CHAR <c> - push character code for character literal")]
-    private static Task Prim_CHAR(ForthInterpreter i) { var s = i.ReadNextTokenOrThrow("Expected char after CHAR"); if (!i._isCompiling) i.Push(s.Length > 0 ? (long)s[0] : 0L); else i.CurrentList().Add(ii => { ii.Push(s.Length > 0 ? (long)s[0] : 0L); return Task.CompletedTask; }); return Task.CompletedTask; }
+    private static Task Prim_CHAR(ForthInterpreter i) { if (!i.TryParseNextWord(out var s)) throw new ForthException(ForthErrorCode.CompileError, "Expected char after CHAR"); if (!i._isCompiling) i.Push(s.Length > 0 ? (long)s[0] : 0L); else i.CurrentList().Add(ii => { ii.Push(s.Length > 0 ? (long)s[0] : 0L); return Task.CompletedTask; }); return Task.CompletedTask; }
 
     [Primitive("[CHAR]", IsImmediate = true, HelpString = "[CHAR] <c> - compile character code literal")]
     private static Task Prim_BRACKETCHAR(ForthInterpreter i)
     {
-        var s = i.ReadNextTokenOrThrow("Expected char after [CHAR]");
+        if (!i.TryParseNextWord(out var s)) throw new ForthException(ForthErrorCode.CompileError, "Expected char after [CHAR]");
         var code = s.Length > 0 ? (long)s[0] : 0L;
         i.CurrentList().Add(ii => { ii.Push(code); return Task.CompletedTask; });
         return Task.CompletedTask;
@@ -394,18 +347,26 @@ internal static partial class CorePrimitives
     [Primitive("[']", IsImmediate = true, HelpString = "['] <name> - compile execution token literal")]
     private static Task Prim_BRACKETTICK(ForthInterpreter i)
     {
-#pragma warning disable CS8604 // word is not null here
-        var name = i.ReadNextTokenOrThrow("Expected name after [']");
-        if (!i.TryResolveWord(name, out var word)) throw new ForthException(ForthErrorCode.UndefinedWord, $"Word not found: {name}");
-        i.CurrentList().Add(ii => { ii.Push(word as object); return Task.CompletedTask; });
-#pragma warning restore CS8604
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after [']");
+        if (!i.TryResolveWord(name, out var word) || word is null) throw new ForthException(ForthErrorCode.UndefinedWord, $"Word not found: {name}");
+        
+        if (!i._isCompiling)
+        {
+            // In interpret mode: push the execution token immediately
+            i.Push(word as object);
+        }
+        else
+        {
+            // In compile mode: compile code to push the execution token at runtime
+            i.CurrentList().Add(ii => { ii.Push(word as object); return Task.CompletedTask; });
+        }
         return Task.CompletedTask;
     }
 
     [Primitive("S\"", IsImmediate = true, HelpString = "S\" ( \"ccc<quote>\" -- c-addr u ) - parse string literal")]
     private static Task Prim_SQUOTE(ForthInterpreter i)
     {
-        var next = i.ReadNextTokenOrThrow("Expected text after S\"");
+        if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after S\"");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
         var str = next[1..^1];
@@ -434,7 +395,7 @@ internal static partial class CorePrimitives
     [Primitive("S", IsImmediate = true, HelpString = "S <text> - push string literal (string) or compile-time push")]
     private static Task Prim_S(ForthInterpreter i)
     {
-        var next = i.ReadNextTokenOrThrow("Expected text after S");
+        if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after S");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S expects quoted token");
         var str = next[1..^1];
@@ -448,11 +409,11 @@ internal static partial class CorePrimitives
     [Primitive("BIND", HelpString = "BIND <type> <method> <argcount> <name> - bind a CLR method to a forth word")]
     private static Task Prim_BIND(ForthInterpreter i)
     {
-        var typeName = i.ReadNextTokenOrThrow("Expected type name after BIND");
-        var methodName = i.ReadNextTokenOrThrow("Expected method name after BIND");
-        var argCountTok = i.ReadNextTokenOrThrow("Expected arg count after BIND");
+        if (!i.TryParseNextWord(out var typeName)) throw new ForthException(ForthErrorCode.CompileError, "Expected type name after BIND");
+        if (!i.TryParseNextWord(out var methodName)) throw new ForthException(ForthErrorCode.CompileError, "Expected method name after BIND");
+        if (!i.TryParseNextWord(out var argCountTok)) throw new ForthException(ForthErrorCode.CompileError, "Expected arg count after BIND");
         if (!int.TryParse(argCountTok, out var argCount)) throw new ForthException(ForthErrorCode.CompileError, "BIND: invalid argcount");
-        var wordName = i.ReadNextTokenOrThrow("Expected word name after BIND");
+        if (!i.TryParseNextWord(out var wordName)) throw new ForthException(ForthErrorCode.CompileError, "Expected word name after BIND");
         var created = ClrBinder.CreateBoundWord(typeName, methodName, argCount);
         created.Name = wordName;
         created.Module = i._currentModule;
@@ -465,7 +426,7 @@ internal static partial class CorePrimitives
     [Primitive(".\"", IsImmediate = true, HelpString = ".\" <text> - print quoted text (interpret/compile-time)")]
     private static Task Prim_DOTQUOTE(ForthInterpreter i)
     {
-        var next = i.ReadNextTokenOrThrow("Expected text after .\"");
+        if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after .\"");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, ".\" expects quoted token");
         var str = next[1..^1];
@@ -485,22 +446,34 @@ internal static partial class CorePrimitives
     [Primitive("ABORT\"", IsImmediate = true, HelpString = "ABORT\" <message> - abort with message if flag true")]
     private static Task Prim_ABORTQUOTE(ForthInterpreter i)
     {
-        var next = i.ReadNextTokenOrThrow("Expected text after ABORT\"");
+        if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after ABORT\"");
         if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "ABORT\" expects quoted token");
         var str = next[1..^1];
-        var captured = str;
-        i.CurrentList().Add(ii =>
+        
+        if (!i._isCompiling)
         {
-            ii.EnsureStack(1, "ABORT\"");
-            var flag = ii.PopInternal();
-            if (ToBool(flag))
+            // Interpret mode: execute immediately
+            // Note: In interpret mode, there's no flag on the stack - we always abort with the message
+            // This matches the pattern: ABORT "message" throws immediately
+            throw new ForthException(ForthErrorCode.Unknown, str);
+        }
+        else
+        {
+            // Compile mode: compile code that checks flag and aborts conditionally
+            var captured = str;
+            i.CurrentList().Add(ii =>
             {
-                throw new ForthException(ForthErrorCode.Unknown, captured);
-            }
+                ii.EnsureStack(1, "ABORT\"");
+                var flag = ii.PopInternal();
+                if (ToBool(flag))
+                {
+                    throw new ForthException(ForthErrorCode.Unknown, captured);
+                }
+                return Task.CompletedTask;
+            });
             return Task.CompletedTask;
-        });
-        return Task.CompletedTask;
+        }
     }
 
     [Primitive(">BODY", HelpString = ">BODY ( xt|addr -- a-addr ) - get data-field address for CREATEd word or passthrough addr")]
@@ -571,7 +544,7 @@ internal static partial class CorePrimitives
     [Primitive("MARKER", IsImmediate = true, HelpString = "MARKER <name> - create a marker that restores state when executed")]
     private static Task Prim_MARKER(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("Expected name after MARKER");
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after MARKER");
         var snap = i.CreateMarkerSnapshot();
         var created = new Word(ii => { ii.RestoreSnapshot(snap); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
         i._dict = i._dict.SetItem((i._currentModule, name), created);
@@ -582,7 +555,7 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("FORGET", IsImmediate = true, HelpString = "FORGET <name> - remove a definition from the dictionary")]
-    private static Task Prim_FORGET(ForthInterpreter i) { var name = i.ReadNextTokenOrThrow("Expected name after FORGET"); i.ForgetWord(name); return Task.CompletedTask; }
+    private static Task Prim_FORGET(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after FORGET"); i.ForgetWord(name); return Task.CompletedTask; }
 
     [Primitive("REPORT-ERRORS", HelpString = "REPORT-ERRORS - report collected test errors (stub)")]
     private static Task Prim_REPORT_ERRORS(ForthInterpreter i)

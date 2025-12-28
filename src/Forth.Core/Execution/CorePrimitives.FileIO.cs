@@ -88,7 +88,15 @@ internal static partial class CorePrimitives
     [Primitive("APPEND-FILE", HelpString = "APPEND-FILE ( data filename -- ) - append data to file")]
     private static Task Prim_APPENDFILE(ForthInterpreter i)
     {
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after APPEND-FILE");
+        string filenameToken;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string sfn)
+        {
+            filenameToken = (string)i.PopInternal();
+        }
+        else
+        {
+            if (!i.TryParseNextWord(out filenameToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected filename after APPEND-FILE");
+        }
         // support (addr u filename) and (u addr filename) forms as written by S" variations
         object data;
         if (i.Stack.Count >= 2 && i.Stack[^1] is long && i.Stack[^2] is long)
@@ -138,7 +146,15 @@ internal static partial class CorePrimitives
     [Primitive("READ-FILE", HelpString = "READ-FILE ( filename -- str ) - read entire file as string")]
     private static Task Prim_READFILE(ForthInterpreter i)
     {
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after READ-FILE");
+        string filenameToken;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string sfn)
+        {
+            filenameToken = (string)i.PopInternal();
+        }
+        else
+        {
+            if (!i.TryParseNextWord(out filenameToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected filename after READ-FILE");
+        }
         try
         {
             var text = System.IO.File.ReadAllText(filenameToken, Encoding.UTF8);
@@ -155,7 +171,15 @@ internal static partial class CorePrimitives
     [Primitive("FILE-EXISTS", HelpString = "FILE-EXISTS ( filename -- flag ) - true if file exists")]
     private static Task Prim_FILEEXISTS(ForthInterpreter i)
     {
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after FILE-EXISTS");
+        string filenameToken;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string sfn)
+        {
+            filenameToken = (string)i.PopInternal();
+        }
+        else
+        {
+            if (!i.TryParseNextWord(out filenameToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected filename after FILE-EXISTS");
+        }
         i.Push(System.IO.File.Exists(filenameToken) ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -184,7 +208,15 @@ internal static partial class CorePrimitives
     [Primitive("FILE-SIZE", HelpString = "FILE-SIZE ( filename -- size | -1 ) - file size in bytes or -1 if error")]
     private static Task Prim_FILESIZE(ForthInterpreter i)
     {
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after FILE-SIZE");
+        string filenameToken;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string sfn)
+        {
+            filenameToken = (string)i.PopInternal();
+        }
+        else
+        {
+            if (!i.TryParseNextWord(out filenameToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected filename after FILE-SIZE");
+        }
         try
         {
             var fi = new FileInfo(filenameToken);
@@ -204,7 +236,15 @@ internal static partial class CorePrimitives
         // mode may be on stack; default to read
         long mode = 0;
         if (i.Stack.Count > 0 && i.Stack[^1] is long) mode = (long)i.PopInternal();
-        var filenameToken = (i.Stack.Count > 0 && i.Stack[^1] is string sfn) ? (string)i.PopInternal() : i.ReadNextTokenOrThrow("Expected filename after OPEN-FILE");
+        string filenameToken;
+        if (i.Stack.Count > 0 && i.Stack[^1] is string sfn)
+        {
+            filenameToken = (string)i.PopInternal();
+        }
+        else
+        {
+            if (!i.TryParseNextWord(out filenameToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected filename after OPEN-FILE");
+        }
         try
         {
             var h = i.OpenFileHandle(filenameToken, (ForthInterpreter.FileOpenMode)mode);
@@ -381,7 +421,7 @@ internal static partial class CorePrimitives
         }
         else
         {
-            pathToken = i.ReadNextTokenOrThrow("Expected path after INCLUDE");
+            if (!i.TryParseNextWord(out pathToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected path after INCLUDE");
         }
 
         if (pathToken.Length >= 2 && pathToken[0] == '"' && pathToken[^1] == '"')
@@ -412,7 +452,7 @@ internal static partial class CorePrimitives
         }
         else
         {
-            pathToken = i.ReadNextTokenOrThrow("Expected path after LOAD-FILE");
+            if (!i.TryParseNextWord(out pathToken)) throw new ForthException(ForthErrorCode.CompileError, "Expected path after LOAD-FILE");
         }
         if (pathToken.Length >= 2 && pathToken[0] == '"' && pathToken[^1] == '"')
             pathToken = pathToken[1..^1];

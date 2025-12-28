@@ -197,13 +197,14 @@ namespace Forth.Tests.Core
         }
 
         /// <summary>
-        /// ABORT with a string message should raise an exception with the provided message included.
+        /// ABORT" should raise an exception with the provided message.
+        /// Note: ABORT" is a composite token (no space between ABORT and quote).
         /// </summary>
         [Fact]
         public async Task AbortWithMessage_ThrowsExpected()
         {
             var f = New();
-            var ex = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("ABORT \"FAIL\""));
+            var ex = await Assert.ThrowsAsync<ForthException>(() => f.EvalAsync("ABORT\"FAIL\""));
             Assert.Equal(ForthErrorCode.Unknown, ex.Code);
             Assert.Contains("FAIL", ex.Message);
         }

@@ -47,12 +47,17 @@ internal static partial class CorePrimitives
             else i.CurrentList().Add(ii => wpost.ExecuteAsync(ii));
             return;
         }
+        
+        // For control words that don't yet have dictionary entries,
+        // add them to the parse buffer so they'll be processed by the next iteration
         switch (name.ToUpperInvariant())
         {
             case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
             case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'": case "RECURSE":
             case "AHEAD":
-                i._tokens!.Insert(i._tokenIndex, name);
+                // Add to parse buffer for processing in next parse iteration
+                i._parseBuffer ??= new System.Collections.Generic.Queue<string>();
+                i._parseBuffer.Enqueue(name);
                 return;
         }
         throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
@@ -514,25 +519,22 @@ internal static partial class CorePrimitives
 
     private static void SkipBracketSection(ForthInterpreter i, bool skipElse)
     {
-        if (i._tokens is null) return; // nothing to skip
+        // Use character parser to skip remaining tokens on current source
         int depth = 0;
         
-        for (int idx = i._tokenIndex; idx < i._tokens.Count; idx++)
+        while (i.TryParseNextWord(out var tok))
         {
-            var t = i._tokens[idx];
-            var upper = t.ToUpperInvariant();
+            if (tok.Length == 0) continue;
             
-            // Normalize possible separated bracket tokens into a single composite representation when present: "[" "IF" "]"
-            string comp = upper;
-            bool consumedComposite = false;
-            if (t == "[" && idx + 2 < i._tokens.Count && i._tokens[idx + 2] == "]")
-            {
-                comp = ("[" + i._tokens[idx + 1].ToUpperInvariant() + "]");
-                consumedComposite = true;
-            }
+            var upper = tok.ToUpperInvariant();
 
-            if (comp == "[IF]") { depth++; if (consumedComposite) { idx += 2; } continue; }
-            if (comp == "[THEN]")
+            if (upper == "[IF]") 
+            { 
+                depth++; 
+                continue; 
+            }
+            
+            if (upper == "[THEN]")
             {
                 if (depth == 0)
                 {
@@ -541,33 +543,35 @@ internal static partial class CorePrimitives
                     i._bracketIfSeenElse = false;
                     i._bracketIfNestingDepth = 0;
                     i._bracketIfActiveDepth--;
-                    // If we consumed a composite, idx already advanced to the closing bracket index; set token index to next
-                    i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume
+                    // DON'T skip to end - continue parsing normally after [THEN]
+                    // The main loop will continue processing remaining tokens
                     return;
                 }
                 depth--;
-                if (consumedComposite) { idx += 2; }
                 continue;
             }
-            if (skipElse && comp == "[ELSE]" && depth == 0)
+            
+            if (skipElse && upper == "[ELSE]" && depth == 0)
             {
                 // Found [ELSE] at our depth - resume execution of ELSE part
                 i._bracketIfSkipping = false;
                 i._bracketIfSeenElse = true;
-                i._tokenIndex = (consumedComposite ? idx + 1 : idx) + 1; // consume [ELSE]
+                // DON'T skip to end - we want to continue parsing the ELSE part
                 return;
             }
-            if (consumedComposite)
-            {
-                // If we synthesized a composite token but didn't match any of the above cases, advance past closing bracket
-                idx += 2;
-            }
+            
+            // All other tokens are skipped
         }
         
-        // Reached end of line without finding terminator
-        // For multi-line support: skip to end of current token stream
-        // The persistent state (_bracketIfSkipping, _bracketIfNestingDepth) will handle continuation
-        i._tokenIndex = i._tokens.Count;
+        // Reached end of source without finding terminator
+        // Parser is already at end since TryParseNextWord returned false
+        // For multi-line support: the persistent state (_bracketIfSkipping, _bracketIfNestingDepth) 
+        // will handle continuation on the next line/EvalAsync call
+        // If skipElse is false and we didn't find [THEN], enable skip mode for multi-line ELSE sections
+        if (!skipElse && !i._bracketIfSkipping)
+        {
+            i._bracketIfSkipping = true;
+        }
     }
 
     // [IF] [ELSE] [THEN] temporarily removed until full ANS bracket conditional design is finalized.
