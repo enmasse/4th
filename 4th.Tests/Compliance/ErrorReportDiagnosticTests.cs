@@ -86,7 +86,7 @@ public class ErrorReportDiagnosticTests
         }
     }
 
-    [Fact(Skip = "Diagnostic-only: line-by-line loading is not representative because colon definitions span multiple lines; use whole-file INCLUDE instead.")]
+    [Fact]
     public async Task Diagnostic_LoadErrorReportLineByLine()
     {
         var forth = new ForthInterpreter();
