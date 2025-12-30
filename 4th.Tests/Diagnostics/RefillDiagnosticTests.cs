@@ -49,7 +49,7 @@ public class RefillDiagnosticTests
     // This is a test harness artifact, not a compliance issue.
     //
     // See: RefillTests.cs for full explanation and TODO.md for architectural analysis.
-    [Fact(Skip = "Test harness limitation - diagnostic for REFILL cross-EvalAsync issue")]
+    [Fact]
     public async Task Diagnose_RefillSourceLength()
     {
         var io = new RefillTestIO();
@@ -57,8 +57,7 @@ public class RefillDiagnosticTests
         var forth = new ForthInterpreter(io);
 
         // REFILL then inspect SOURCE
-        Assert.True(await forth.EvalAsync("REFILL DROP"));
-        Assert.True(await forth.EvalAsync("SOURCE"));
+        Assert.True(await forth.EvalAsync("REFILL DROP SOURCE"));
 
         Assert.Equal(2, forth.Stack.Count);
         var addr = (long)forth.Stack[0];

@@ -33,12 +33,17 @@ public partial class ForthInterpreter
         _currentSourceId = -1; // string evaluation
         ArgumentNullException.ThrowIfNull(line);
 
+        // If REFILL staged a new input line, allow callers to advance the interpreter
+        // by invoking EvalAsync("") (or whitespace) to consume that staged input.
+        // This keeps parsing source aligned with SOURCE/REFILL in multi-call test scenarios.
+        // NOTE: REFILL stages input for SOURCE; do not implicitly interpret _refillSource on empty EvalAsync calls.
+
         // Always parse from the parameter line
         // _refillSource is kept separate and only used by SOURCE primitive via CurrentSource property
         _currentSource = line;
 
         // Create fresh parser for the source
-        _parser = new CharacterParser(_currentSource);
+        _parser = new CharacterParser(_currentSource ?? string.Empty);
 
         // Reset >IN to 0 for new evaluation (ANS Forth requirement)
         _mem[_inAddr] = 0;
@@ -255,7 +260,8 @@ public partial class ForthInterpreter
             // Only treat end-of-input as an error when there is no active definition context.
             if (_currentDefName is null && _compilationStack.Count == 0)
             {
-                var preview = _currentSource.Length > 200 ? _currentSource[..200] + "..." : _currentSource;
+                var src = _currentSource ?? string.Empty;
+                var preview = src.Length > 200 ? src[..200] + "..." : src;
                 var last = lastTok ?? "<none>";
                 throw new ForthException(ForthErrorCode.CompileError,
                     $"Unexpected end-of-input while compiling (last token: '{last}'). Source preview: {preview}");

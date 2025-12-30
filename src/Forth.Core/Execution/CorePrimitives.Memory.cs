@@ -260,10 +260,12 @@ internal static partial class CorePrimitives
     {
         var src = i.CurrentSource ?? string.Empty;
         
-        // ANS Forth: SOURCE returns the input buffer, not just the unparsed remainder
-        // However, >IN manipulation assumes we can skip ahead in the source
-        // Allocate the source string in memory and return character address + length
+        // SOURCE should not alter the input position (>IN). Some implementations of
+        // AllocateSourceString may use input parsing helpers that mutate >IN.
+        i.MemTryGet(i.InAddr, out var savedIn);
         var addr = i.AllocateSourceString(src);
+        i._mem[i.InAddr] = savedIn;
+
         i.Push(addr);
         i.Push((long)src.Length);
         return Task.CompletedTask;

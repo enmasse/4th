@@ -191,7 +191,7 @@ internal static partial class CorePrimitives
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
         var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
-        filename = filename.TrimStart();
+        filename = filename.Trim();
         try
         {
             var exists = System.IO.File.Exists(filename);
@@ -291,7 +291,7 @@ internal static partial class CorePrimitives
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
         var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
-        filename = filename.TrimStart();
+        filename = filename.Trim();
         if (!File.Exists(filename))
         {
             i.Push(-1L);
@@ -470,7 +470,7 @@ internal static partial class CorePrimitives
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
         var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
-        filename = filename.TrimStart();
+        filename = filename.Trim();
         if (!System.IO.Path.IsPathRooted(filename))
         {
              filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
@@ -485,7 +485,7 @@ internal static partial class CorePrimitives
         string filename;
         if (i.Stack.Count >= 1 && i.Stack[^1] is string s)
         {
-            filename = (string)i.PopInternal();
+            filename = ((string)i.PopInternal()).Trim();
         }
         else
         {
@@ -493,7 +493,7 @@ internal static partial class CorePrimitives
             var u = ToLong(i.PopInternal());
             var addr = ToLong(i.PopInternal());
             filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
-            filename = filename.TrimStart();
+            filename = filename.Trim();
          }
         if (!System.IO.Path.IsPathRooted(filename))
         {
@@ -513,8 +513,8 @@ internal static partial class CorePrimitives
         var addr1 = ToLong(i.PopInternal());
         var oldName = i.ReadMemoryString(addr1, u1).TrimEnd('\r', '\n');
         var newName = i.ReadMemoryString(addr2, u2).TrimEnd('\r', '\n');
-        oldName = oldName.TrimStart();
-        newName = newName.TrimStart();
+        oldName = oldName.Trim();
+        newName = newName.Trim();
         try
         {
             // Overwrite destination if it exists (test-suite expectation)
@@ -538,8 +538,8 @@ internal static partial class CorePrimitives
         var addr1 = ToLong(i.PopInternal());
         var src = i.ReadMemoryString(addr1, u1).TrimEnd('\r', '\n');
         var dst = i.ReadMemoryString(addr2, u2).TrimEnd('\r', '\n');
-        src = src.TrimStart();
-        dst = dst.TrimStart();
+        src = src.Trim();
+        dst = dst.Trim();
         try
         {
             // Overwrite destination if it exists (test-suite expectation)
