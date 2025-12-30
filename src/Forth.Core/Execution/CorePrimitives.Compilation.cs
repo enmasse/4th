@@ -11,6 +11,7 @@ internal static partial class CorePrimitives
     private static Task Prim_Colon(ForthInterpreter i)
     {
         var name = i.ReadNextTokenOrThrow("Expected name after ':'");
+        i.Trace($"TOK : {name}");
         i.BeginDefinition(name);
         return Task.CompletedTask;
     }
@@ -18,85 +19,19 @@ internal static partial class CorePrimitives
     [Primitive(":NONAME", IsImmediate = true, HelpString = ":NONAME - begin an anonymous definition, leaving xt on stack")]
     private static Task Prim_ColonNoname(ForthInterpreter i)
     {
+        i.Trace("TOK :NONAME");
         i.BeginDefinition(null);
         return Task.CompletedTask;
     }
 
     [Primitive(";", IsImmediate = true, HelpString = "; - finish a definition")]
-    private static Task Prim_Semi(ForthInterpreter i) { i.FinishDefinition(); return Task.CompletedTask; }
-
-    [Primitive("IMMEDIATE", IsImmediate = true, HelpString = "Mark the last defined word as immediate")]
-    private static Task Prim_IMMEDIATE(ForthInterpreter i)
-    {
-        if (i._lastDefinedWord is null)
-            throw new ForthException(ForthErrorCode.CompileError, "No recent definition to mark IMMEDIATE");
-        i._lastDefinedWord.IsImmediate = true;
-        return Task.CompletedTask;
-    }
-
-    [Primitive("POSTPONE", IsImmediate = true, IsAsync = true, HelpString = "Postpone execution of a word until compile-time or add its execution to the current definition")]
-    private static Task Prim_POSTPONE(ForthInterpreter i) => PostponeImpl(i);
-
-    private static async Task PostponeImpl(ForthInterpreter i)
-    {
-        var name = i.ReadNextTokenOrThrow("POSTPONE expects a name");
-        if (i.TryResolveWord(name, out var wpost) && wpost is not null)
-        {
-            if (wpost.IsImmediate)
-                await wpost.ExecuteAsync(i);
-            else i.CurrentList().Add(ii => wpost.ExecuteAsync(ii));
-            return;
-        }
-        
-        // For control words that don't yet have dictionary entries,
-        // add them to the parse buffer so they'll be processed by the next iteration
-        switch (name.ToUpperInvariant())
-        {
-            case "IF": case "ELSE": case "THEN": case "BEGIN": case "WHILE": case "REPEAT": case "UNTIL":
-            case "DO": case "LOOP": case "LEAVE": case "LITERAL": case "[": case "]": case "'": case "RECURSE":
-            case "AHEAD":
-                // Add to parse buffer for processing in next parse iteration
-                i._parseBuffer ??= new System.Collections.Generic.Queue<string>();
-                i._parseBuffer.Enqueue(name);
-                return;
-        }
-        throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
-    }
-
-    [Primitive("'", IsImmediate = true, HelpString = "Push execution token for a word")]
-    private static Task Prim_Tick(ForthInterpreter i)
-    {
-        var name = i.ReadNextTokenOrThrow("Expected word after '");
-        if (!i.TryResolveWord(name, out var wt) || wt is null)
-        {
-            // Simplified behavior: if word is undefined, push the name as a string
-            // This supports patterns like: WORDLIST ' VOCAB1 DEFINITIONS
-            i.Push(name);
-            return Task.CompletedTask;
-        }
-        if (!i._isCompiling)
-            i.Push(wt);
-        else
-            i.CurrentList().Add(ii => { ii.Push(wt); return Task.CompletedTask; });
-        return Task.CompletedTask;
-    }
-
-    [Primitive("LITERAL", IsImmediate = true, HelpString = "Compile a literal value into the current definition")]
-    private static Task Prim_LITERAL(ForthInterpreter i)
-    {
-        if (!i._isCompiling)
-            throw new ForthException(ForthErrorCode.CompileError, "LITERAL outside compilation");
-        i.EnsureStack(1, "LITERAL");
-        var val = i.PopInternal();
-        i.CurrentList().Add(ii => { ii.Push(val); return Task.CompletedTask; });
-        return Task.CompletedTask;
-    }
+    private static Task Prim_Semi(ForthInterpreter i) { i.Trace("TOK ;"); i.FinishDefinition(); return Task.CompletedTask; }
 
     [Primitive("[", IsImmediate = true, HelpString = "Switch to interpret state during compilation")]
-    private static Task Prim_LBracket(ForthInterpreter i) { i._isCompiling = false; i._mem[i.StateAddr] = 0; return Task.CompletedTask; }
+    private static Task Prim_LBracket(ForthInterpreter i) { i.Trace($"TOK [ wasCompiling={i._isCompiling}"); i._isCompiling = false; i._mem[i.StateAddr] = 0; return Task.CompletedTask; }
 
     [Primitive("]", IsImmediate = true, HelpString = "Switch to compile state")]
-    private static Task Prim_RBracket(ForthInterpreter i) { i._isCompiling = true; i._mem[i.StateAddr] = 1; return Task.CompletedTask; }
+    private static Task Prim_RBracket(ForthInterpreter i) { i.Trace($"TOK ] wasCompiling={i._isCompiling}"); i._isCompiling = true; i._mem[i.StateAddr] = 1; return Task.CompletedTask; }
 
     [Primitive("IF", IsImmediate = true, HelpString = "Begin an if-then construct")]
     private static Task Prim_IF(ForthInterpreter i)
@@ -411,109 +346,106 @@ internal static partial class CorePrimitives
     [Primitive("[IF]", IsImmediate = true, HelpString = "[IF] ( flag -- ) - conditional compilation start (interpret/compile)")]
     private static Task Prim_BRACKET_IF(ForthInterpreter i)
     {
+        i.Trace($"TOK [IF] enter isCompiling={i._isCompiling} skipping={i._bracketIfSkipping} activeDepth={i._bracketIfActiveDepth} nesting={i._bracketIfNestingDepth}");
         // [IF] works in both interpret and compile mode - it's a compile-time conditional
         // If already skipping from outer [IF], just track nesting depth
         if (i._bracketIfSkipping)
         {
             i._bracketIfNestingDepth++;
             i._bracketIfActiveDepth++;
+            i.Trace($"TOK [IF] nested skipping now activeDepth={i._bracketIfActiveDepth} nesting={i._bracketIfNestingDepth}");
             return Task.CompletedTask;
         }
 
         // Not currently skipping - evaluate condition
-        i.EnsureStack(1, "[IF]");
-        var flagObj = i.PopInternal();
+        object flagObj;
+        if (i.Stack.Count > 0)
+        {
+            flagObj = i.PopInternal();
+        }
+        else
+        {
+            // Some legacy sources call [IF] without first pushing a flag; treat as false
+            flagObj = 0L;
+        }
         bool cond = ToBool(flagObj);
-        
-        // ALWAYS increment active depth when processing [IF], regardless of condition
-        // This ensures [ELSE] and [THEN] can track they're inside a bracket conditional
-        // even across line boundaries (when file is loaded line-by-line)
+
         i._bracketIfActiveDepth++;
-        
+
         if (cond)
         {
-            // Condition true - continue processing normally
-            // We're not skipping, but we ARE inside a bracket conditional block
+            i.Trace($"TOK [IF] cond=true isCompiling={i._isCompiling} activeDepth={i._bracketIfActiveDepth}");
             return Task.CompletedTask;
         }
-        
-        // Condition false - skip until [ELSE] or [THEN]
+
+        i.Trace($"TOK [IF] cond=false -> skip isCompiling={i._isCompiling}");
         i._bracketIfNestingDepth = 0;
         i._bracketIfSeenElse = false;
         i._bracketIfSkipping = true;
-        
-        // Skip rest of current token list
+
         SkipBracketSection(i, skipElse: true);
-        
+
+        i.Trace($"TOK [IF] exit skip isCompiling={i._isCompiling} skipping={i._bracketIfSkipping} activeDepth={i._bracketIfActiveDepth}");
         return Task.CompletedTask;
     }
 
     [Primitive("[ELSE]", IsImmediate = true, HelpString = "[ELSE] - conditional compilation alternate part")]
     private static Task Prim_BRACKET_ELSE(ForthInterpreter i)
     {
-        // Check if we're inside any [IF] block
-        // Note: With the fix to [IF], _bracketIfActiveDepth should always be > 0 when we reach [ELSE]
-        // However, we keep a lenient check to avoid breaking edge cases
+        i.Trace($"TOK [ELSE] enter isCompiling={i._isCompiling} skipping={i._bracketIfSkipping} activeDepth={i._bracketIfActiveDepth} nesting={i._bracketIfNestingDepth}");
         if (i._bracketIfActiveDepth == 0 && !i._bracketIfSkipping)
         {
-            // Only throw error if we're not skipping AND depth is 0
-            // If we're skipping, we might be inside a nested [IF] that spans multiple lines
             throw new ForthException(ForthErrorCode.CompileError, "[ELSE] without [IF]");
         }
 
-        // If we're at a nested [ELSE] (inside a skipped block), just continue
         if (i._bracketIfNestingDepth > 0)
         {
+            i.Trace("TOK [ELSE] nested ignored");
             return Task.CompletedTask;
         }
 
-        // At depth 0: toggle skip state
         if (i._bracketIfSkipping)
         {
-            // Was skipping (false [IF]), now execute [ELSE] part
             i._bracketIfSkipping = false;
             i._bracketIfSeenElse = true;
+            i.Trace($"TOK [ELSE] resume exec isCompiling={i._isCompiling}");
         }
         else
         {
-            // Was executing ([IF] was true), now need to skip [ELSE] part until [THEN]
             i._bracketIfSeenElse = true;
-            i._bracketIfSkipping = true;  // Enable skipping for subsequent lines
-            SkipBracketSection(i, skipElse: false);  // Skip rest of current line
+            i._bracketIfSkipping = true;
+            i.Trace($"TOK [ELSE] start skip isCompiling={i._isCompiling}");
+            SkipBracketSection(i, skipElse: false);
+            i.Trace($"TOK [ELSE] exit skip isCompiling={i._isCompiling} skipping={i._bracketIfSkipping}");
         }
-        
+
         return Task.CompletedTask;
     }
 
     [Primitive("[THEN]", IsImmediate = true, HelpString = "[THEN] - end bracket conditional")]
     private static Task Prim_BRACKET_THEN(ForthInterpreter i)
     {
-        // Check if we're inside any [IF] block
-        // With the [IF] fix, this should always be > 0, but keep lenient check
+        i.Trace($"TOK [THEN] enter isCompiling={i._isCompiling} skipping={i._bracketIfSkipping} activeDepth={i._bracketIfActiveDepth} nesting={i._bracketIfNestingDepth}");
         if (i._bracketIfActiveDepth == 0 && !i._bracketIfSkipping)
         {
-            // Only throw error if we're not skipping AND depth is 0
             throw new ForthException(ForthErrorCode.CompileError, "[THEN] without [IF]");
         }
 
-        // If at nested depth (inside skipped block), just decrement
         if (i._bracketIfNestingDepth > 0)
         {
             i._bracketIfNestingDepth--;
+            i.Trace($"TOK [THEN] nested dec nesting={i._bracketIfNestingDepth}");
             return Task.CompletedTask;
         }
 
-        // At depth 0: end the conditional
         i._bracketIfSkipping = false;
         i._bracketIfSeenElse = false;
         i._bracketIfNestingDepth = 0;
-        
-        // Decrement active depth (should go back to 0 after this [THEN])
+
         if (i._bracketIfActiveDepth > 0)
-        {
             i._bracketIfActiveDepth--;
-        }
-        
+
+        i.Trace($"TOK [THEN] exit isCompiling={i._isCompiling} activeDepth={i._bracketIfActiveDepth}");
         return Task.CompletedTask;
     }
 
@@ -521,19 +453,39 @@ internal static partial class CorePrimitives
     {
         // Use character parser to skip remaining tokens on current source
         int depth = 0;
-        
+
         while (i.TryParseNextWord(out var tok))
         {
             if (tok.Length == 0) continue;
-            
+
+            // If we entered skip mode while compiling, we must still honor ';' so we don't
+            // leave the interpreter stuck in compile mode.
+            if (i._isCompiling)
+            {
+                if (i._doesCollecting)
+                {
+                    if (tok == ";")
+                    {
+                        i.FinishDefinition();
+                        continue;
+                    }
+                }
+                else if (tok == ";")
+                {
+                    i.FinishDefinition();
+                    continue;
+                }
+            }
+
             var upper = tok.ToUpperInvariant();
 
-            if (upper == "[IF]") 
-            { 
-                depth++; 
-                continue; 
+            if (upper == "[IF]")
+            {
+                depth++;
+                i._bracketIfActiveDepth++;
+                continue;
             }
-            
+
             if (upper == "[THEN]")
             {
                 if (depth == 0)
@@ -542,35 +494,23 @@ internal static partial class CorePrimitives
                     i._bracketIfSkipping = false;
                     i._bracketIfSeenElse = false;
                     i._bracketIfNestingDepth = 0;
-                    i._bracketIfActiveDepth--;
-                    // DON'T skip to end - continue parsing normally after [THEN]
-                    // The main loop will continue processing remaining tokens
+                    if (i._bracketIfActiveDepth > 0) i._bracketIfActiveDepth--;
                     return;
                 }
                 depth--;
+                if (i._bracketIfActiveDepth > 0) i._bracketIfActiveDepth--;
                 continue;
             }
-            
+
             if (skipElse && upper == "[ELSE]" && depth == 0)
             {
                 // Found [ELSE] at our depth - resume execution of ELSE part
                 i._bracketIfSkipping = false;
                 i._bracketIfSeenElse = true;
-                // DON'T skip to end - we want to continue parsing the ELSE part
                 return;
             }
-            
-            // All other tokens are skipped
-        }
-        
-        // Reached end of source without finding terminator
-        // Parser is already at end since TryParseNextWord returned false
-        // For multi-line support: the persistent state (_bracketIfSkipping, _bracketIfNestingDepth) 
-        // will handle continuation on the next line/EvalAsync call
-        // If skipElse is false and we didn't find [THEN], enable skip mode for multi-line ELSE sections
-        if (!skipElse && !i._bracketIfSkipping)
-        {
-            i._bracketIfSkipping = true;
+
+            // Otherwise ignore the token
         }
     }
 
@@ -638,7 +578,7 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("ENDCASE", IsImmediate = true, HelpString = "ENDCASE - end case structure, drop selector ( sel -- )")]
+    [Primitive("ENDCASE", IsImmediate = true, HelpString = "ENDCASE - end a CASE structure")]
     private static Task Prim_ENDCASE(ForthInterpreter i)
     {
         if (!i._isCompiling)
@@ -792,6 +732,88 @@ internal static partial class CorePrimitives
             ii._locals![name] = ii.PopInternal();
             return Task.CompletedTask;
         });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("'", IsImmediate = true, HelpString = "Push execution token for a word")]
+    private static Task Prim_Tick(ForthInterpreter i)
+    {
+        var name = i.ReadNextTokenOrThrow("Expected word after '");
+        if (!i.TryResolveWord(name, out var wt) || wt is null)
+        {
+            // Fallback: WORDLIST-generated vocab names (VOCABn) may exist under core or current module.
+            if (name.StartsWith("VOCAB", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i._dict.TryGetValue((null, name), out var wcore)) wt = wcore;
+                else if (!string.IsNullOrWhiteSpace(i._currentModule)
+                    && i._dict.TryGetValue((i._currentModule, name), out var wmod)) wt = wmod;
+                else
+                {
+                    // Last resort: scan dictionary for matching name under any module.
+                    foreach (var kv in i._dict)
+                    {
+                        var w = kv.Value;
+                        if (w is null) continue;
+                        if (w.Name != null && w.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            wt = w;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (wt is null)
+            throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
+ 
+        if (!i._isCompiling)
+            i.Push(wt);
+        else
+            i.CurrentList().Add(ii => { ii.Push(wt); return Task.CompletedTask; });
+
+        return Task.CompletedTask;
+    }
+
+    [Primitive("LITERAL", IsImmediate = true, HelpString = "Compile a literal value into the current definition")]
+    private static Task Prim_LITERAL(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "LITERAL outside compilation");
+        i.EnsureStack(1, "LITERAL");
+        var val = i.PopInternal();
+        i.CurrentList().Add(ii => { ii.Push(val); return Task.CompletedTask; });
+        return Task.CompletedTask;
+    }
+
+    [Primitive("IMMEDIATE", IsImmediate = true, HelpString = "Mark the most recently defined word as immediate")]
+    private static Task Prim_IMMEDIATE(ForthInterpreter i)
+    {
+        if (i._lastDefinedWord is null)
+            throw new ForthException(ForthErrorCode.CompileError, "IMMEDIATE with no previous definition");
+
+        i._lastDefinedWord.IsImmediate = true;
+        return Task.CompletedTask;
+    }
+
+    [Primitive("POSTPONE", IsImmediate = true, HelpString = "POSTPONE <name> - compile semantics of a word")]
+    private static Task Prim_POSTPONE(ForthInterpreter i)
+    {
+        if (!i._isCompiling)
+            throw new ForthException(ForthErrorCode.CompileError, "POSTPONE outside compilation");
+
+        var name = i.ReadNextTokenOrThrow("POSTPONE expects a name");
+        if (!i.TryResolveWord(name, out var w) || w is null)
+            throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {name}");
+
+        if (w.IsImmediate)
+        {
+            // Execute the compile-time behavior of the immediate word now.
+            return w.ExecuteAsync(i);
+        }
+
+        // Non-immediate: compile runtime execution of the referenced word.
+        i.CurrentList().Add(ii => w.ExecuteAsync(ii));
         return Task.CompletedTask;
     }
 }

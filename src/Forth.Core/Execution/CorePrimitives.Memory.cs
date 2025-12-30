@@ -259,8 +259,10 @@ internal static partial class CorePrimitives
     private static Task Prim_SOURCE(ForthInterpreter i)
     {
         var src = i.CurrentSource ?? string.Empty;
+        
+        // ANS Forth: SOURCE returns the input buffer, not just the unparsed remainder
+        // However, >IN manipulation assumes we can skip ahead in the source
         // Allocate the source string in memory and return character address + length
-        // This allows >IN manipulation to work correctly with ANS Forth expectations
         var addr = i.AllocateSourceString(src);
         i.Push(addr);
         i.Push((long)src.Length);

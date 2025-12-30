@@ -14,8 +14,18 @@ public partial class ForthInterpreter
     /// <returns>True if interpreter continues running; false if exit requested.</returns>
     public async Task<bool> EvalAsync(string line)
     {
-        if (!_preludeLoaded) await _loadPrelude;
-        return await EvalInternalAsync(line);
+        // Ensure prelude has been loaded before any evaluation.
+        if (!_preludeLoaded)
+        {
+            var prevTrace = EnableTrace;
+            EnableTrace = prevTrace || Environment.GetEnvironmentVariable("FORTH_TRACE_PRELUDE") == "1";
+            Trace("EvalAsync: awaiting prelude load");
+            await _loadPrelude.ConfigureAwait(false);
+            Trace($"EvalAsync: prelude loaded flag={_preludeLoaded}");
+            EnableTrace = prevTrace;
+        }
+
+        return await EvalInternalAsync(line).ConfigureAwait(false);
     }
 
     private async Task<bool> EvalInternalAsync(string line)
@@ -26,13 +36,15 @@ public partial class ForthInterpreter
         // Always parse from the parameter line
         // _refillSource is kept separate and only used by SOURCE primitive via CurrentSource property
         _currentSource = line;
-        
+
         // Create fresh parser for the source
         _parser = new CharacterParser(_currentSource);
-        
+
         // Reset >IN to 0 for new evaluation (ANS Forth requirement)
         _mem[_inAddr] = 0;
         _parser.SetPosition(0);
+
+        string? lastTok = null;
 
         // ANS Forth bracket conditional multi-line support:
         // If we're currently skipping due to a false [IF], scan for bracket conditionals
@@ -41,18 +53,15 @@ public partial class ForthInterpreter
         {
             // Process skipped tokens until we exit skip mode or reach end of source
             await ProcessSkippedLine();
-            
+
             // If still skipping (reached end while in skip mode), return early
             if (_bracketIfSkipping)
             {
                 return !_exitRequested;
             }
-            
+
             // Exited skip mode - fall through to process remaining tokens normally
         }
-
-        // REMOVED: Token preprocessing no longer needed
-        // CharacterParser handles bracket forms (['], [IF], [ELSE], [THEN]) directly during parsing
 
         // NEW: Character-based parsing loop (replaces token-based loop)
         while (TryParseNextWord(out var tok))
@@ -62,14 +71,12 @@ public partial class ForthInterpreter
                 continue;
             }
 
+            lastTok = tok;
+
             if (_doesCollecting)
             {
-                // Stop DOES> collection when semicolon is encountered
-                // The semicolon will be processed normally to finish the definition
                 if (tok == ";")
                 {
-                    // Don't add semicolon to DOES> tokens
-                    // Process it normally to finish definition (which will apply DOES> body)
                     FinishDefinition();
                     continue;
                 }
@@ -82,21 +89,11 @@ public partial class ForthInterpreter
 
             if (!_isCompiling)
             {
-                // Handle .( ... ) immediate printing
-                if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
-                {
-                    WriteText(tok.Substring(2, tok.Length - 3));
-                    continue;
-                }
+                Trace($"TOK {tok} (interp)");
 
-                // REMOVED: ABORT special handling - CharacterParser and ABORT"/ABORT primitives handle this
-                // ABORT is a regular word that will be looked up and executed
-                // ABORT" is handled by CharacterParser as a composite token and by the ABORT" primitive
-
-                // Automatic pushing of quoted string tokens
-                // This allows standalone quoted strings like "path.4th" INCLUDED to work
-                // Immediate parsing words like S" consume their tokens via ReadNextTokenOrThrow
-                // before this code sees them, so there's no interference
+                // Treat "..." as an interpret-time string literal.
+                // This is a convenience used heavily by the test suite, and it also
+                // aligns with INCLUDED, which accepts a string on the data stack.
                 if (tok.Length >= 2 && tok[0] == '"' && tok[^1] == '"')
                 {
                     Push(tok[1..^1]);
@@ -118,30 +115,32 @@ public partial class ForthInterpreter
                 if (TryResolveWord(tok, out var word) && word is not null)
                 {
                     await word.ExecuteAsync(this);
-                    
+
                     // Check if executing the word triggered skip mode (e.g., [ELSE] after TRUE [IF])
                     // If so, switch to ProcessSkippedLine to handle remaining tokens
                     if (_bracketIfSkipping)
                     {
                         // Enter skip mode - process remaining source in skip mode
                         await ProcessSkippedLine();
-                        
+
                         // If still skipping after processing, done with this source
                         if (_bracketIfSkipping)
                         {
                             return !_exitRequested;
                         }
-                        
+
                         // Otherwise, exited skip mode - continue with remaining tokens
                     }
-                    
+
                     continue;
                 }
 
+                Trace($"UNDEF {tok} isCompiling={_isCompiling}");
                 throw new ForthException(ForthErrorCode.UndefinedWord, $"Undefined word: {tok}");
             }
             else
             {
+                Trace($"TOK {tok} (compile)");
                 // Handle .( ... ) immediate printing even in compile mode
                 if (tok.StartsWith(".(") && tok.EndsWith(")") && tok.Length >= 3)
                 {
@@ -207,25 +206,25 @@ public partial class ForthInterpreter
                             }
                             continue;
                         }
-                        
+
                         await cw.ExecuteAsync(this);
-                        
+
                         // Check if executing immediate word triggered skip mode (e.g., [ELSE] after TRUE [IF])
                         // If so, switch to ProcessSkippedLine to handle remaining tokens
                         if (_bracketIfSkipping)
                         {
                             // Enter skip mode - process remaining source in skip mode
                             await ProcessSkippedLine();
-                            
+
                             // If still skipping after processing, done with this source
                             if (_bracketIfSkipping)
                             {
                                 return !_exitRequested;
                             }
-                            
+
                             // Otherwise, exited skip mode - continue with remaining tokens
                         }
-                        
+
                         continue;
                     }
 
@@ -249,6 +248,20 @@ public partial class ForthInterpreter
         _parseBuffer = null; // clear parse buffer (NEW - prevents token carryover between evaluations)
         // NOTE: Do NOT clear _refillSource here! It should persist until the next REFILL
         // This allows SOURCE to access the refilled content across multiple EvalAsync calls
+
+        if (_isCompiling)
+        {
+            // Allow interactive/multi-call compilation where a definition spans multiple EvalAsync calls.
+            // Only treat end-of-input as an error when there is no active definition context.
+            if (_currentDefName is null && _compilationStack.Count == 0)
+            {
+                var preview = _currentSource.Length > 200 ? _currentSource[..200] + "..." : _currentSource;
+                var last = lastTok ?? "<none>";
+                throw new ForthException(ForthErrorCode.CompileError,
+                    $"Unexpected end-of-input while compiling (last token: '{last}'). Source preview: {preview}");
+            }
+        }
+
         return !_exitRequested;
     }
 }

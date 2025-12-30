@@ -193,7 +193,11 @@ internal class CharacterParser
             {
                 _position++; // skip ')'
             }
-            return ".(" + textBuilder.ToString() + ")";
+
+            // Return .( as the directive token, and buffer the payload as a quoted token
+            // so the `.(` primitive can consume it consistently.
+            _nextToken = "\"" + textBuilder.ToString() + "\"";
+            return ".(";
         }
 
         // Handle ." string literal
@@ -226,8 +230,9 @@ internal class CharacterParser
         if ((ch == 'S' || ch == 's') && _position + 1 < _source.Length && _source[_position + 1] == '"')
         {
             _position += 2; // skip 'S"' or 's"'
-            // Skip at most one leading space
-            if (_position < _source.Length && _source[_position] == ' ')
+            // Optional separator after S". Preserve leading spaces that are part of the literal.
+            // We only skip a single space or tab, which is the common delimiter in `S" text"`.
+            if (_position < _source.Length && (_source[_position] == ' ' || _source[_position] == '\t'))
             {
                 _position++;
             }
@@ -235,7 +240,40 @@ internal class CharacterParser
             textBuilder.Append('"');
             while (_position < _source.Length && _source[_position] != '"')
             {
-                textBuilder.Append(_source[_position]);
+                var c = _source[_position];
+
+                if (c == '\\' && _position + 1 < _source.Length)
+                {
+                    var nxt = _source[_position + 1];
+                    switch (nxt)
+                    {
+                        case 'n': textBuilder.Append('\n'); _position += 2; continue;
+                        case 'r': textBuilder.Append('\r'); _position += 2; continue;
+                        case 't': textBuilder.Append('\t'); _position += 2; continue;
+                        case '\\': textBuilder.Append('\\'); _position += 2; continue;
+                        case '"': textBuilder.Append('"'); _position += 2; continue;
+                        case 'x':
+                        case 'X':
+                            // \xHH (2 hex digits) decoding
+                            if (_position + 3 < _source.Length)
+                            {
+                                var h1 = _source[_position + 2];
+                                var h2 = _source[_position + 3];
+                                int v1 = FromHexDigit(h1);
+                                int v2 = FromHexDigit(h2);
+                                if (v1 >= 0 && v2 >= 0)
+                                {
+                                    textBuilder.Append((char)((v1 << 4) | v2));
+                                    _position += 4;
+                                    continue;
+                                }
+                            }
+                            // Not a valid \xHH; treat as literal backslash
+                            break;
+                    }
+                }
+
+                textBuilder.Append(c);
                 _position++;
             }
             if (_position < _source.Length && _source[_position] == '"')
@@ -484,5 +522,13 @@ internal class CharacterParser
             _position++; // advance past terminator
         }
         return result;
+    }
+
+    static int FromHexDigit(char c)
+    {
+        if (c is >= '0' and <= '9') return c - '0';
+        if (c is >= 'a' and <= 'f') return 10 + (c - 'a');
+        if (c is >= 'A' and <= 'F') return 10 + (c - 'A');
+        return -1;
     }
 }

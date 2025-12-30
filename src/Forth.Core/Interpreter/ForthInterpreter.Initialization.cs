@@ -70,6 +70,7 @@ public partial class ForthInterpreter
             // Try to load embedded prelude resource
             var asm = typeof(ForthInterpreter).Assembly;
             var resourceName = "Forth.Core.prelude.4th";
+            Trace($"Prelude load: trying embedded resource {resourceName}");
             using var stream = asm.GetManifestResourceStream(resourceName);
             if (stream != null)
             {
@@ -77,6 +78,7 @@ public partial class ForthInterpreter
                 var prelude = await reader.ReadToEndAsync();
                 await LoadPreludeText(prelude);
                 _preludeLoaded = true;
+                Trace("Prelude load: embedded resource loaded");
                 return;
             }
 
@@ -90,11 +92,13 @@ public partial class ForthInterpreter
                 var prelude = await System.IO.File.ReadAllTextAsync(preludePath);
                 await LoadPreludeText(prelude);
                 _preludeLoaded = true;
+                Trace($"Prelude load: file loaded from {preludePath}");
             }
             else
             {
                 // No prelude available - mark as loaded to avoid blocking
                 _preludeLoaded = true;
+                Trace($"Prelude load: not found at {preludePath}");
             }
         }
         catch (System.Exception ex)

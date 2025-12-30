@@ -86,7 +86,7 @@ public class ErrorReportDiagnosticTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "Diagnostic-only: line-by-line loading is not representative because colon definitions span multiple lines; use whole-file INCLUDE instead.")]
     public async Task Diagnostic_LoadErrorReportLineByLine()
     {
         var forth = new ForthInterpreter();
@@ -124,11 +124,21 @@ public class ErrorReportDiagnosticTests
                 continue;
             }
 
-            _output.WriteLine($"Line {lineNum}: {trimmed}");
+            // Remove inline backslash comments for per-line evaluation.
+            // INCLUDED/INCLUDE evaluate whole files, but this diagnostic feeds lines individually,
+            // so we need to avoid partial definitions being split and commented unexpectedly.
+            var effectiveLine = line;
+            var commentIdx = effectiveLine.IndexOf('\\');
+            if (commentIdx >= 0)
+                effectiveLine = effectiveLine[..commentIdx];
+            if (string.IsNullOrWhiteSpace(effectiveLine))
+                continue;
+ 
+             _output.WriteLine($"Line {lineNum}: {trimmed}");
 
             try
             {
-                await forth.EvalAsync(line);
+                await forth.EvalAsync(effectiveLine);
                 _output.WriteLine($"  ? OK");
             }
             catch (System.Exception ex)

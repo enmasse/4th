@@ -7,6 +7,29 @@ namespace Forth.Core.Execution;
 
 internal static partial class CorePrimitives
 {
+    [Primitive(".(", IsImmediate = true, HelpString = ".( <text>) - print text up to ')' (immediate)")]
+    private static Task Prim_DotParen(ForthInterpreter i)
+    {
+        if (!i.TryParseNextWord(out var next))
+            throw new ForthException(ForthErrorCode.CompileError, "Expected text after .(");
+
+        // CharacterParser buffers the payload as a quoted token.
+        if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
+            throw new ForthException(ForthErrorCode.CompileError, ".( expects quoted token");
+
+        var msg = next[1..^1];
+
+        if (!i._isCompiling)
+        {
+            i.WriteText(msg);
+            return Task.CompletedTask;
+        }
+
+        var captured = msg;
+        i.CurrentList().Add(ii => { ii.WriteText(captured); return Task.CompletedTask; });
+        return Task.CompletedTask;
+    }
+
     [Primitive(".", Category = "Arithmetic", HelpString = ". ( n -- ) - print top of stack as a number")]
     private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
 
@@ -278,6 +301,7 @@ internal static partial class CorePrimitives
         else if (IsNumeric(addr))
         {
             var a = ToLong(addr);
+            // Read exactly u1 characters from memory; this is what we're trimming.
             str = i.ReadMemoryString(a, u1);
         }
         else

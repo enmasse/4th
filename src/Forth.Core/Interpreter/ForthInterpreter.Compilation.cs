@@ -43,6 +43,8 @@ public partial class ForthInterpreter
         // Allow nesting only for :NONAME (name == null)
         if (name != null && _isCompiling) throw new ForthException(ForthErrorCode.CompileError, "Nested definitions not supported");
 
+        Trace($"BeginDefinition name={(name ?? ":NONAME")} wasCompiling={_isCompiling} csDepth={_compilationStack.Count}");
+
         // Push current context
         var context = new CompilationContext
         {
@@ -61,6 +63,8 @@ public partial class ForthInterpreter
         _currentInstructions = new List<Func<ForthInterpreter, Task>>();
         _currentDefTokens = new List<string>();
         _currentLocals = null;
+
+        Trace($"BeginDefinition end name={(name ?? ":NONAME")} isCompiling={_isCompiling} csDepth={_compilationStack.Count}");
     }
 
     // Finish current definition (called by ; primitive)
@@ -68,6 +72,9 @@ public partial class ForthInterpreter
     {
         if (!_isCompiling) throw new ForthException(ForthErrorCode.CompileError, "; without matching :");
         var name = _currentDefName;
+
+        Trace($"FinishDefinition begin name={(name ?? ":NONAME")} csDepth={_compilationStack.Count}");
+
         var instrs = _currentInstructions ?? new List<Func<ForthInterpreter, Task>>();
         var bodyTokens = _currentDefTokens != null ? new List<string>(_currentDefTokens) : null;
 
@@ -144,6 +151,12 @@ public partial class ForthInterpreter
         }
 
         // Pop and restore context
+        if (_compilationStack.Count == 0)
+        {
+            throw new ForthException(ForthErrorCode.CompileError,
+                $"Internal error: compilation stack empty in FinishDefinition (name={name})");
+        }
+
         var context = _compilationStack.Pop();
         _isCompiling = context.IsCompiling;
         _mem[_stateAddr] = _isCompiling ? 1 : 0;
@@ -151,5 +164,7 @@ public partial class ForthInterpreter
         _currentInstructions = context.CurrentInstructions;
         _currentDefTokens = context.CurrentDefTokens;
         _currentLocals = context.CurrentLocals;
+
+        Trace($"FinishDefinition end name={(name ?? ":NONAME")} restoredIsCompiling={_isCompiling} csDepth={_compilationStack.Count}");
     }
 }

@@ -18,7 +18,26 @@ public partial class ForthInterpreter
         while (_bracketIfSkipping && TryParseNextWord(out var tok))
         {
             if (tok.Length == 0) continue;
-            
+
+            // If we entered skip mode while compiling, we must still honor ';' so we don't
+            // leave the interpreter stuck in compile mode.
+            if (_isCompiling)
+            {
+                if (_doesCollecting)
+                {
+                    if (tok == ";")
+                    {
+                        FinishDefinition();
+                        continue;
+                    }
+                }
+                else if (tok == ";")
+                {
+                    FinishDefinition();
+                    continue;
+                }
+            }
+
             var upper = tok.ToUpperInvariant();
 
             // Track [IF] nesting
@@ -44,7 +63,7 @@ public partial class ForthInterpreter
                     _bracketIfSeenElse = false;
                     _bracketIfNestingDepth = 0;
                     _bracketIfActiveDepth--;
-                    
+
                     // Exit skip mode - caller will continue with main loop
                     break;
                 }
@@ -59,7 +78,7 @@ public partial class ForthInterpreter
                     // At our depth level - switch from skip to execute
                     _bracketIfSkipping = false;
                     _bracketIfSeenElse = true;
-                    
+
                     // Exit skip mode - caller will continue with main loop
                     break;
                 }
@@ -94,7 +113,7 @@ public partial class ForthInterpreter
                 if (TryResolveWord(tok, out var word) && word is not null)
                 {
                     await word.ExecuteAsync(this);
-                    
+
                     // If we transitioned to skip mode, skip rest of line
                     if (_bracketIfSkipping)
                     {
@@ -102,7 +121,7 @@ public partial class ForthInterpreter
                         while (TryParseNextWord(out var skipTok))
                         {
                             var skipUpper = skipTok.ToUpperInvariant();
-                            
+
                             // Track bracket conditional nesting
                             if (skipUpper == "[IF]")
                             {
@@ -135,7 +154,7 @@ public partial class ForthInterpreter
                             }
                             // All other tokens are skipped
                         }
-                        
+
                         // If still skipping, we're done with this line
                         if (_bracketIfSkipping)
                         {

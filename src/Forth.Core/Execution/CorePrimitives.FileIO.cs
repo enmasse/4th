@@ -190,7 +190,8 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "FILE-STATUS");
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
-        var filename = i.ReadMemoryString(addr, u);
+        var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
+        filename = filename.TrimStart();
         try
         {
             var exists = System.IO.File.Exists(filename);
@@ -289,7 +290,8 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "DELETE-FILE");
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
-        var filename = i.ReadMemoryString(addr, u);
+        var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
+        filename = filename.TrimStart();
         if (!File.Exists(filename))
         {
             i.Push(-1L);
@@ -467,10 +469,11 @@ internal static partial class CorePrimitives
         i.EnsureStack(2, "INCLUDE-FILE");
         var u = ToLong(i.PopInternal());
         var addr = ToLong(i.PopInternal());
-        var filename = i.ReadMemoryString(addr, u);
+        var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
+        filename = filename.TrimStart();
         if (!System.IO.Path.IsPathRooted(filename))
         {
-            filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
+             filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
         }
         var text = await System.IO.File.ReadAllTextAsync(filename).ConfigureAwait(false);
         await i.EvalAsync(text).ConfigureAwait(false);
@@ -489,8 +492,9 @@ internal static partial class CorePrimitives
             i.EnsureStack(2, "INCLUDED");
             var u = ToLong(i.PopInternal());
             var addr = ToLong(i.PopInternal());
-            filename = i.ReadMemoryString(addr, u);
-        }
+            filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
+            filename = filename.TrimStart();
+         }
         if (!System.IO.Path.IsPathRooted(filename))
         {
             filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
@@ -507,11 +511,14 @@ internal static partial class CorePrimitives
         var addr2 = ToLong(i.PopInternal());
         var u1 = ToLong(i.PopInternal());
         var addr1 = ToLong(i.PopInternal());
-        var oldName = i.ReadMemoryString(addr1, u1);
-        var newName = i.ReadMemoryString(addr2, u2);
+        var oldName = i.ReadMemoryString(addr1, u1).TrimEnd('\r', '\n');
+        var newName = i.ReadMemoryString(addr2, u2).TrimEnd('\r', '\n');
+        oldName = oldName.TrimStart();
+        newName = newName.TrimStart();
         try
         {
-            File.Move(oldName, newName);
+            // Overwrite destination if it exists (test-suite expectation)
+            File.Move(oldName, newName, overwrite: true);
             i.Push(0L);
         }
         catch (Exception)
@@ -529,11 +536,14 @@ internal static partial class CorePrimitives
         var addr2 = ToLong(i.PopInternal());
         var u1 = ToLong(i.PopInternal());
         var addr1 = ToLong(i.PopInternal());
-        var src = i.ReadMemoryString(addr1, u1);
-        var dst = i.ReadMemoryString(addr2, u2);
+        var src = i.ReadMemoryString(addr1, u1).TrimEnd('\r', '\n');
+        var dst = i.ReadMemoryString(addr2, u2).TrimEnd('\r', '\n');
+        src = src.TrimStart();
+        dst = dst.TrimStart();
         try
         {
-            File.Copy(src, dst);
+            // Overwrite destination if it exists (test-suite expectation)
+            File.Copy(src, dst, overwrite: true);
             i.Push(0L);
         }
         catch (Exception)

@@ -32,6 +32,14 @@ public partial class ForthInterpreter
     /// </summary>
     internal bool TryParseNextWord(out string word)
     {
+        // If compilation state is somehow "stuck" but there is no active definition context,
+        // recover to interpret mode. This prevents compile state leakage across EvalAsync calls.
+        if (_isCompiling && _currentDefName is null && (_currentDefTokens is null || _currentDefTokens.Count == 0) && _compilationStack.Count == 0)
+        {
+            _isCompiling = false;
+            _mem[_stateAddr] = 0;
+        }
+
         // Check parse buffer first (for immediate word body expansion)
         if (_parseBuffer != null && _parseBuffer.Count > 0)
         {

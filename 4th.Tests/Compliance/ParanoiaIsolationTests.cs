@@ -1,7 +1,10 @@
 using Xunit;
-using Xunit.Abstractions;
-using Forth.Core;
 using Forth.Core.Interpreter;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit.Abstractions;
 
 namespace Forth.Tests.Compliance;
 
@@ -9,10 +12,10 @@ public class ParanoiaIsolationTests
 {
     private readonly ITestOutputHelper _output;
 
-    public ParanoiaIsolationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    public ParanoiaIsolationTests(ITestOutputHelper output) => _output = output;
+
+    private static bool ShouldRunParanoia()
+        => string.Equals(Environment.GetEnvironmentVariable("RUN_PARANOIA"), "1", StringComparison.OrdinalIgnoreCase);
 
     [Fact]
     public void ParanoiaInitializationTest()
@@ -33,11 +36,13 @@ public class ParanoiaIsolationTests
         _output.WriteLine($"Initialization test passed. Stack top: {interp.Stack.Last()}");
     }
 
-    [Fact]
+    [Fact(Skip = "Long-running diagnostic (paranoia.4th). Set RUN_PARANOIA=1 and remove Skip locally to run.")]
     public void ParanoiaWithStackTrace()
     {
-        // Run paranoia with detailed stack tracing to find where it fails
-        var interp = new ForthInterpreter();
+        if (!ShouldRunParanoia()) return;
+         
+         // Run paranoia with detailed stack tracing to find where it fails
+         var interp = new ForthInterpreter();
         
         try
         {

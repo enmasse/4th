@@ -102,15 +102,24 @@ internal static partial class CorePrimitives
     [Primitive("FCONSTANT", IsImmediate = true, HelpString = "FCONSTANT <name> - define a floating constant from top of stack")]
     private static Task Prim_FCONSTANT(ForthInterpreter i)
     {
-        var name = i.ReadNextTokenOrThrow("Expected name after FCONSTANT");
-        i.EnsureStack(1, "FCONSTANT");
-        var val = i.PopInternal();
-        var d = ToDoubleFromObj(val);
-        var createdConst = new Word(ii => { ii.Push(d); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
-        i._dict = i._dict.SetItem((i._currentModule, name), createdConst);
-        i.RegisterDefinition(name);
-        i._lastDefinedWord = createdConst;
-        return Task.CompletedTask;
+            var name = i.ReadNextTokenOrThrow("Expected name after FCONSTANT");
+            if (i.Stack.Count == 0)
+            {
+                if (i.TryResolveWord(name, out var existing) && existing is not null)
+                {
+                    // Already defined; nothing to do
+                    return Task.CompletedTask;
+                }
+                throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow in FCONSTANT");
+            }
+            i.EnsureStack(1, "FCONSTANT");
+            var val = i.PopInternal();
+            var d = ToDoubleFromObj(val);
+            var createdConst = new Word(ii => { ii.Push(d); return Task.CompletedTask; }) { Name = name, Module = i._currentModule };
+            i._dict = i._dict.SetItem((i._currentModule, name), createdConst);
+            i.RegisterDefinition(name);
+            i._lastDefinedWord = createdConst;
+            return Task.CompletedTask;
     }
 
     [Primitive("FVARIABLE", IsImmediate = true, HelpString = "FVARIABLE <name> - define a floating variable (initialized to 0.0)")]
@@ -417,45 +426,28 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    [Primitive("F~", HelpString = "F~ ( r1 r2 r3 -- flag ) - approximate equality with tolerance r3")]
+    [Primitive("F~", HelpString = "Floating point proximity test ( r1 r2 r3 -- flag )")]
     private static Task Prim_FTilde(ForthInterpreter i)
     {
         i.EnsureStack(3, "F~");
         var r3 = ToDoubleFromObj(i.PopInternal());
         var r2 = ToDoubleFromObj(i.PopInternal());
         var r1 = ToDoubleFromObj(i.PopInternal());
-        
-        bool result;
-        if (r3 > 0.0)
+        var diff = Math.Abs(r1 - r2);
+        double tol;
+        if (r3 >= 0)
         {
-            // Positive r3: absolute tolerance test
-            result = Math.Abs(r1 - r2) < r3;
-        }
-        else if (r3 == 0.0)
-        {
-            // Zero r3: exact equality
-            result = r1 == r2;
+            tol = Math.Abs(r3);
         }
         else
         {
-            // Negative r3: relative tolerance test
-            // |r1 - r2| < |r3 * (r1 + r2) / 2|
-            var diff = Math.Abs(r1 - r2);
-            
-            // Special case: if values are exactly equal, return true regardless of tolerance
-            if (diff == 0.0)
-            {
-                result = true;
-            }
-            else
-            {
-                var avgMagnitude = Math.Abs((r1 + r2) / 2.0);
-                var tolerance = Math.Abs(r3) * avgMagnitude;
-                result = diff < tolerance;
-            }
+            var absTolerance = Math.Abs(r3);
+            var absR1 = Math.Abs(r1);
+            var absR2 = Math.Abs(r2);
+            tol = absTolerance * ((absR1 + absR2) / 2.0);
         }
-        
-        i.Push(result ? -1L : 0L);
+        var flag = diff <= tol || (r1 == 0.0 && r2 == 0.0);
+        i.Push(flag ? -1L : 0L);
         return Task.CompletedTask;
     }
 
@@ -731,4 +723,10 @@ internal static partial class CorePrimitives
         i.Push(res);
         return Task.CompletedTask;
     }
+
+    [Primitive("SET-NEAR", HelpString = "SET-NEAR - enable approximate FP equality (compatibility no-op)")]
+    private static Task Prim_SET_NEAR(ForthInterpreter i) => Task.CompletedTask;
+
+    [Primitive("SET-EXACT", HelpString = "SET-EXACT - enable exact FP equality (compatibility no-op)")]
+    private static Task Prim_SET_EXACT(ForthInterpreter i) => Task.CompletedTask;
 }

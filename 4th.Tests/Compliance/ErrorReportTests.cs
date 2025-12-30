@@ -115,7 +115,7 @@ public class ErrorReportTests
         }
     }
     
-    [Fact(Skip = "Depends on CheckWordsAreDefined passing first")]
+    [Fact]
     public async Task ErrorReport_ReportErrors_ShouldWork()
     {
         var forth = new ForthInterpreter();

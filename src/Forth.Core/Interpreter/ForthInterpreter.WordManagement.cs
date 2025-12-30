@@ -121,6 +121,15 @@ public partial class ForthInterpreter
             return false;
         }
 
+        // Special case: WORDLIST-created vocab names like VOCAB1 are stored in the core dictionary
+        // but are intended to be found regardless of the current compilation module.
+        if (token.StartsWith("VOCAB", StringComparison.OrdinalIgnoreCase)
+            && _dict.TryGetValue((null, token), out var wv))
+        {
+            word = wv;
+            return true;
+        }
+ 
         // Search current module
         if (!string.IsNullOrWhiteSpace(_currentModule)
             && _dict.TryGetValue((_currentModule, token), out var wc))

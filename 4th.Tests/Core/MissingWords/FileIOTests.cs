@@ -48,7 +48,7 @@ public class FileIOTests
             // write initial
             Assert.True(await forth.EvalAsync($"S\"Line1\" \"{path}\" WRITE-FILE"));
             // append second line
-            Assert.True(await forth.EvalAsync($"S\"\nLine2\" \"{path}\" APPEND-FILE"));
+            Assert.True(await forth.EvalAsync($"S\"\\nLine2\" \"{path}\" APPEND-FILE"));
             var txt = File.ReadAllText(path);
             Assert.Equal("Line1\nLine2", txt);
         }
