@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
@@ -24,6 +27,7 @@ jobs:
         run: dotnet build Forth.sln --no-restore --configuration Release
 
       - name: Run tests
+        working-directory: ${{ github.workspace }}
         run: dotnet test Forth.sln --no-build --configuration Release --verbosity minimal
 
       - name: Run ans-diff

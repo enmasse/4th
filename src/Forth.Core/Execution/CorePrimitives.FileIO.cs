@@ -188,10 +188,30 @@ internal static partial class CorePrimitives
     private static Task Prim_FILESTATUS(ForthInterpreter i)
     {
         i.EnsureStack(2, "FILE-STATUS");
-        var u = ToLong(i.PopInternal());
-        var addr = ToLong(i.PopInternal());
-        var filename = i.ReadMemoryString(addr, u).TrimEnd('\r', '\n');
-        filename = filename.Trim();
+        var v1 = ToLong(i.PopInternal());
+        var v2 = ToLong(i.PopInternal());
+
+        static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
+
+        string filename;
+        if (v2 > 0)
+        {
+            long maybeLen = 0;
+            i.MemTryGet(v2 - 1, out maybeLen);
+            if (ToLong(maybeLen) == v1)
+            {
+                filename = NormalizeFileName(i.ReadMemoryString(v2, v1));
+            }
+            else
+            {
+                filename = NormalizeFileName(i.ReadMemoryString(v1, v2));
+            }
+        }
+        else
+        {
+            filename = NormalizeFileName(i.ReadMemoryString(v1, v2));
+        }
+
         try
         {
             var exists = System.IO.File.Exists(filename);
@@ -294,16 +314,25 @@ internal static partial class CorePrimitives
         static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
 
         string filename;
-        // Prefer (addr u). If that doesn't exist as a file but swapped does, use swapped.
-        var candidate1 = NormalizeFileName(i.ReadMemoryString(v2, v1));
-        if (!string.IsNullOrWhiteSpace(candidate1) && (File.Exists(candidate1) || Path.IsPathRooted(candidate1)))
+
+        // Prefer the same heuristic used for S\" variations elsewhere:
+        // if v1 looks like a counted-string char address (len at v1-1 equals v2), treat as (addr u).
+        if (v1 > 0)
         {
-            filename = candidate1;
+            long maybeLen = 0;
+            i.MemTryGet(v1 - 1, out maybeLen);
+            if (ToLong(maybeLen) == v2)
+            {
+                filename = NormalizeFileName(i.ReadMemoryString(v1, v2));
+            }
+            else
+            {
+                filename = NormalizeFileName(i.ReadMemoryString(v2, v1));
+            }
         }
         else
         {
-            var candidate2 = NormalizeFileName(i.ReadMemoryString(v1, v2));
-            filename = !string.IsNullOrWhiteSpace(candidate2) ? candidate2 : candidate1;
+            filename = NormalizeFileName(i.ReadMemoryString(v2, v1));
         }
 
         if (!File.Exists(filename))
@@ -531,23 +560,29 @@ internal static partial class CorePrimitives
 
         string DecodeName(long a, long b)
         {
-            // Try (addr u) first.
+            // Prefer counted-string heuristic if possible.
+            if (a > 0)
+            {
+                long maybeLen = 0;
+                i.MemTryGet(a - 1, out maybeLen);
+                if (ToLong(maybeLen) == b)
+                    return NormalizeFileName(i.ReadMemoryString(a, b));
+            }
+
+            // Fallback: try (addr u) then swapped.
             var candidate1 = NormalizeFileName(i.ReadMemoryString(a, b));
             if (!string.IsNullOrWhiteSpace(candidate1) && (File.Exists(candidate1) || Path.IsPathRooted(candidate1)))
                 return candidate1;
 
-            // Fall back to swapped.
             var candidate2 = NormalizeFileName(i.ReadMemoryString(b, a));
             return !string.IsNullOrWhiteSpace(candidate2) ? candidate2 : candidate1;
         }
 
-        // From stack we don't know whether caller produced (addr u) or (u addr) pairs.
         var oldName = DecodeName(vAddr1, vU1);
         var newName = DecodeName(vAddr2, vU2);
 
         try
         {
-            // Overwrite destination if it exists (test-suite expectation)
             File.Move(oldName, newName, overwrite: true);
             i.Push(0L);
         }
@@ -562,17 +597,36 @@ internal static partial class CorePrimitives
     private static Task Prim_COPYFILE(ForthInterpreter i)
     {
         i.EnsureStack(4, "COPY-FILE");
-        var u2 = ToLong(i.PopInternal());
-        var addr2 = ToLong(i.PopInternal());
-        var u1 = ToLong(i.PopInternal());
-        var addr1 = ToLong(i.PopInternal());
-        var src = i.ReadMemoryString(addr1, u1).TrimEnd('\r', '\n');
-        var dst = i.ReadMemoryString(addr2, u2).TrimEnd('\r', '\n');
-        src = src.Trim();
-        dst = dst.Trim();
+        var vU2 = ToLong(i.PopInternal());
+        var vAddr2 = ToLong(i.PopInternal());
+        var vU1 = ToLong(i.PopInternal());
+        var vAddr1 = ToLong(i.PopInternal());
+
+        static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
+
+        string DecodeName(long a, long b)
+        {
+            if (a > 0)
+            {
+                long maybeLen = 0;
+                i.MemTryGet(a - 1, out maybeLen);
+                if (ToLong(maybeLen) == b)
+                    return NormalizeFileName(i.ReadMemoryString(a, b));
+            }
+
+            var candidate1 = NormalizeFileName(i.ReadMemoryString(a, b));
+            if (!string.IsNullOrWhiteSpace(candidate1) && (File.Exists(candidate1) || Path.IsPathRooted(candidate1)))
+                return candidate1;
+
+            var candidate2 = NormalizeFileName(i.ReadMemoryString(b, a));
+            return !string.IsNullOrWhiteSpace(candidate2) ? candidate2 : candidate1;
+        }
+
+        var src = DecodeName(vAddr1, vU1);
+        var dst = DecodeName(vAddr2, vU2);
+
         try
         {
-            // Overwrite destination if it exists (test-suite expectation)
             File.Copy(src, dst, overwrite: true);
             i.Push(0L);
         }

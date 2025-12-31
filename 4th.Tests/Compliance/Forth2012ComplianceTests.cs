@@ -5,6 +5,7 @@ using Forth.Core;
 using Forth.Core.Interpreter;
 using Xunit;
 using System.IO;
+using Forth.Tests;
 
 namespace Forth.Tests.Compliance;
 
@@ -12,30 +13,15 @@ public class Forth2012ComplianceTests
 {
     private static ForthInterpreter New() => new();
 
-    private static string GetRepoRoot()
-    {
-        // Search upward for the solution file to find the repo root
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (Directory.GetFiles(dir.FullName, "*.sln").Any())
-            {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
-        }
-        // Fallback: assume we're in bin\Debug\net9.0
-        return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", ".."));
-    }
-
     [Fact]
     public async Task CoreTests()
     {
-        var repoRoot = GetRepoRoot();
+        var repoRoot = TestPaths.GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var corePath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "core.fr");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var corePath = Path.Combine(suiteRoot, "src", "core.fr");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{corePath}\" INCLUDED");
@@ -47,11 +33,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task CoreExtTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var coreextPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "coreexttest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var coreextPath = Path.Combine(suiteRoot, "src", "coreexttest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{coreextPath}\" INCLUDED");
@@ -64,11 +50,12 @@ public class Forth2012ComplianceTests
     {
         var f = new ForthInterpreter { EnableTrace = true };
         Environment.SetEnvironmentVariable("FORTH_TRACE_PRELUDE", "1");
-        var root = GetRepoRoot();
+        var root = TestPaths.GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
 
         var testerPath = Path.Combine(root, "tests", "ttester.4th");
-        var errorReportPath = Path.Combine(root, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var fpDir = Path.Combine(root, "tests", "forth2012-test-suite", "src", "fp");
+        var errorReportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var fpDir = Path.Combine(suiteRoot, "src", "fp");
 
         try
         {
@@ -90,7 +77,7 @@ public class Forth2012ComplianceTests
         catch (Exception ex)
         {
             var trace = f.GetTraceDump();
-            var repoRoot = GetRepoRoot();
+            var repoRoot = TestPaths.GetRepoRoot();
             var artifactsDir = Path.Combine(repoRoot, "artifacts");
             Directory.CreateDirectory(artifactsDir);
             var logPath = Path.Combine(artifactsDir, "floatingpoint-trace.log");
@@ -105,7 +92,7 @@ public class Forth2012ComplianceTests
     [Fact(Skip = "Test hangs, skipping temporarily")]
     public async Task ParanoiaTest()
     {
-        var repoRoot = GetRepoRoot();
+        var repoRoot = TestPaths.GetRepoRoot();
         var f = New();
         var fpDir = Path.Combine(repoRoot, "tests", "forth2012-test-suite-local", "src", "fp");
         var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite-local", "src", "tester.fr");
@@ -130,11 +117,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task FacilityTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var facilityPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "facilitytest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var facilityPath = Path.Combine(suiteRoot, "src", "facilitytest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{facilityPath}\" INCLUDED");
@@ -145,11 +132,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task FileTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var filePath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "filetest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var filePath = Path.Combine(suiteRoot, "src", "filetest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{filePath}\" INCLUDED");
@@ -160,11 +147,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task BlockTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var blockPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "blocktest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var blockPath = Path.Combine(suiteRoot, "src", "blocktest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{blockPath}\" INCLUDED");
@@ -175,11 +162,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task DoubleNumberTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var doublePath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "doubletest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var doublePath = Path.Combine(suiteRoot, "src", "doubletest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{doublePath}\" INCLUDED");
@@ -190,11 +177,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task ExceptionTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var exceptionPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "exceptiontest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var exceptionPath = Path.Combine(suiteRoot, "src", "exceptiontest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{exceptionPath}\" INCLUDED");
@@ -205,11 +192,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task LocalsTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var localsPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "localstest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var localsPath = Path.Combine(suiteRoot, "src", "localstest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{localsPath}\" INCLUDED");
@@ -220,11 +207,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task MemoryTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var memoryPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "memorytest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var memoryPath = Path.Combine(suiteRoot, "src", "memorytest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{memoryPath}\" INCLUDED");
@@ -235,11 +222,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task SearchOrderTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var searchorderPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "searchordertest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var searchorderPath = Path.Combine(suiteRoot, "src", "searchordertest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{searchorderPath}\" INCLUDED");
@@ -250,11 +237,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task StringTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var stringPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "stringtest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var stringPath = Path.Combine(suiteRoot, "src", "stringtest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{stringPath}\" INCLUDED");
@@ -265,11 +252,11 @@ public class Forth2012ComplianceTests
     [Fact]
     public async Task ToolsTests()
     {
-        var repoRoot = GetRepoRoot();
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
         var f = New();
-        var testerPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "tester.fr");
-        var errorreportPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "errorreport.fth");
-        var toolsPath = Path.Combine(repoRoot, "tests", "forth2012-test-suite", "src", "toolstest.fth");
+        var testerPath = Path.Combine(suiteRoot, "src", "tester.fr");
+        var errorreportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
+        var toolsPath = Path.Combine(suiteRoot, "src", "toolstest.fth");
         await f.EvalAsync($"\"{testerPath}\" INCLUDED");
         await f.EvalAsync($"\"{errorreportPath}\" INCLUDED");
         await f.EvalAsync($"\"{toolsPath}\" INCLUDED");

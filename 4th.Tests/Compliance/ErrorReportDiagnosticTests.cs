@@ -4,6 +4,7 @@ using Xunit.Abstractions;
 using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
+using Forth.Tests;
 
 namespace Forth.Tests.Compliance;
 
@@ -16,19 +17,7 @@ public class ErrorReportDiagnosticTests
         _output = output;
     }
 
-    private static string GetRepoRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (Directory.GetFiles(dir.FullName, "*.sln").Any())
-            {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
-    }
+    private static string GetRepoRoot() => TestPaths.GetRepoRoot();
 
     [Fact]
     public async Task Diagnostic_CheckWordDefinedAfterLoad()
@@ -50,7 +39,8 @@ public class ErrorReportDiagnosticTests
         _output.WriteLine($"Has #ERRORS: {wordsBefore.Any(w => w.Equals("#ERRORS", StringComparison.OrdinalIgnoreCase))}");
 
         // Load errorreport as a whole file
-        var errorReportPath = Path.Combine(root, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
+        var errorReportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
         var content = await File.ReadAllTextAsync(errorReportPath);
         
         _output.WriteLine($"\nLoading errorreport.fth ({content.Length} chars)...");
@@ -107,7 +97,8 @@ public class ErrorReportDiagnosticTests
         _output.WriteLine($"#ERRORS variable defined after ttester: {hasErrors}");
 
         // Now try loading errorreport.fth line by line
-        var errorReportPath = Path.Combine(root, "tests", "forth2012-test-suite", "src", "errorreport.fth");
+        var suiteRoot = TestPaths.GetForth2012SuiteRoot();
+        var errorReportPath = Path.Combine(suiteRoot, "src", "errorreport.fth");
         var lines = await File.ReadAllLinesAsync(errorReportPath);
 
         _output.WriteLine($"\nProcessing {lines.Length} lines from errorreport.fth...");
