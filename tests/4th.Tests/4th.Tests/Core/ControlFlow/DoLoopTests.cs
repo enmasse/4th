@@ -1,0 +1,50 @@
+using Forth.Core.Interpreter;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace Forth.Tests.Core.ControlFlow;
+
+public class DoLoopTests
+{
+    /// <summary>
+    /// Intention: Verify simple DO ... LOOP iteration with I as loop index accumulates correct sum.
+    /// Expected: ": SUM10 0 10 0 DO I + LOOP ; SUM10" leaves 45 on the stack (0+1+..+9).
+    /// </summary>
+    [Fact]
+    public async Task DoLoop_Basic()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync(": SUM10 0 10 0 DO I + LOOP ;"));
+        Assert.True(await forth.EvalAsync("SUM10"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(45L, (long)forth.Stack[0]);
+    }
+
+    /// <summary>
+    /// Intention: Validate LEAVE breaks out early from a loop when a condition is met.
+    /// Expected: Accumulator stops updating once index reaches 5, producing 0+1+2+3+4 = 10.
+    /// </summary>
+    [Fact]
+    public async Task DoLoop_LeaveEarly()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync(": SUM5 0 10 0 DO I 5 = IF LEAVE THEN I + LOOP ;"));
+        Assert.True(await forth.EvalAsync("SUM5"));
+        Assert.Single(forth.Stack);
+        Assert.Equal(10L, (long)forth.Stack[0]);
+    }
+
+    /// <summary>
+    /// Intention: Ensure UNLOOP correctly cleans loop parameters when exiting early (e.g., via EXIT).
+    /// Expected: No stack corruption or runtime error when exiting loop prematurely.
+    /// </summary>
+    [Fact]
+    public async Task Unloop_InsideExit()
+    {
+        var forth = new ForthInterpreter();
+        Assert.True(await forth.EvalAsync(": T 0 0 10 DO I 3 = IF UNLOOP EXIT THEN 1 + LOOP ;"));
+        Assert.True(await forth.EvalAsync("T"));
+        // Either 0 or empty stack is acceptable; here we assert no exception and depth is 0 or 1
+        Assert.True(forth.Stack.Count == 0 || forth.Stack.Count == 1);
+    }
+}

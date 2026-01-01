@@ -20,7 +20,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Run tests
 Write-Host "Running tests..." -ForegroundColor Yellow
-dotnet test 4th.Tests
+dotnet test .\tests\4th.Tests\4th.Tests\4th.Tests.csproj
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Tests failed!" -ForegroundColor Red
     exit 1

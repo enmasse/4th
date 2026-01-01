@@ -7,6 +7,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\4th\4th.csproj" />
+    <ProjectReference Include="..\..\src\4th\4th\4th.csproj" />
   </ItemGroup>
 </Project>
