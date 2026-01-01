@@ -267,3 +267,8 @@ MIT License - see LICENSE file for details.
 
 - [ANS Forth Standard](https://forth-standard.org/)
 - [Forth Programming Language](https://en.wikipedia.org/wiki/Forth_(programming_language))
+
+## Repository layout notes
+
+- Development notes and changelogs are under `docs/`.
+- Ad-hoc/manual test scripts and diagnostics are under `scratch/` (not part of the automated test suite).
