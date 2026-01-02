@@ -26,9 +26,19 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Run docs generation
+Write-Host "Generating word documentation..." -ForegroundColor Yellow
+dotnet run --project tools/DocsGen -c Release
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Docs generation failed!" -ForegroundColor Red
+    exit 1
+}
+
 # Run ANS compliance diff (don't fail on missing for health check)
 Write-Host "Running ANS compliance diff..." -ForegroundColor Yellow
-dotnet run --project tools/ans-diff -- --sets=all --fail-on-missing=false
+$ansReport = Join-Path $env:TEMP "ans-diff-report.md"
+dotnet run --project tools/ans-diff -- --sets=all --fail-on-missing=false 2>&1 | Tee-Object -FilePath $ansReport
+Write-Host "Wrote ans-diff report to: $ansReport" -ForegroundColor Yellow
 
 # List TODO.md contents
 Write-Host "Listing TODO.md contents..." -ForegroundColor Yellow

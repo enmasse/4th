@@ -35,7 +35,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          dotnet run --project . --configuration Release 2>&1 | tee report.md
+          report="$RUNNER_TEMP/ans-diff-report.md"
+          dotnet run --project . --configuration Release 2>&1 | tee "$report"
           rc=${PIPESTATUS[0]}
           if [ $rc -ne 0 ]; then
             echo "ans-diff reported missing ANS words; failing CI"
@@ -47,4 +48,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ans-diff-report
-          path: tools/ans-diff/report.md
+          path: ${{ runner.temp }}/ans-diff-report.md
+
+      - name: Run docs generator
+        run: dotnet run --project tools/DocsGen -c Release
+
+      - name: Verify docs are up-to-date
+        shell: bash
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"

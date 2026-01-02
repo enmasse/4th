@@ -272,3 +272,8 @@ MIT License - see LICENSE file for details.
 
 - Development notes and changelogs are under `docs/`.
 - Ad-hoc/manual test scripts and diagnostics are under `scratch/` (not part of the automated test suite).
+
+## Documentation
+
+- Start here: [`docs/index.md`](docs/index.md)
+- Word reference: [`docs/words/index.md`](docs/words/index.md)
