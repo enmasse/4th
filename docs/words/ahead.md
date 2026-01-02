@@ -47,7 +47,7 @@ Source: `tests/forth-tests/toolstest.fth`
 : PT1 AHEAD 1111 2222 THEN 3333 ; ->
 ```
 
-Source: `tests/forth2012-test-suite/src/toolstest.fth`
+Source: `tests/forth2012-test-suite-local/src/toolstest.fth`
 
 ## SEE ALSO
 

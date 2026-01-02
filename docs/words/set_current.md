@@ -36,7 +36,7 @@ Source: `tests/forth-tests/searchordertest.fth`
 WID2 @ SET-CURRENT ->
 ```
 
-Source: `tests/forth2012-test-suite/src/searchordertest.fth`
+Source: `tests/forth2012-test-suite-local/src/searchordertest.fth`
 
 ## SEE ALSO
 

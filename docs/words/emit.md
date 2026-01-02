@@ -32,14 +32,14 @@ Source: `tests/forth-tests/coreexttest.fth`
 [ CR ] .( First message via .( ) ; DOTP ->
 ```
 
-Source: `tests/forth2012-test-suite/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
 
 ```forth
 : DOTP  CR ." Second message via ." [CHAR] " EMIT    \ Check .( is immediate
 [ CR ] .( First message via .( ) ; DOTP ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite/src/coreexttest.fth`
 
 ## SEE ALSO
 

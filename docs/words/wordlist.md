@@ -30,13 +30,13 @@ Source: `tests/forth-tests/searchordertest.fth`
 WORDLIST WID2 ! ->
 ```
 
-Source: `tests/forth2012-test-suite/src/searchordertest.fth`
+Source: `tests/forth2012-test-suite-local/src/searchordertest.fth`
 
 ```forth
 WORDLIST WID2 ! ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/searchordertest.fth`
+Source: `tests/forth2012-test-suite/src/searchordertest.fth`
 
 ## SEE ALSO
 

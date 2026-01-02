@@ -21,23 +21,23 @@ SEARCH ( c-addr1 u1 c-addr2 u2 -- c-addr3 u3 flag ) - search for substring
 ## EXAMPLES
 
 ```forth
-S" hello world" 11 S" world" 5 SEARCH DROP DROP -> -1
+S1 S2 SEARCH -> S1 TRUE
 ```
 
-Source: `tests/forth/search-tests.tester.4th`
+Source: `tests/forth-tests/stringtest.fth`
 
 ```forth
-S" hello world" 11 S" foo" 3 SEARCH DROP DROP -> 0
+S1 S3 SEARCH -> S1  9 /STRING TRUE
 ```
 
-Source: `tests/forth/search-tests.tester.4th`
+Source: `tests/forth-tests/stringtest.fth`
 
 ```forth
-S" abc" 3 S" a" 1 SEARCH DROP DROP -> -1
+S1 S4 SEARCH -> S1 25 /STRING TRUE
 ```
 
-Source: `tests/forth/search-tests.tester.4th`
+Source: `tests/forth-tests/stringtest.fth`
 
 ## SEE ALSO
 
-- [`DROP`](drop.md)
+- [`/STRING`](_string.md)

@@ -30,13 +30,13 @@ Source: `tests/forth-tests/coreexttest.fth`
 : AG0 701 BEGIN DUP 7 MOD 0= IF EXIT THEN 1+ AGAIN ; ->
 ```
 
-Source: `tests/forth2012-test-suite/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
 
 ```forth
 : AG0 701 BEGIN DUP 7 MOD 0= IF EXIT THEN 1+ AGAIN ; ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite/src/coreexttest.fth`
 
 ## SEE ALSO
 

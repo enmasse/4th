@@ -32,14 +32,14 @@ Source: `tests/forth-tests/coreexttest.fth`
 HTEST3 S= -> TRUE
 ```
 
-Source: `tests/forth2012-test-suite/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
 
 ```forth
 123 0 <# #S BL HOLD HTEST2 HOLDS BL HOLD HTEST HOLDS #>
 HTEST3 S= -> TRUE
 ```
 
-Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite/src/coreexttest.fth`
 
 ## SEE ALSO
 

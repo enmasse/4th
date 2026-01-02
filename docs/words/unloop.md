@@ -36,7 +36,7 @@ I 1+ 0 DO I J + 3 = IF I UNLOOP I UNLOOP EXIT THEN 1+ LOOP
 LOOP ; ->
 ```
 
-Source: `tests/forth2012-test-suite/src/core.fr`
+Source: `tests/forth2012-test-suite-local/src/core.fr`
 
 ```forth
 : GD6  ( PAT: T{0 0},{0 0}{1 0}{1 1},{0 0}{1 0}{1 1}{2 0}{2 1}{2 2} )
@@ -45,7 +45,7 @@ I 1+ 0 DO I J + 3 = IF I UNLOOP I UNLOOP EXIT THEN 1+ LOOP
 LOOP ; ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/core.fr`
+Source: `tests/forth2012-test-suite/src/core.fr`
 
 ## SEE ALSO
 

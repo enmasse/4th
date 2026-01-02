@@ -21,10 +21,10 @@ CLOSE-FILE ( fid -- ior ) - close file handle
 ## EXAMPLES
 
 ```forth
-CLOSE-FILE ->
+FID1 @ CLOSE-FILE -> 0
 ```
 
-Source: `tests/forth/create-file-tests.4th`
+Source: `tests/forth-tests/filetest.fth`
 
 ```forth
 FID1 @ CLOSE-FILE -> 0

@@ -36,7 +36,7 @@ Source: `tests/forth-tests/fp/ak-fp-test.fth`
 0. d>f fdrop fdepth -> 0
 ```
 
-Source: `tests/forth2012-test-suite/src/fp/ak-fp-test.fth`
+Source: `tests/forth2012-test-suite-local/src/fp/ak-fp-test.fth`
 
 ## SEE ALSO
 

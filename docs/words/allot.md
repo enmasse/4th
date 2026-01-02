@@ -21,30 +21,27 @@ ALLOT ( u -- ) - reserve u cells in dictionary
 ## EXAMPLES
 
 ```forth
-S" hello" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+HERE 1 ALLOT ALIGN HERE SWAP - ALMNT = -> <TRUE>
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/core.fr`
 
 ```forth
-S" hello\rworld" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+HERE 5 ALLOT -5 ALLOT HERE = -> <TRUE>
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/coreplustest.fth`
 
 ```forth
-S" hello\nworld" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+HERE 0 ALLOT HERE = -> <TRUE>
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/coreplustest.fth`
 
 ## SEE ALSO
 
-- [`ACCEPT`](accept.md)
-- [`CREATE`](create.md)
+- [`-`](_.md)
+- [`=`](_.md)
+- [`ALIGN`](align.md)
+- [`HERE`](here.md)
+- [`SWAP`](swap.md)

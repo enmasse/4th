@@ -21,12 +21,6 @@ CREATE-FILE ( c-addr u fam -- fileid ior ) - create file
 ## EXAMPLES
 
 ```forth
-S" testfile.txt" 1 CREATE-FILE SWAP DROP 0= -> TRUE
-```
-
-Source: `tests/forth/create-file-tests.4th`
-
-```forth
 FN1 R/W CREATE-FILE SWAP FID1 ! -> 0
 ```
 
@@ -38,11 +32,15 @@ FN2 R/W BIN CREATE-FILE SWAP FID2 ! -> 0
 
 Source: `tests/forth-tests/filetest.fth`
 
+```forth
+FN1 R/W CREATE-FILE SWAP FID1 ! -> 0
+```
+
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
+
 ## SEE ALSO
 
 - [`!`](_.md)
-- [`0=`](0_.md)
 - [`BIN`](bin.md)
-- [`DROP`](drop.md)
 - [`R/W`](r_w.md)
 - [`SWAP`](swap.md)

@@ -27,16 +27,16 @@ BASE @ HEX BASE @ DECIMAL BASE @ - SWAP BASE ! -> 6
 Source: `tests/forth-tests/coreexttest.fth`
 
 ```forth
-HEX : LT20 {: BEAD DEAF :} DEAF BEAD ; BEEF DEAD LT20 -> DEAD BEEF
-```
-
-Source: `tests/forth-tests/localstest.fth`
-
-```forth
 hex fffffffffffff. decimal d>f f>d -> hex fffffffffffff. decimal
 ```
 
 Source: `tests/forth-tests/fp/ak-fp-test.fth`
+
+```forth
+HEX : LT20 {: BEAD DEAF :} DEAF BEAD ; BEEF DEAD LT20 -> DEAD BEEF
+```
+
+Source: `tests/forth-tests/localstest.fth`
 
 ## SEE ALSO
 

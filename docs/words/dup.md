@@ -21,52 +21,26 @@ Duplicate top stack item ( x -- x x )
 ## EXAMPLES
 
 ```forth
-\ ( -- ) record the pre-test depth.
-DEPTH START-DEPTH ! 0 XCURSOR ! F{ ;
-: -> \ ( ... -- ) record depth and contents of stack.
-DEPTH DUP ACTUAL-DEPTH ! \ record depth
-START-DEPTH @ > IF \ if there is something on the stack
-DEPTH START-DEPTH @ - 0 DO \ save them
-ACTUAL-RESULTS I CELLS + !
-LOOP
-THEN
-F-> ;
-:
-```
-
-Source: `tests/tester.fs`
-
-```forth
-\ ( -- ) syntactic sugar.
-DEPTH START-DEPTH ! 0 XCURSOR ! F{ ;
-: ->		\ ( ... -- ) record depth and contents of stack.
-DEPTH DUP ACTUAL-DEPTH !		\ record depth
-START-DEPTH @ > IF		\ if there is something on the stack
-DEPTH START-DEPTH @ - 0 DO ACTUAL-RESULTS I CELLS + ! LOOP \ save them
-THEN
-F-> ;
-:
-```
-
-Source: `tests/ttester.4th`
-
-```forth
 RND-TEST-BLOCK BLOCK DUP ALIGNED = -> TRUE
+```
+
+Source: `tests/forth-tests/blocktest.fth`
+
+```forth
+RND-TEST-BLOCK DUP BLOCK SWAP BLOCK = -> TRUE
+```
+
+Source: `tests/forth-tests/blocktest.fth`
+
+```forth
+RND-TEST-BLOCK BUFFER DUP ALIGNED = -> TRUE
 ```
 
 Source: `tests/forth-tests/blocktest.fth`
 
 ## SEE ALSO
 
-- [`!`](_.md)
-- [`+`](_.md)
-- [`-`](_.md)
-- [`:`](_.md)
-- [`;`](_.md)
 - [`=`](_.md)
-- [`>`](_.md)
-- [`@`](_.md)
 - [`BLOCK`](block.md)
-- [`CELLS`](cells.md)
-- [`DEPTH`](depth.md)
-- [`DO`](do.md)
+- [`BUFFER`](buffer.md)
+- [`SWAP`](swap.md)

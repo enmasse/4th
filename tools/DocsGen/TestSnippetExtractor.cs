@@ -24,6 +24,7 @@ internal static class TestSnippetExtractor
             .Where(IsFixture)
             .Where(p => !p.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             .Where(p => !p.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
         // Heuristic #1: capture `T{ ... }T` blocks (ttester harness) as examples.

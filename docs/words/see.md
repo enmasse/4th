@@ -30,13 +30,13 @@ Source: `tests/forth-tests/coreplustest.fth`
 : PB1 CR ." You should see 2345: "." 2345"( A comment) CR ; PB1 ->
 ```
 
-Source: `tests/forth2012-test-suite/src/coreplustest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreplustest.fth`
 
 ```forth
 : PB1 CR ." You should see 2345: "." 2345"( A comment) CR ; PB1 ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/coreplustest.fth`
+Source: `tests/forth2012-test-suite/src/coreplustest.fth`
 
 ## SEE ALSO
 

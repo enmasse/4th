@@ -40,7 +40,7 @@ S" required-helper2.fth" INCLUDED
 -> 2
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ```forth
 0
@@ -51,7 +51,7 @@ S" required-helper2.fth" INCLUDED
 -> 2
 ```
 
-Source: `tests/forth2012-test-suite-local/src/filetest.fth`
+Source: `tests/forth2012-test-suite/src/filetest.fth`
 
 ## SEE ALSO
 

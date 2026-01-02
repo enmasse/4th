@@ -36,7 +36,7 @@ Source: `tests/forth-tests/filetest.fth`
 LINE2 FID1 @ WRITE-FILE -> 0
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ## SEE ALSO
 

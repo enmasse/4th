@@ -30,13 +30,13 @@ Source: `tests/forth-tests/blocktest.fth`
 2 RND-TEST-BLOCK-SEQ DUP TT1 DUP DUP 1+ THRU 1- = -> TRUE
 ```
 
-Source: `tests/forth2012-test-suite/src/blocktest.fth`
+Source: `tests/forth2012-test-suite-local/src/blocktest.fth`
 
 ```forth
 2 RND-TEST-BLOCK-SEQ DUP TT1 DUP DUP 1+ THRU 1- = -> TRUE
 ```
 
-Source: `tests/forth2012-test-suite-local/src/blocktest.fth`
+Source: `tests/forth2012-test-suite/src/blocktest.fth`
 
 ## SEE ALSO
 

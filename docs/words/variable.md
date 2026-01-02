@@ -36,7 +36,7 @@ Source: `tests/forth-tests/coreplustest.fth`
 VARIABLE V1 ->
 ```
 
-Source: `tests/forth2012-test-suite/src/core.fr`
+Source: `tests/forth2012-test-suite-local/src/core.fr`
 
 ## SEE ALSO
 

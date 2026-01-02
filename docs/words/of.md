@@ -21,6 +21,18 @@ OF - compare and branch ( sel test -- sel | )
 ## EXAMPLES
 
 ```forth
+: CS6 CASE 1 OF ENDOF 2 ENDCASE ; 1 CS6 ->
+```
+
+Source: `tests/forth-tests/coreexttest.fth`
+
+```forth
+: CS7 CASE 3 OF ENDOF 2 ENDCASE ; 1 CS7 -> 1
+```
+
+Source: `tests/forth-tests/coreexttest.fth`
+
+```forth
 , and extensions for the handling of floating point tests.
 \ Code for testing equality of floating point values comes
 \ from ftester.fs written by David N. Williams, based on the idea of
@@ -36,19 +48,7 @@ OF - compare and branch ( sel test -- sel | )
 \ The basic usage takes the form  T{ <code> -> <expected stack>
 ```
 
-Source: `tests/ttester.4th`
-
-```forth
-: CS6 CASE 1 OF ENDOF 2 ENDCASE ; 1 CS6 ->
-```
-
-Source: `tests/forth-tests/coreexttest.fth`
-
-```forth
-: CS7 CASE 3 OF ENDOF 2 ENDCASE ; 1 CS7 -> 1
-```
-
-Source: `tests/forth-tests/coreexttest.fth`
+Source: `tests/forth-tests/fp/ttester.fs`
 
 ## SEE ALSO
 

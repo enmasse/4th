@@ -36,7 +36,7 @@ Source: `tests/forth-tests/coreexttest.fth`
 111 VALUE VAL1 -999 VALUE VAL2 ->
 ```
 
-Source: `tests/forth2012-test-suite/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
 
 ## SEE ALSO
 

@@ -36,7 +36,7 @@ Source: `tests/forth-tests/doubletest.fth`
 1. 2. 3. 2ROT -> 2. 3. 1.
 ```
 
-Source: `tests/forth2012-test-suite/src/doubletest.fth`
+Source: `tests/forth2012-test-suite-local/src/doubletest.fth`
 
 ## SEE ALSO
 

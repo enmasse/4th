@@ -30,13 +30,13 @@ Source: `tests/forth-tests/filetest.fth`
 SOURCE-ID DUP -1 = SWAP 0= OR -> FALSE
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ```forth
 SOURCE-ID DUP -1 = SWAP 0= OR -> FALSE
 ```
 
-Source: `tests/forth2012-test-suite-local/src/filetest.fth`
+Source: `tests/forth2012-test-suite/src/filetest.fth`
 
 ## SEE ALSO
 

@@ -30,13 +30,13 @@ Source: `tests/forth-tests/fp/ak-fp-test.fth`
 -4. d>f -2. d>f fover f>d f>d f>d -> -4. -2. -4.
 ```
 
-Source: `tests/forth2012-test-suite/src/fp/ak-fp-test.fth`
+Source: `tests/forth2012-test-suite-local/src/fp/ak-fp-test.fth`
 
 ```forth
 -4. d>f -2. d>f fover f>d f>d f>d -> -4. -2. -4.
 ```
 
-Source: `tests/forth2012-test-suite-local/src/fp/ak-fp-test.fth`
+Source: `tests/forth2012-test-suite/src/fp/ak-fp-test.fth`
 
 ## SEE ALSO
 

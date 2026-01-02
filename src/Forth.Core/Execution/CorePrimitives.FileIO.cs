@@ -308,31 +308,15 @@ internal static partial class CorePrimitives
     private static Task Prim_DELETEFILE(ForthInterpreter i)
     {
         i.EnsureStack(2, "DELETE-FILE");
-        var v1 = ToLong(i.PopInternal());
-        var v2 = ToLong(i.PopInternal());
+        var u = (int)ToLong(i.PopInternal());
+        var addr = ToLong(i.PopInternal());
 
         static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
 
-        string filename;
-
-        // Prefer the same heuristic used for S\" variations elsewhere:
-        // if v1 looks like a counted-string char address (len at v1-1 equals v2), treat as (addr u).
-        if (v1 > 0)
+        var filename = NormalizeFileName(i.ReadMemoryString(addr, u));
+        if (!System.IO.Path.IsPathRooted(filename))
         {
-            long maybeLen = 0;
-            i.MemTryGet(v1 - 1, out maybeLen);
-            if (ToLong(maybeLen) == v2)
-            {
-                filename = NormalizeFileName(i.ReadMemoryString(v1, v2));
-            }
-            else
-            {
-                filename = NormalizeFileName(i.ReadMemoryString(v2, v1));
-            }
-        }
-        else
-        {
-            filename = NormalizeFileName(i.ReadMemoryString(v2, v1));
+            filename = System.IO.Path.GetFullPath(filename, System.IO.Directory.GetCurrentDirectory());
         }
 
         if (!File.Exists(filename))

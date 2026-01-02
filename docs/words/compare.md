@@ -21,24 +21,23 @@ COMPARE ( c-addr1 u1 c-addr2 u2 -- n ) - compare two strings lexicographically, 
 ## EXAMPLES
 
 ```forth
-S1 S1 COMPARE -> 0
+s" 10000" fbuf 5 compare -> 0
 ```
 
-Source: `tests/forth-tests/stringtest.fth`
+Source: `tests/forth-tests/fp/ak-fp-test.fth`
 
 ```forth
-S1 PAD OVER COMPARE -> 0
+s" 10000" fbuf 5 compare -> 0
 ```
 
-Source: `tests/forth-tests/stringtest.fth`
+Source: `tests/forth-tests/fp/ak-fp-test.fth`
 
 ```forth
-S1 PAD 6 COMPARE -> 1
+s" 33333" fbuf 5 compare -> 0
 ```
 
-Source: `tests/forth-tests/stringtest.fth`
+Source: `tests/forth-tests/fp/ak-fp-test.fth`
 
 ## SEE ALSO
 
-- [`OVER`](over.md)
-- [`PAD`](pad.md)
+- (none yet)

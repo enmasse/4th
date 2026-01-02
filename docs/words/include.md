@@ -49,7 +49,7 @@ INCLUDE required-helper1.fth
 -> 2
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ## SEE ALSO
 

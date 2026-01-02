@@ -30,13 +30,13 @@ Source: `tests/forth-tests/core.fr`
 : GT8 STATE @ ; IMMEDIATE ->
 ```
 
-Source: `tests/forth2012-test-suite/src/core.fr`
+Source: `tests/forth2012-test-suite-local/src/core.fr`
 
 ```forth
 : GT8 STATE @ ; IMMEDIATE ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/core.fr`
+Source: `tests/forth2012-test-suite/src/core.fr`
 
 ## SEE ALSO
 

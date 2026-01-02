@@ -21,46 +21,35 @@ Drop top stack item ( x -- )
 ## EXAMPLES
 
 ```forth
-S" HELLO" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 READ-LINE DROP
-B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
--> 72 69 76 76 79
+RND-TEST-BLOCK BLOCK DROP UPDATE ->
 ```
 
-Source: `tests/forth/add-input-line-tests.tester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ```forth
-CREATE C 16 ALLOT
-5 C !
-72 C 1 + C! 69 C 2 + C! 76 C 3 + C! 76 C 4 + C! 79 C 5 + C!
-C ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 READ-LINE DROP
-B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
--> 72 69 76 76 79
+RND-TEST-BLOCK                      \ blk
+0 OVER PREPARE-RND-BLOCK            \ blk hash
+UPDATE FLUSH                        \ blk hash
+OVER 0 SWAP PREPARE-RND-BLOCK DROP  \ blk hash
+FLUSH ( with no preliminary UPDATE) \ blk hash
+SWAP BLOCK 1024 ELF-HASH = -> TRUE
 ```
 
-Source: `tests/forth/add-input-line-tests.tester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ```forth
-CREATE D 16 ALLOT
-72 D C! 69 D 1 + C! 76 D 2 + C! 76 D 3 + C! 79 D 4 + C!
-D 5 ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 READ-LINE DROP
-B C@ B 1 + C@ B 2 + C@ B 3 + C@ B 4 + C@
--> 72 69 76 76 79
+' TUF2-1 2RND-TEST-BLOCKS TUF2       \ run test procedure
+SWAP DROP SWAP DROP 2= -> TRUE
 ```
 
-Source: `tests/forth/add-input-line-tests.tester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ## SEE ALSO
 
-- [`!`](_.md)
-- [`+`](_.md)
-- [`ALLOT`](allot.md)
-- [`C!`](c_.md)
-- [`C@`](c_.md)
-- [`CREATE`](create.md)
-- [`READ-LINE`](read_line.md)
+- [`'`](_.md)
+- [`=`](_.md)
+- [`BLOCK`](block.md)
+- [`FLUSH`](flush.md)
+- [`OVER`](over.md)
+- [`SWAP`](swap.md)
+- [`UPDATE`](update.md)

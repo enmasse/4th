@@ -2,6 +2,8 @@ using System.Text;
 using DocsGen;
 using Forth.Core.Documentation;
 
+static string NormalizeLf(string s) => s.Replace("\r\n", "\n");
+
 static string Slug(string word)
 {
     // Keep it stable and filesystem-friendly
@@ -125,7 +127,7 @@ static string BuildWordDoc(
         }
     }
 
-    return sb.ToString();
+    return NormalizeLf(sb.ToString());
 }
 
 static string FindRepoRoot(string startDir)

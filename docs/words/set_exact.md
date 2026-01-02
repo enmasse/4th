@@ -34,7 +34,7 @@ SET-EXACT
 t{  S" ."    >FLOAT  ->   FALSE     }t
 ```
 
-Source: `tests/forth2012-test-suite/src/fp/to-float-test.4th`
+Source: `tests/forth2012-test-suite-local/src/fp/to-float-test.4th`
 
 ```forth
 DECIMAL
@@ -42,7 +42,7 @@ SET-EXACT
 t{  S" ."    >FLOAT  ->   FALSE     }t
 ```
 
-Source: `tests/forth2012-test-suite-local/src/fp/to-float-test.4th`
+Source: `tests/forth2012-test-suite/src/fp/to-float-test.4th`
 
 ## SEE ALSO
 

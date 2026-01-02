@@ -21,12 +21,6 @@ COUNT ( c-addr -- c-addr u ) - return counted string address and length
 ## EXAMPLES
 
 ```forth
-S" hello" COUNT SWAP DROP -> 5
-```
-
-Source: `tests/forth/memory-count-tests.tester.4th`
-
-```forth
 GT1STRING COUNT -> GT1STRING CHAR+ 3
 ```
 
@@ -38,9 +32,13 @@ CQ1 COUNT EVALUATE -> 123
 
 Source: `tests/forth-tests/coreexttest.fth`
 
+```forth
+CQ2 COUNT EVALUATE ->
+```
+
+Source: `tests/forth-tests/coreexttest.fth`
+
 ## SEE ALSO
 
 - [`CHAR+`](char_.md)
-- [`DROP`](drop.md)
 - [`EVALUATE`](evaluate.md)
-- [`SWAP`](swap.md)

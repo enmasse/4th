@@ -30,13 +30,13 @@ Source: `tests/forth-tests/toolstest.fth`
 : ?DONE POSTPONE IF 1 CS-ROLL ; IMMEDIATE ->
 ```
 
-Source: `tests/forth2012-test-suite/src/toolstest.fth`
+Source: `tests/forth2012-test-suite-local/src/toolstest.fth`
 
 ```forth
 : ?DONE POSTPONE IF 1 CS-ROLL ; IMMEDIATE ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/toolstest.fth`
+Source: `tests/forth2012-test-suite/src/toolstest.fth`
 
 ## SEE ALSO
 

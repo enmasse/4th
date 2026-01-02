@@ -30,13 +30,13 @@ Source: `tests/forth-tests/fp/ak-fp-test.fth`
 fmem sf@ f>d -> -2.
 ```
 
-Source: `tests/forth2012-test-suite/src/fp/ak-fp-test.fth`
+Source: `tests/forth2012-test-suite-local/src/fp/ak-fp-test.fth`
 
 ```forth
 fmem sf@ f>d -> -2.
 ```
 
-Source: `tests/forth2012-test-suite-local/src/fp/ak-fp-test.fth`
+Source: `tests/forth2012-test-suite/src/fp/ak-fp-test.fth`
 
 ## SEE ALSO
 

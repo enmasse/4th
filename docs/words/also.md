@@ -30,13 +30,13 @@ Source: `tests/forth-tests/searchordertest.fth`
 ALSO GET-ORDER -> GET-ORDERLIST OVER SWAP 1+
 ```
 
-Source: `tests/forth2012-test-suite/src/searchordertest.fth`
+Source: `tests/forth2012-test-suite-local/src/searchordertest.fth`
 
 ```forth
 ALSO GET-ORDER -> GET-ORDERLIST OVER SWAP 1+
 ```
 
-Source: `tests/forth2012-test-suite-local/src/searchordertest.fth`
+Source: `tests/forth2012-test-suite/src/searchordertest.fth`
 
 ## SEE ALSO
 

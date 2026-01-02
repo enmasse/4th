@@ -52,7 +52,7 @@ SIV @
 -> 11111 0 22222
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ```forth
 11111 SAVE-INPUT
@@ -69,7 +69,7 @@ SIV @
 -> 11111 0 22222
 ```
 
-Source: `tests/forth2012-test-suite-local/src/filetest.fth`
+Source: `tests/forth2012-test-suite/src/filetest.fth`
 
 ## SEE ALSO
 

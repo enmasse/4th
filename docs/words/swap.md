@@ -21,23 +21,26 @@ Swap top two items ( a b -- b a )
 ## EXAMPLES
 
 ```forth
-1 2 3 swap -> 1 3 2
+RND-TEST-BLOCK DUP BLOCK SWAP BLOCK = -> TRUE
 ```
 
-Source: `tests/ttester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ```forth
-1 2 3 swap -> 1 2 2
+RND-TEST-BLOCK DUP BUFFER SWAP BUFFER = -> TRUE
 ```
 
-Source: `tests/ttester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ```forth
-1 2 3 swap -> 1 2 2
+RND-TEST-BLOCK DUP BLOCK SWAP BUFFER = -> TRUE
 ```
 
-Source: `tests/ttester.4th`
+Source: `tests/forth-tests/blocktest.fth`
 
 ## SEE ALSO
 
-- (none yet)
+- [`=`](_.md)
+- [`BLOCK`](block.md)
+- [`BUFFER`](buffer.md)
+- [`DUP`](dup.md)

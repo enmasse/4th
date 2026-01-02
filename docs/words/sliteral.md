@@ -30,13 +30,13 @@ Source: `tests/forth-tests/stringtest.fth`
 : S14 [ S1A ] SLITERAL ; ->
 ```
 
-Source: `tests/forth2012-test-suite/src/stringtest.fth`
+Source: `tests/forth2012-test-suite-local/src/stringtest.fth`
 
 ```forth
 : S14 [ S1A ] SLITERAL ; ->
 ```
 
-Source: `tests/forth2012-test-suite-local/src/stringtest.fth`
+Source: `tests/forth2012-test-suite/src/stringtest.fth`
 
 ## SEE ALSO
 

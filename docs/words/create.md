@@ -21,30 +21,28 @@ CREATE <name> - create a new data-definition word
 ## EXAMPLES
 
 ```forth
-S" hello" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+CREATE CR1 ->
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/core.fr`
 
 ```forth
-S" hello\rworld" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+: WEIRD: CREATE DOES> 1 + DOES> 2 + ; ->
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/core.fr`
 
 ```forth
-S" hello\nworld" ADD-INPUT-LINE
-CREATE B 16 ALLOT
-B 10 ACCEPT
+CREATE IW5 456 , IMMEDIATE ->
 ```
 
-Source: `tests/forth/accept-tests.4th`
+Source: `tests/forth-tests/coreplustest.fth`
 
 ## SEE ALSO
 
-- [`ACCEPT`](accept.md)
-- [`ALLOT`](allot.md)
+- [`+`](_.md)
+- [`,`](_.md)
+- [`:`](_.md)
+- [`;`](_.md)
+- [`DOES>`](does_.md)
+- [`IMMEDIATE`](immediate.md)

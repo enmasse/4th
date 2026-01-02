@@ -36,7 +36,7 @@ Source: `tests/forth-tests/filetest.fth`
 FN1 FILE-STATUS SWAP DROP 0= -> FALSE
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ## SEE ALSO
 

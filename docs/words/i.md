@@ -21,52 +21,33 @@ Push current loop index
 ## EXAMPLES
 
 ```forth
-\ ( -- ) record the pre-test depth.
-DEPTH START-DEPTH ! 0 XCURSOR ! F{ ;
-: -> \ ( ... -- ) record depth and contents of stack.
-DEPTH DUP ACTUAL-DEPTH ! \ record depth
-START-DEPTH @ > IF \ if there is something on the stack
-DEPTH START-DEPTH @ - 0 DO \ save them
-ACTUAL-RESULTS I CELLS + !
-LOOP
-THEN
-F-> ;
-:
-```
-
-Source: `tests/tester.fs`
-
-```forth
-\ ( -- ) syntactic sugar.
-DEPTH START-DEPTH ! 0 XCURSOR ! F{ ;
-: ->		\ ( ... -- ) record depth and contents of stack.
-DEPTH DUP ACTUAL-DEPTH !		\ record depth
-START-DEPTH @ > IF		\ if there is something on the stack
-DEPTH START-DEPTH @ - 0 DO ACTUAL-RESULTS I CELLS + ! LOOP \ save them
-THEN
-F-> ;
-:
-```
-
-Source: `tests/ttester.4th`
-
-```forth
 : GD1 DO I LOOP ; ->
+```
+
+Source: `tests/forth-tests/core.fr`
+
+```forth
+: GD2 DO I -1 +LOOP ; ->
+```
+
+Source: `tests/forth-tests/core.fr`
+
+```forth
+: GD5 123 SWAP 0 DO I 4 > IF DROP 234 LEAVE THEN LOOP ; ->
 ```
 
 Source: `tests/forth-tests/core.fr`
 
 ## SEE ALSO
 
-- [`!`](_.md)
-- [`+`](_.md)
-- [`-`](_.md)
+- [`+LOOP`](_loop.md)
 - [`:`](_.md)
 - [`;`](_.md)
 - [`>`](_.md)
-- [`@`](_.md)
-- [`CELLS`](cells.md)
-- [`DEPTH`](depth.md)
 - [`DO`](do.md)
-- [`DUP`](dup.md)
+- [`DROP`](drop.md)
 - [`IF`](if.md)
+- [`LEAVE`](leave.md)
+- [`LOOP`](loop.md)
+- [`SWAP`](swap.md)
+- [`THEN`](then.md)

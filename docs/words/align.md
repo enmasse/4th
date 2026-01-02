@@ -36,7 +36,7 @@ Source: `tests/forth-tests/coreexttest.fth`
 HERE 1 ALLOT ALIGN HERE SWAP - ALMNT = -> <TRUE>
 ```
 
-Source: `tests/forth2012-test-suite/src/core.fr`
+Source: `tests/forth2012-test-suite-local/src/core.fr`
 
 ## SEE ALSO
 

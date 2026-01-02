@@ -30,13 +30,13 @@ Source: `tests/forth-tests/filetest.fth`
 FN1 W/O OPEN-FILE SWAP FID1 ! -> 0
 ```
 
-Source: `tests/forth2012-test-suite/src/filetest.fth`
+Source: `tests/forth2012-test-suite-local/src/filetest.fth`
 
 ```forth
 FN1 W/O OPEN-FILE SWAP FID1 ! -> 0
 ```
 
-Source: `tests/forth2012-test-suite-local/src/filetest.fth`
+Source: `tests/forth2012-test-suite/src/filetest.fth`
 
 ## SEE ALSO
 

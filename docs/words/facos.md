@@ -21,12 +21,6 @@ FACOS ( r -- r ) - floating-point arccosine
 ## EXAMPLES
 
 ```forth
-S" 3.14159E" >FLOAT -> -1E FACOS TRUE RX
-```
-
-Source: `tests/ttester.4th`
-
-```forth
 1E facos 0E tf= -> true
 ```
 
@@ -38,7 +32,12 @@ Source: `tests/forth-tests/fp/ak-fp-test.fth`
 
 Source: `tests/forth-tests/fp/ak-fp-test.fth`
 
+```forth
+0E facos pi f/ 0.5E tf= -> true
+```
+
+Source: `tests/forth-tests/fp/ak-fp-test.fth`
+
 ## SEE ALSO
 
-- [`>FLOAT`](_float.md)
 - [`f/`](f_.md)

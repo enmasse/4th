@@ -36,7 +36,7 @@ Source: `tests/forth-tests/coreexttest.fth`
 : CS6 CASE 1 OF ENDOF 2 ENDCASE ; 1 CS6 ->
 ```
 
-Source: `tests/forth2012-test-suite/src/coreexttest.fth`
+Source: `tests/forth2012-test-suite-local/src/coreexttest.fth`
 
 ## SEE ALSO
 
