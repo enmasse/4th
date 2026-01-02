@@ -216,9 +216,33 @@ class Program
 
         try
         {
-            var reportDir = Path.Combine(repoRoot, "tools", "ans-diff");
-            Directory.CreateDirectory(reportDir);
-            var reportPath = Path.Combine(reportDir, "report.md");
+            var outArg = args.FirstOrDefault(a => a.StartsWith("--output=", StringComparison.OrdinalIgnoreCase));
+            string reportPath;
+            if (outArg is not null)
+            {
+                reportPath = outArg.Substring("--output=".Length).Trim('"');
+            }
+            else if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_ACTIONS")))
+            {
+                // In CI, default to a temp location to avoid modifying the working tree.
+                var runnerTemp = Environment.GetEnvironmentVariable("RUNNER_TEMP")?.Trim();
+                var baseDir = string.IsNullOrWhiteSpace(runnerTemp) ? Path.GetTempPath() : runnerTemp;
+                reportPath = Path.Combine(baseDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), "ans-diff-report.md");
+            }
+            else
+            {
+                reportPath = Path.Combine(repoRoot, "tools", "ans-diff", "report.md");
+            }
+
+            if (string.IsNullOrWhiteSpace(reportPath))
+            {
+                reportPath = Path.Combine(repoRoot, "tools", "ans-diff", "report.md");
+            }
+
+            var reportDir = Path.GetDirectoryName(reportPath);
+            if (!string.IsNullOrWhiteSpace(reportDir))
+                Directory.CreateDirectory(reportDir);
+
             File.WriteAllText(reportPath, sb.ToString());
             Console.WriteLine($"Wrote report to: {reportPath}");
         }
