@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class StackPrimitives
 {
     [Primitive("DUP", HelpString = "Duplicate top stack item ( x -- x x )")]
     private static Task Prim_DUP(ForthInterpreter i) { i.EnsureStack(1, "DUP"); i.Push(i.StackTop()); return Task.CompletedTask; }
@@ -49,7 +49,15 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("PICK", HelpString = "Copy Nth item from top ( n -- ) \nPICK expects index n and pushes the item at that depth")]
-    private static Task Prim_PICK(ForthInterpreter i) { i.EnsureStack(1, "PICK"); var n = ToLong(i.PopInternal()); if (n < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: negative index {n}"); if (n >= i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: index {n} exceeds stack depth {i.Stack.Count}"); i.Push(i.StackNthFromTop((int)n + 1)); return Task.CompletedTask; }
+    private static Task Prim_PICK(ForthInterpreter i)
+    {
+        i.EnsureStack(1, "PICK");
+        var n = CorePrimitives.ToLong(i.PopInternal());
+        if (n < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: negative index {n}");
+        if (n >= i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: index {n} exceeds stack depth {i.Stack.Count}");
+        i.Push(i.StackNthFromTop((int)n + 1));
+        return Task.CompletedTask;
+    }
 
     [Primitive("DEPTH", HelpString = "Return current stack depth ( -- n )")]
     private static Task Prim_DEPTH(ForthInterpreter i) { i.Push((long)i.Stack.Count); return Task.CompletedTask; }
@@ -102,7 +110,7 @@ internal static partial class CorePrimitives
         i.EnsureStack(1, "?DUP");
         var n = i.PopInternal();
         i.Push(n);
-        if (ToLong(n) != 0) i.Push(n);
+        if (CorePrimitives.ToLong(n) != 0) i.Push(n);
         return Task.CompletedTask;
     }
 

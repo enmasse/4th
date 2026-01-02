@@ -15,6 +15,39 @@ namespace Forth.Core.Execution;
     Justification = "Primitives are discovered and invoked via reflection by CreateWords() scanning [Primitive] attributes.")]
 internal static partial class CorePrimitives
 {
+    // Helpers used across groups
+    internal static long ToLong(object o)
+    {
+        return o switch
+        {
+            long l => l,
+            int ii => ii,
+            short s => s,
+            byte b => b,
+            double d => (long)d,
+            char c => c,
+            bool bo => bo ? -1 : 0,
+            string str => str.Length > 0 ? (long)str[0] : throw new ForthException(ForthErrorCode.TypeError, "Empty string for number conversion"),
+            Word w when w.BodyAddr.HasValue => w.BodyAddr.Value,
+            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {o?.GetType().Name ?? "null"}")
+        };
+    }
+
+    internal static bool ToBool(object v) => v switch
+    {
+        bool b => b,
+        long l => l != 0,
+        int i => i != 0,
+        short s => s != 0,
+        byte b8 => b8 != 0,
+        char c => c != '\0',
+        double d => d != 0.0,
+        float f => f != 0.0f,
+        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
+    };
+
+    internal static bool IsNumeric(object o) => o is long || o is int || o is short || o is byte || o is double || o is char || o is bool;
+
     private sealed class KeyComparer : IEqualityComparer<(string? Module, string Name)>
     {
         public bool Equals((string? Module, string Name) x, (string? Module, string Name) y)
@@ -38,78 +71,66 @@ internal static partial class CorePrimitives
     public static ImmutableDictionary<(string? Module, string Name), Word> Words =>
         _words.Value;
 
-    // Helpers used across groups
-    private static long ToLong(object o)
-    {
-        return o switch
-        {
-            long l => l,
-            int ii => ii,
-            short s => s,
-            byte b => b,
-            double d => (long)d,
-            char c => c,
-            bool bo => bo ? -1 : 0,
-            string str => str.Length > 0 ? (long)str[0] : throw new ForthException(ForthErrorCode.TypeError, "Empty string for number conversion"),
-            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {o?.GetType().Name ?? "null"}")
-        };
-    }
-
-    private static bool ToBool(object v) => v switch
-    {
-        bool b => b,
-        long l => l != 0,
-        int i => i != 0,
-        short s => s != 0,
-        byte b8 => b8 != 0,
-        char c => c != '\0',
-        double d => d != 0.0,
-        float f => f != 0.0f,
-        _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected boolean/number, got {v?.GetType().Name ?? "null"}")
-    };
-
     private static ImmutableDictionary<(string? Module, string Name), Word> CreateWords()
     {
         var dict = ImmutableDictionary.CreateBuilder<(string? Module, string Name), Word>(new KeyComparer());
-        var primType = typeof(CorePrimitives);
-        var methods = primType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
-        
-        var seenPrimitives = new Dictionary<string, (string MethodName, string? Module)>(StringComparer.OrdinalIgnoreCase);
-        
-        foreach (var method in methods)
+
+        var asm = typeof(CorePrimitives).Assembly;
+        var bindingFlags = BindingFlags.Static | BindingFlags.NonPublic;
+
+        var seenPrimitives = new Dictionary<(string? Module, string Name), (string TypeName, string MethodName)>(new KeyComparer());
+
+        foreach (var type in asm.GetTypes())
         {
-            var attr = method.GetCustomAttribute<PrimitiveAttribute>();
-            if (attr is not null)
+            if (!type.IsClass)
             {
+                continue;
+            }
+
+            // Only consider primitive containers. Today primitives live under the Execution namespace.
+            // This keeps scanning tight and avoids accidental pickup from unrelated tooling types.
+            if (!string.Equals(type.Namespace, typeof(CorePrimitives).Namespace, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var methods = type.GetMethods(bindingFlags);
+            foreach (var method in methods)
+            {
+                var attr = method.GetCustomAttribute<PrimitiveAttribute>();
+                if (attr is null)
+                {
+                    continue;
+                }
+
                 var name = attr.Name;
                 var module = attr.Module;
-                
-                // Check for duplicate primitive declarations
-                if (seenPrimitives.TryGetValue(name, out var existing))
+                var key = (module, name);
+
+                // Check for duplicate primitive declarations (unique within a module)
+                if (seenPrimitives.TryGetValue(key, out var existing))
                 {
-                    // Allow same name in different modules
-                    if (string.Equals(existing.Module, module, StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException(
-                            $"Duplicate primitive '{name}' declared in methods '{existing.MethodName}' and '{method.Name}'. " +
-                            $"Each primitive name must be unique within a module.");
-                    }
+                    throw new InvalidOperationException(
+                        $"Duplicate primitive '{name}' declared in '{existing.TypeName}.{existing.MethodName}' and '{type.Name}.{method.Name}'. " +
+                        "Each primitive name must be unique within a module.");
                 }
-                else
-                {
-                    seenPrimitives[name] = (method.Name, module);
-                }
-                
+
+                seenPrimitives[key] = (type.Name, method.Name);
+
                 var func = (Func<ForthInterpreter, Task>)Delegate.CreateDelegate(typeof(Func<ForthInterpreter, Task>), method);
-                var word = new Word(func);
-                word.Name = name;
-                word.Module = module;
-                word.IsImmediate = attr.IsImmediate;
-                word.HelpString = attr.HelpString;
-                word.Category = attr.Category;
-                dict[(module, name)] = word;
+                var word = new Word(func)
+                {
+                    Name = name,
+                    Module = module,
+                    IsImmediate = attr.IsImmediate,
+                    HelpString = attr.HelpString,
+                    Category = attr.Category
+                };
+
+                dict[key] = word;
             }
         }
+
         return dict.ToImmutable();
     }
 

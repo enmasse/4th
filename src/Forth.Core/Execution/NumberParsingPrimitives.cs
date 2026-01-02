@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Forth.Core.Execution;
 
 // Numeric parsing related primitives
-internal static partial class CorePrimitives
+internal static class NumberParsingPrimitives
 {
     // >NUMBER ( c-addr u acc start -- acc' remflag digits )
     [Primitive(">NUMBER", HelpString = ">NUMBER ( c-addr u acc start -- acc' remflag digits ) - accumulate digits per BASE, report remainder")]
@@ -36,9 +36,8 @@ internal static partial class CorePrimitives
     {
         consumed = startDigits;
 
-        // Materialize the input slice into a string
         string slice;
-        
+
         if (addrOrStr is string s)
         {
             slice = length <= s.Length ? s.Substring(0, length) : s;
@@ -47,27 +46,23 @@ internal static partial class CorePrimitives
         {
             if (length == 0)
             {
-                // counted string form: addr points to count byte
                 i.MemTryGet(addr, out var countVal);
                 int count = (int)((byte)countVal);
                 slice = i.ReadMemoryString(addr + 1, count);
             }
             else
             {
-                // (c-addr u) form: addr already points to actual string data
                 slice = i.ReadMemoryString(addr, length);
             }
         }
         else
         {
-            throw new ForthException(ForthErrorCode.TypeError, 
+            throw new ForthException(ForthErrorCode.TypeError,
                 $"ParseDigits received unexpected type: {addrOrStr?.GetType().Name ?? "null"}, value={addrOrStr}");
         }
 
         int idx = 0;
-        // Don't skip leading space - tokenizer already handled it for S" literals
 
-        // Accumulate digits
         while (idx < slice.Length)
         {
             char c = slice[idx];
@@ -91,7 +86,7 @@ internal static partial class CorePrimitives
     private static Task Prim_ToUNumber(ForthInterpreter i)
     {
         i.EnsureStack(2, ">UNUMBER");
-        var u = ToLong(i.PopInternal());
+        var u = CorePrimitives.ToLong(i.PopInternal());
         var addr = i.PopInternal();
         if (u < 0) throw new ForthException(ForthErrorCode.TypeError, ">UNUMBER negative length");
 
@@ -99,7 +94,7 @@ internal static partial class CorePrimitives
         int @base = (int)(baseVal <= 1 ? 10 : baseVal);
         if (@base < 2) @base = 10;
 
-        var addrLong = ToLong(addr);
+        var addrLong = CorePrimitives.ToLong(addr);
         string slice = i.ReadMemoryString(addrLong, (int)u);
         if (NumberParser.TryParse(slice, def => @base, out var num))
         {

@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class ArithmeticPrimitives
 {
+    // Moved from `CorePrimitives.Arithmetic.cs`
+
     [Primitive("1+", Category = "Arithmetic", HelpString = "Increment ( n -- n+1 )")]
     private static Task Prim_OnePlus(ForthInterpreter i)
     {
@@ -79,6 +81,7 @@ internal static partial class CorePrimitives
         i._stack.Push(ForthValue.FromLong(n < 0 ? -n : n));
         return Task.CompletedTask;
     }
+
     [Primitive("+", Category = "Arithmetic", HelpString = "Add two numbers ( a b -- sum )")]
     private static Task Prim_Plus(ForthInterpreter i)
     {
@@ -163,8 +166,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // FM/MOD - Floored division and modulus for single-cell numbers
-    // Returns remainder then quotient per /MOD convention
     [Primitive("FM/MOD", HelpString = "Floored division ( n1 n2 -- rem quot ) with remainder having sign of divisor")]
     private static Task Prim_FM_Slash_MOD(ForthInterpreter i)
     {
@@ -176,12 +177,12 @@ internal static partial class CorePrimitives
         long a = aFv.LongValue;
         if (b == 0) throw new ForthException(ForthErrorCode.DivideByZero, "Divide by zero");
 
-        long q = a / b; // truncates toward zero
-        long r = a % b; // remainder with sign of dividend
-        if (r != 0 && ((a ^ b) < 0)) // signs differ -> need floor adjustment
+        long q = a / b;
+        long r = a % b;
+        if (r != 0 && ((a ^ b) < 0))
         {
             q -= 1;
-            r += b; // remainder sign follows divisor (floored semantics)
+            r += b;
         }
 
         i._stack.Push(ForthValue.FromLong(r));
@@ -266,13 +267,11 @@ internal static partial class CorePrimitives
 
         var quot = (long)quotBig;
         var rem = (long)remBig;
-        // Push remainder then quotient as per /MOD convention
         i._stack.Push(ForthValue.FromLong(rem));
         i._stack.Push(ForthValue.FromLong(quot));
         return Task.CompletedTask;
     }
 
-    // Double-cell addition: D+ (d1_lo d1_hi d2_lo d2_hi -- sum_lo sum_hi)
     [Primitive("D+", HelpString = "D+ ( d1 d2 -- d3 ) - add two double-cell numbers (low then high)")]
     private static Task Prim_DPlus(ForthInterpreter i)
     {
@@ -292,7 +291,6 @@ internal static partial class CorePrimitives
             ulong u1 = (ulong)d1_lo;
             ulong u2 = (ulong)d2_lo;
             ulong low = u1 + u2;
-            // carry if overflow
             ulong carry = (low < u1) ? 1UL : 0UL;
 
             ulong uh1 = (ulong)d1_hi;
@@ -306,7 +304,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // Double-cell subtraction: D- (d1 d2 -- d3) where d3 = d1 - d2
     [Primitive("D-", HelpString = "D- ( d1 d2 -- d3 ) - subtract two double-cell numbers (low then high)")]
     private static Task Prim_DMinus(ForthInterpreter i)
     {
@@ -326,7 +323,6 @@ internal static partial class CorePrimitives
             ulong u1 = (ulong)d1_lo;
             ulong u2 = (ulong)d2_lo;
             ulong low = u1 - u2;
-            // borrow if underflow
             ulong borrow = (u1 < u2) ? 1UL : 0UL;
 
             ulong uh1 = (ulong)d1_hi;
@@ -340,7 +336,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // M* ( n1 n2 -- d ) multiply two single-cell numbers producing double-cell product
     [Primitive("M*", HelpString = "M* ( n1 n2 -- d ) - multiply two cells producing a double-cell result (low then high)")]
     private static Task Prim_MStar(ForthInterpreter i)
     {
@@ -354,7 +349,7 @@ internal static partial class CorePrimitives
         var prod = new BigInteger(n1) * new BigInteger(n2);
         var mask = (BigInteger.One << 64) - 1;
         var lowBig = prod & mask;
-        var highBig = prod >> 64; // arithmetic shift preserves sign for high cell
+        var highBig = prod >> 64;
 
         long low = (long)(ulong)lowBig;
         long high = (long)highBig;
@@ -364,7 +359,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // UM* ( u1 u2 -- ud ) unsigned multiply producing double-cell result (low then high)
     [Primitive("UM*", HelpString = "UM* ( u1 u2 -- ud ) - unsigned multiply to double-cell (low then high)")]
     private static Task Prim_UMStar(ForthInterpreter i)
     {
@@ -388,7 +382,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // UM/MOD ( ud u -- urem uquot ) unsigned division returning remainder then quotient
     [Primitive("UM/MOD", HelpString = "UM/MOD ( ud u -- urem uquot ) - unsigned division of double-cell by single-cell")]
     private static Task Prim_UMSlashMod(ForthInterpreter i)
     {
@@ -412,8 +405,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // SM/REM - Divide double-cell dividend by single-cell divisor using floored semantics
-    // Stack: ( d_low d_high n -- rem quot )
     [Primitive("SM/REM", HelpString = "SM/REM ( d n -- rem quot ) - floored division of double-cell by single-cell")]
     private static Task Prim_SM_Slash_REM(ForthInterpreter i)
     {
@@ -439,6 +430,7 @@ internal static partial class CorePrimitives
 
         long quot = (long)q0;
         long rem = (long)r0;
+        // Preserve the existing implementation's stack ordering.
         i._stack.Push(ForthValue.FromLong(quot));
         i._stack.Push(ForthValue.FromLong(rem));
         return Task.CompletedTask;
@@ -489,7 +481,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // WITHIN ( x low high -- flag ) true if low <= x < high
     [Primitive("WITHIN", HelpString = "WITHIN ( x low high -- flag ) - true if low <= x < high")]
     private static Task Prim_WITHIN(ForthInterpreter i)
     {
@@ -506,7 +497,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // D< ( d1 d2 -- flag ) true if d1 < d2
     [Primitive("D<", HelpString = "D< ( d1 d2 -- flag ) - true if d1 < d2")]
     private static Task Prim_DLess(ForthInterpreter i)
     {
@@ -525,7 +515,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // D= ( d1 d2 -- flag ) true if d1 == d2
     [Primitive("D=", HelpString = "D= ( d1 d2 -- flag ) - true if d1 == d2")]
     private static Task Prim_DEqual(ForthInterpreter i)
     {
@@ -544,7 +533,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // D>S ( d -- n ) convert double to single by taking the high cell
     [Primitive("D>S", HelpString = "D>S ( d -- n ) - convert double-cell to single-cell by taking the high cell")]
     private static Task Prim_DToS(ForthInterpreter i)
     {
@@ -557,7 +545,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // D2* ( d -- d*2 ) multiply double-cell by 2
     [Primitive("D2*", HelpString = "D2* ( d -- d*2 ) - multiply double-cell by 2")]
     private static Task Prim_DTwoStar(ForthInterpreter i)
     {
@@ -580,7 +567,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // D2/ ( d -- d/2 ) divide double-cell by 2
     [Primitive("D2/", HelpString = "D2/ ( d -- d/2 ) - divide double-cell by 2")]
     private static Task Prim_DTwoSlash(ForthInterpreter i)
     {
@@ -599,7 +585,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // DABS ( d -- |d| ) absolute value of double-cell
     [Primitive("DABS", HelpString = "DABS ( d -- |d| ) - absolute value of double-cell")]
     private static Task Prim_DABS(ForthInterpreter i)
     {
@@ -624,8 +609,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-
-    // DNEGATE ( d -- -d ) negate double-cell
     [Primitive("DNEGATE", HelpString = "DNEGATE ( d -- -d ) - negate double-cell")]
     private static Task Prim_DNEGATE(ForthInterpreter i)
     {
@@ -650,7 +633,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // DU< ( ud1 ud2 -- flag ) true if ud1 < ud2 unsigned
     [Primitive("DU<", HelpString = "DU< ( ud1 ud2 -- flag ) - true if ud1 < ud2 unsigned")]
     private static Task Prim_DULess(ForthInterpreter i)
     {
@@ -686,7 +668,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // DMAX ( d1 d2 -- d3 ) d3 = max(d1, d2)
     [Primitive("DMAX", HelpString = "DMAX ( d1 d2 -- d3 ) - return the maximum of two double-cell numbers")]
     private static Task Prim_DMAX(ForthInterpreter i)
     {
@@ -715,7 +696,6 @@ internal static partial class CorePrimitives
         return Task.CompletedTask;
     }
 
-    // DMIN ( d1 d2 -- d3 ) d3 = min(d1, d2)
     [Primitive("DMIN", HelpString = "DMIN ( d1 d2 -- d3 ) - return the minimum of two double-cell numbers")]
     private static Task Prim_DMIN(ForthInterpreter i)
     {
@@ -748,7 +728,7 @@ internal static partial class CorePrimitives
     private static Task Prim_Question(ForthInterpreter i)
     {
         i.EnsureStack(1, "?");
-        var addr = ToLong(i.PopInternal());
+        var addr = CorePrimitives.ToLong(i.PopInternal());
         var val = i._mem[addr];
         i.WriteText(val.ToString());
         return Task.CompletedTask;

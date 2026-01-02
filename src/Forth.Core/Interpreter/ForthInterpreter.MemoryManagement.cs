@@ -12,6 +12,7 @@ public partial class ForthInterpreter
         for (int idx = 0; idx < str.Length; idx++)
             _mem[addr + 1 + idx] = (long)str[idx];
         _nextAddr = addr + 1 + str.Length;
+
         return addr;
     }
 
@@ -21,6 +22,7 @@ public partial class ForthInterpreter
         for (int idx = 0; idx < str.Length; idx++)
             _mem[addr + idx] = (long)str[idx];
         _nextAddr += str.Length;
+
         return addr;
     }
 
@@ -43,6 +45,8 @@ public partial class ForthInterpreter
     // Unified string reading helpers
     internal string ReadCountedString(long addr)
     {
+        var result = string.Empty;
+
         MemTryGet(addr, out var len);
         var l = (int)len;
         if (l <= 0) return string.Empty;
@@ -52,7 +56,9 @@ public partial class ForthInterpreter
             MemTryGet(addr + 1 + k, out var chv);
             sb.Append((char)chv);
         }
-        return sb.ToString();
+        result = sb.ToString();
+
+        return result;
     }
 
     internal string ReadMemoryString(long addr, long u)
@@ -64,6 +70,8 @@ public partial class ForthInterpreter
             MemTryGet(addr + k, out var chv);
             sb.Append((char)chv);
         }
-        return sb.ToString();
+        var result = sb.ToString();
+
+        return result;
     }
 }

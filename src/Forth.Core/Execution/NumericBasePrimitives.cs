@@ -1,11 +1,9 @@
 using Forth.Core.Interpreter;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class NumericBasePrimitives
 {
     [Primitive("BASE", HelpString = "Push address of BASE variable")]
     private static Task Prim_BASE(ForthInterpreter i) { i.Push(i.BaseAddr); return Task.CompletedTask; }

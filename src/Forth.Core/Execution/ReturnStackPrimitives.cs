@@ -1,10 +1,9 @@
 using Forth.Core.Interpreter;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class ReturnStackPrimitives
 {
     [Primitive(">R", HelpString = ">R ( x -- ) - push top of data stack onto return stack")]
     private static Task Prim_ToR(ForthInterpreter i) { i.EnsureStack(1, ">R"); var a = i.PopInternal(); i.RPush(a); return Task.CompletedTask; }

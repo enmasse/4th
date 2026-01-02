@@ -10,6 +10,13 @@ namespace Forth.Tests.Core.MissingWords;
 
 public class FileIOTests
 {
+    private static string CreateTestTempDir([System.Runtime.CompilerServices.CallerMemberName] string? testName = null)
+    {
+        var baseDir = Path.Combine(AppContext.BaseDirectory, "tmp", "fileio", testName ?? "unknown", Guid.NewGuid().ToString("n"));
+        Directory.CreateDirectory(baseDir);
+        return baseDir;
+    }
+
     private sealed class TestIO : IForthIO
     {
         public readonly System.Collections.Generic.List<string> Outputs = new();
@@ -24,7 +31,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             Assert.True(await forth.EvalAsync($"S\"Hello file\" \"{path}\" WRITE-FILE"));
@@ -42,13 +50,14 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             // write initial
             Assert.True(await forth.EvalAsync($"S\"Line1\" \"{path}\" WRITE-FILE"));
-            // append second line
-            Assert.True(await forth.EvalAsync($"S\"\\nLine2\" \"{path}\" APPEND-FILE"));
+            // append second line with an actual newline character
+            Assert.True(await forth.EvalAsync($"S\"\nLine2\" \"{path}\" APPEND-FILE"));
             var txt = File.ReadAllText(path);
             Assert.Equal("Line1\nLine2", txt);
         }
@@ -63,7 +72,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "Payload");
@@ -83,7 +93,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         // ensure missing
         if (File.Exists(path)) File.Delete(path);
         Assert.True(await forth.EvalAsync($"\"{path}\" FILE-EXISTS"));
@@ -106,13 +117,14 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         // ensure missing
         if (File.Exists(path)) File.Delete(path);
         Assert.True(await forth.EvalAsync($"S\"{path}\" FILE-STATUS"));
         Assert.Equal(2, forth.Stack.Count);
-        Assert.Equal(-1L, (long)forth.Stack[0]); // x: -1 not exists
-        Assert.Equal(0L, (long)forth.Stack[1]); // ior: 0
+        Assert.Equal(-1L, (long)forth.Stack[0]);
+        Assert.Equal(0L, (long)forth.Stack[1]);
 
         // create
         File.WriteAllText(path, "x");
@@ -120,8 +132,8 @@ public class FileIOTests
         forth = new ForthInterpreter(io);
         Assert.True(await forth.EvalAsync($"S\"{path}\" FILE-STATUS"));
         Assert.Equal(2, forth.Stack.Count);
-        Assert.Equal(0L, (long)forth.Stack[0]); // x: 0 exists
-        Assert.Equal(0L, (long)forth.Stack[1]); // ior: 0
+        Assert.Equal(0L, (long)forth.Stack[0]);
+        Assert.Equal(0L, (long)forth.Stack[1]);
 
         if (File.Exists(path)) File.Delete(path);
     }
@@ -131,13 +143,14 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".4th");
         try
         {
             // Write a tiny forth file that prints text and CR
             File.WriteAllText(path, ".\" INCLUDED\" CR\n");
-            Assert.True(await forth.EvalAsync($"INCLUDE \"{path}\""));
-            // INCLUDE executes lines which cause Print and NewLine
+            Assert.True(await forth.EvalAsync($"\" {path}\" INCLUDED"));
+            // INCLUDED executes lines which cause Print and NewLine
             Assert.True(io.Outputs.Count >= 2);
             Assert.Equal("INCLUDED", io.Outputs[0]);
             Assert.Equal("\n", io.Outputs[1]);
@@ -153,12 +166,13 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".4th");
         try
         {
             // Write a tiny forth file that prints text and CR
             File.WriteAllText(path, ".\" INCLUDE-FILED\" CR\n");
-            Assert.True(await forth.EvalAsync($"S\"{path}\" INCLUDE-FILE"));
+            Assert.True(await forth.EvalAsync($"\"{path}\" INCLUDE-FILE"));
             // INCLUDE-FILE executes lines which cause Print and NewLine
             Assert.True(io.Outputs.Count >= 2);
             Assert.Equal("INCLUDE-FILED", io.Outputs[0]);
@@ -175,7 +189,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".4th");
         try
         {
             // Write a tiny forth file that prints text and CR
@@ -198,7 +213,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         // missing file -> -1
         if (File.Exists(path)) File.Delete(path);
         Assert.True(await forth.EvalAsync($"\"{path}\" FILE-SIZE"));
@@ -220,7 +236,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "ABCDEFG");
@@ -257,7 +274,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "ABCDEFG");
@@ -288,7 +306,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "ABCDEFG");
@@ -322,7 +341,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             if (File.Exists(path)) File.Delete(path);
@@ -348,7 +368,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1, h2 = -1;
         try
         {
@@ -415,7 +436,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1, h2 = -1;
         try
         {
@@ -473,7 +495,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -511,7 +534,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -550,7 +574,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -598,7 +623,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -634,7 +660,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -690,7 +717,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -720,7 +748,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".bin");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".bin");
         long h = -1;
         try
         {
@@ -807,7 +836,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             // Try WRITE-FILE with negative u
@@ -827,7 +857,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "initial");
@@ -847,7 +878,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             // Try WRITE-FILE with invalid addr (large number)
@@ -872,7 +904,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = "create_test.txt";
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, "create_test.txt");
         // S" path" 1 CREATE-FILE -> fid ior
         Assert.True(await forth.EvalAsync($"S\" {path}\" 1 CREATE-FILE"));
         Assert.Equal(2, forth.Stack.Count);
@@ -890,7 +923,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = "truncate_test.txt";
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, "truncate_test.txt");
         File.WriteAllText(path, "existing content");
         Assert.True(await forth.EvalAsync($"S\" {path}\" 1 CREATE-FILE"));
         Assert.True(await forth.EvalAsync("DROP")); // drop ior, keep fid
@@ -905,7 +939,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(path, "content");
@@ -927,7 +962,8 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var path = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         // ensure old doesn't exist
         if (File.Exists(path)) File.Delete(path);
         Assert.True(await forth.EvalAsync($"S\"{path}\" DELETE-FILE"));
@@ -940,8 +976,9 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var oldPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
-        var newPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var oldPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
+        var newPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(oldPath, "content");
@@ -969,8 +1006,9 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var oldPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
-        var newPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var oldPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
+        var newPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         // ensure old doesn't exist
         if (File.Exists(oldPath)) File.Delete(oldPath);
         Assert.True(await forth.EvalAsync($"S\" {oldPath}\" S\" {newPath}\" RENAME-FILE"));
@@ -983,14 +1021,15 @@ public class FileIOTests
     {
         var io = new TestIO();
         var forth = new ForthInterpreter(io);
-        var srcPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
-        var dstPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
+        var dir = CreateTestTempDir();
+        var srcPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
+        var dstPath = Path.Combine(dir, Path.GetRandomFileName() + ".txt");
         try
         {
             File.WriteAllText(srcPath, "content");
             Assert.True(File.Exists(srcPath));
             Assert.False(File.Exists(dstPath));
-            // S" src" S" dst" COPY-FILE -> ior
+            // " src" " dst" COPY-FILE -> ior
             Assert.True(await forth.EvalAsync($"S\" {srcPath}\" S\" {dstPath}\" COPY-FILE"));
             Assert.Single(forth.Stack);
             Assert.Equal(0L, (long)forth.Stack[0]);
@@ -1002,72 +1041,6 @@ public class FileIOTests
         {
             if (File.Exists(srcPath)) File.Delete(srcPath);
             if (File.Exists(dstPath)) File.Delete(dstPath);
-        }
-    }
-
-    [Fact]
-    public async Task Included_Executes_File_Content()
-    {
-        var io = new TestIO();
-        var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
-        try
-        {
-            // Write a tiny forth file that prints text and CR
-            File.WriteAllText(path, ".\" INCLUDED\" CR\n");
-            Assert.True(await forth.EvalAsync($"S\" {path}\" INCLUDED"));
-            // INCLUDED executes lines which cause Print and NewLine
-            Assert.True(io.Outputs.Count >= 2);
-            Assert.Equal("INCLUDED", io.Outputs[0]);
-            Assert.Equal("\n", io.Outputs[1]);
-        }
-        finally
-        {
-            if (File.Exists(path)) File.Delete(path);
-        }
-    }
-
-    [Fact]
-    public async Task Included_AcceptsString()
-    {
-        var io = new TestIO();
-        var forth = new ForthInterpreter(io);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".4th");
-        try
-        {
-            // Write a tiny forth file that prints text and CR
-            File.WriteAllText(path, ".\" INCLUDED-STRING\" CR\n");
-            Assert.True(await forth.EvalAsync($"\"{path}\" INCLUDED"));
-            // INCLUDED executes lines which cause Print and NewLine
-            Assert.True(io.Outputs.Count >= 2);
-            Assert.Equal("INCLUDED-STRING", io.Outputs[0]);
-            Assert.Equal("\n", io.Outputs[1]);
-        }
-        finally
-        {
-            if (File.Exists(path)) File.Delete(path);
-        }
-    }
-
-    [Fact]
-    public async Task OpenFile_WithFam_ReadBinary()
-    {
-        var forth = new ForthInterpreter();
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".txt");
-        try
-        {
-            File.WriteAllText(path, "test");
-            // OPEN-FILE with fam 4 (R/O BIN OR)
-            Assert.True(await forth.EvalAsync($"\"{path}\" 4 OPEN-FILE"));
-            Assert.True(await forth.EvalAsync("SWAP DROP"));
-            var h = (long)forth.Stack[^1];
-            Assert.True(h > 0);
-            // Close
-            Assert.True(await forth.EvalAsync($"{h} CLOSE-FILE"));
-        }
-        finally
-        {
-            if (File.Exists(path)) File.Delete(path);
         }
     }
 }

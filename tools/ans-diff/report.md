@@ -1,4 +1,4 @@
-Report generated on 2026-01-02
+Report generated on 2026-01-03
 
 Found 354 primitives in code:
 
@@ -357,11 +357,111 @@ WRITE-LINE
 XOR
 YIELD
 
+## block (9 words)
+Present (9): BLOCK, BUFFER, EMPTY-BUFFERS, FLUSH, LIST, LOAD, SAVE-BUFFERS, SCR, UPDATE
+Missing (0): 
+
+## block-ext (1 words)
+Present (1): THRU
+Missing (0): 
+
 ## core (136 words)
 Present (136): ,, ;, :, !, ?DUP, ., .", .R, .S, ', [, ], @, */MOD, #, #>, #S, <#, >BODY, >IN, >NUMBER, 0<, 0>, 1-, 1+, 2!, 2@, 2*, 2/, 2DROP, 2R@, ABORT, ABORT", ABS, ACCEPT, ALIGN, ALLOT, APPEND-FILE, AWAIT, BASE, BEGIN, BL, BLK, BLOCK, BYE, C,, C!, C@, CATCH, CELL+, CELLS, CHAR+, CHARS, CLOSE-FILE, CONSTANT, COUNT, CR, CREATE, D-, D+, DECIMAL, DEFER, DEFINITIONS, DO, DOES>, ELSE, EMIT, ERASE, EXIT, EXPECT, FILE-EXISTS, FILE-SIZE, FILL, FM/MOD, FORGET, FORTH, FUTURE, GET-ORDER, HERE, HEX, HOLD, I, IF, IMMEDIATE, INCLUDE, IS, J, JOIN, KEY, KEY?, LEAVE, LITERAL, LOAD, LOOP, M*, M/MOD, MARKER, MOVE, NIP, OPEN-FILE, PAD, POSTPONE, QUIT, READ-FILE, RECURSE, REPEAT, REPOSITION-FILE, S", SAVE, SET-ORDER, SIGN, SM/REM, SOURCE, SP!, SP@, SPAWN, STATE, TASK, TASK?, THEN, THROW, TO, TUCK, TYPE, U<, UM*, UM/MOD, UNLOOP, UNTIL, VALUE, VARIABLE, WHILE, WORD, WORDLIST, WORDS, WRITE-FILE
 Missing (0): 
 
-## Other primitives in code not in tracked sets (218)
--, -ROT, -TRAILING, :NONAME, ?, ?DO, .(, .[S], (LOCAL), ['], [CHAR], [ELSE], [IF], [THEN], *, */, /, /MOD, /STRING, +, +!, +LOOP, <, <=, <>, =, >, >=, >FLOAT, >R, >UNUMBER, 0<>, 0=, 2>R, 2DUP, 2OVER, 2R>, 2ROT, 2SWAP, ADD-INPUT-LINE, AGAIN, AHEAD, ALLOCATE, ALSO, AND, AT-XY, BIN, BIND, BLANK, BUFFER, CASE, CHAR, CLOSE-BLOCK-FILE, CMOVE, CMOVE>, COMPARE, COPY-FILE, CREATE-FILE, CS-PICK, CS-ROLL, D., D<, D=, D>F, D>S, D2*, D2/, DABS, DEFER!, DEFER@, DELETE-FILE, DEPTH, DF!, DF@, DMAX, DMIN, DNEGATE, DROP, DU<, DUMP, DUP, EMPTY-BUFFERS, END-MODULE, ENDCASE, ENDOF, ENV, ENVIRONMENT?, EVALUATE, EXECUTE, F-, F!, F!=, F., F@, F*, F**, F/, F+, F<, F<=, F=, F>, F>=, F>D, F>S, F~, F0<, F0<=, F0=, F0>, F0>=, FABS, FACOS, FASIN, FATAN2, FCONSTANT, FCOS, FDEPTH, FDROP, FDUP, FEXP, FILE-POSITION, FILE-STATUS, FIND, FLN, FLOATS, FLOG, FLOOR, FLUSH, FLUSH-BLOCK-FILE, FMAX, FMIN, FNEGATE, FORTH-WORDLIST, FOVER, FREE, FROT, FROUND, FS., FSIN, FSQRT, FSWAP, FTAN, FTRUNC, FVARIABLE, GET-CURRENT, HELP, IL{, INCLUDE-FILE, INCLUDED, INVERT, LAST-STORE, LATEST, LIST, LOAD-ASM, LOAD-ASM-TYPE, LOAD-FILE, LOCALS|, LSHIFT, M+, MAX, MIN, MOD, MODULE, MS, NEGATE, OF, ONLY, OPEN-BLOCK-DIR, OPEN-BLOCK-FILE, OR, OVER, PAGE, PICK, PREVIOUS, R@, R/O, R/W, R>, READ-FILE-BYTES, READ-LINE, REFILL, RENAME-FILE, REPORT-ERRORS, RESIZE, RESTORE-INPUT, ROT, RP@, RSHIFT, RUN-NEXT, S, S>D, S>F, SAVE-BUFFERS, SAVE-INPUT, SCR, SEARCH, SEARCH-WORDLIST, SEE, SET-CURRENT, SET-EXACT, SET-NEAR, SF!, SF@, SLITERAL, SOURCE-ID, SWAP, THRU, TIME&DATE, UNUSED, UPDATE, USING, W/O, WITHIN, WRITE-FILE-BYTES, WRITE-LINE, XOR, YIELD
+## core-ext (34 words)
+Present (34): -TRAILING, ?DO, .[S], [ELSE], [IF], [THEN], /STRING, +LOOP, >IN, >NUMBER, >R, 2>R, 2R>, ALLOCATE, CASE, COMPARE, DEFER!, DEFER@, ENDCASE, ENDOF, ENVIRONMENT?, FREE, OF, R@, R>, REFILL, RESIZE, RESTORE-INPUT, S>D, SAVE-INPUT, SEARCH, SOURCE-ID, UNUSED, WITHIN
+Missing (0): 
+
+## double-number (11 words)
+Present (11): 2ROT, D<, D=, D>S, D2*, D2/, DABS, DMAX, DMIN, DNEGATE, DU<
+Missing (0): 
+
+## double-number-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## exception (4 words)
+Present (4): ABORT, ABORT", CATCH, THROW
+Missing (0): 
+
+## exception-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## facility (4 words)
+Present (4): AT-XY, MS, PAGE, TIME&DATE
+Missing (0): 
+
+## facility-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## file (15 words)
+Present (15): CLOSE-FILE, CREATE-FILE, DELETE-FILE, FILE-POSITION, FILE-SIZE, FILE-STATUS, INCLUDE-FILE, INCLUDED, OPEN-FILE, READ-FILE, READ-LINE, RENAME-FILE, REPOSITION-FILE, WRITE-FILE, WRITE-LINE
+Missing (0): 
+
+## file-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## float (33 words)
+Present (33): F-, F!, F., F@, F*, F/, F+, F<, F=, F>S, F~, F0<, F0=, FABS, FACOS, FASIN, FATAN2, FCONSTANT, FCOS, FEXP, FLOG, FLOOR, FM/MOD, FMAX, FMIN, FNEGATE, FROUND, FSIN, FSQRT, FTAN, FTRUNC, FVARIABLE, S>F
+Missing (0): 
+
+## float-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## local (2 words)
+Present (2): (LOCAL), LOCALS|
+Missing (0): 
+
+## local-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## memory-allocation (3 words)
+Present (3): ALLOCATE, FREE, RESIZE
+Missing (0): 
+
+## memory-allocation-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## programming-tools (7 words)
+Present (7): AHEAD, CS-PICK, CS-ROLL, DUMP, FORGET, SEE, WORDS
+Missing (0): 
+
+## programming-tools-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## search-order (10 words)
+Present (10): ALSO, DEFINITIONS, FORTH-WORDLIST, GET-CURRENT, GET-ORDER, ONLY, PREVIOUS, SEARCH-WORDLIST, SET-CURRENT, SET-ORDER
+Missing (0): 
+
+## search-order-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## string (8 words)
+Present (8): -TRAILING, /STRING, BLANK, CMOVE, CMOVE>, COMPARE, SEARCH, SLITERAL
+Missing (0): 
+
+## string-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## tools (7 words)
+Present (7): ?, .S, DUMP, FORGET, MARKER, SEE, WORDS
+Missing (0): 
+
+## tools-ext (0 words)
+Present (0): 
+Missing (0): 
+
+## Other primitives in code not in tracked sets (103)
+-, -ROT, :NONAME, .(, ['], [CHAR], *, */, /, /MOD, +, +!, <, <=, <>, =, >, >=, >FLOAT, >UNUMBER, 0<>, 0=, 2DUP, 2OVER, 2SWAP, ADD-INPUT-LINE, AGAIN, AND, BIN, BIND, CHAR, CLOSE-BLOCK-FILE, COPY-FILE, D., D>F, DEPTH, DF!, DF@, DROP, DUP, END-MODULE, ENV, EVALUATE, EXECUTE, F!=, F**, F<=, F>, F>=, F>D, F0<=, F0>, F0>=, FDEPTH, FDROP, FDUP, FIND, FLN, FLOATS, FLUSH-BLOCK-FILE, FOVER, FROT, FS., FSWAP, HELP, IL{, INVERT, LAST-STORE, LATEST, LOAD-ASM, LOAD-ASM-TYPE, LOAD-FILE, LSHIFT, M+, MAX, MIN, MOD, MODULE, NEGATE, OPEN-BLOCK-DIR, OPEN-BLOCK-FILE, OR, OVER, PICK, R/O, R/W, READ-FILE-BYTES, REPORT-ERRORS, ROT, RP@, RSHIFT, RUN-NEXT, S, SET-EXACT, SET-NEAR, SF!, SF@, SWAP, USING, W/O, WRITE-FILE-BYTES, XOR, YIELD
 
 Total missing tracked words: 0

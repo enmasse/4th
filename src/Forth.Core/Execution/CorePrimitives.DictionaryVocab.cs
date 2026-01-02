@@ -378,83 +378,32 @@ internal static partial class CorePrimitives
     private static Task Prim_SQUOTE(ForthInterpreter i)
     {
         if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after S\"");
-        if (next.Length < 2 || next[0] != '"' || next[^1] != '"' )
+        if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
             throw new ForthException(ForthErrorCode.CompileError, "S\" expects quoted token");
-        var str = UnescapeSQuote(next[1..^1]);
-         // ANS-style S" produces c-addr u (tokenizer already handles leading-space rule)
-         if (!i._isCompiling)
-         {
-             // In interpret mode: allocate string and push (c-addr u) immediately
-             var addr = i.AllocateCountedString(str);
-             i.Push(addr + 1);
-             i.Push((long)str.Length);
-         }
-         else
-         {
-             // In compile mode: compile code that will push (c-addr u) at runtime
-             i.CurrentList().Add(ii =>
-             {
-                 var addr = ii.AllocateCountedString(str);
-                 ii.Push(addr + 1);
-                 ii.Push((long)str.Length);
-                 return Task.CompletedTask;
-             });
-         }
-         return Task.CompletedTask;
 
-         static string UnescapeSQuote(string s)
+        // Treat content as raw text. Control characters should be introduced via Forth words (e.g. CR, EMIT),
+        // not via C-style escapes.
+        var str = next[1..^1];
+        if (str.Length > 0 && str[0] == ' ') str = str[1..];
+
+        if (!i._isCompiling)
         {
-            // Minimal, test-driven unescaping used by the suite.
-            // Supports: \n, \r, \t, \\, \" and \xHH.
-            if (s.IndexOf('\\') < 0) return s;
-            var sb = new System.Text.StringBuilder(s.Length);
-            for (int idx = 0; idx < s.Length; idx++)
-            {
-                var c = s[idx];
-                if (c != '\\' || idx + 1 >= s.Length)
-                {
-                    sb.Append(c);
-                    continue;
-                }
-
-                var nxt = s[idx + 1];
-                switch (nxt)
-                {
-                    case 'n': sb.Append('\n'); idx++; continue;
-                    case 'r': sb.Append('\r'); idx++; continue;
-                    case 't': sb.Append('\t'); idx++; continue;
-                    case '\\': sb.Append('\\'); idx++; continue;
-                    case '"': sb.Append('"'); idx++; continue;
-                    case 'x':
-                    case 'X':
-                        if (idx + 3 < s.Length)
-                        {
-                            int v1 = FromHexDigit(s[idx + 2]);
-                            int v2 = FromHexDigit(s[idx + 3]);
-                            if (v1 >= 0 && v2 >= 0)
-                            {
-                                sb.Append((char)((v1 << 4) | v2));
-                                idx += 3;
-                                continue;
-                            }
-                        }
-                        break;
-                }
-
-                // Unknown escape: keep the backslash literally.
-                sb.Append('\\');
-            }
-
-            return sb.ToString();
-
-            static int FromHexDigit(char ch)
-            {
-                if (ch is >= '0' and <= '9') return ch - '0';
-                if (ch is >= 'a' and <= 'f') return 10 + (ch - 'a');
-                if (ch is >= 'A' and <= 'F') return 10 + (ch - 'A');
-                return -1;
-            }
+            var addr = i.AllocateCountedString(str);
+            i.Push(addr + 1);
+            i.Push((long)str.Length);
         }
+        else
+        {
+            i.CurrentList().Add(ii =>
+            {
+                var addr = ii.AllocateCountedString(str);
+                ii.Push(addr + 1);
+                ii.Push((long)str.Length);
+                return Task.CompletedTask;
+            });
+        }
+
+        return Task.CompletedTask;
     }
 
     [Primitive("S", IsImmediate = true, HelpString = "S <text> - push string literal (string) or compile-time push")]

@@ -230,50 +230,13 @@ internal class CharacterParser
         if ((ch == 'S' || ch == 's') && _position + 1 < _source.Length && _source[_position + 1] == '"')
         {
             _position += 2; // skip 'S"' or 's"'
-            // Optional separator after S". Preserve leading spaces that are part of the literal.
-            // We only skip a single space or tab, which is the common delimiter in `S" text"`.
-            if (_position < _source.Length && (_source[_position] == ' ' || _source[_position] == '\t'))
-            {
-                _position++;
-            }
+            // Preserve all characters after S" as part of the literal, including leading whitespace.
+            // ANS Forth treats everything up to the closing quote as the string payload.
             var textBuilder = new StringBuilder();
             textBuilder.Append('"');
             while (_position < _source.Length && _source[_position] != '"')
             {
-                var c = _source[_position];
-
-                if (c == '\\' && _position + 1 < _source.Length)
-                {
-                    var nxt = _source[_position + 1];
-                    switch (nxt)
-                    {
-                        case 'n': textBuilder.Append('\n'); _position += 2; continue;
-                        case 'r': textBuilder.Append('\r'); _position += 2; continue;
-                        case 't': textBuilder.Append('\t'); _position += 2; continue;
-                        case '\\': textBuilder.Append('\\'); _position += 2; continue;
-                        case '"': textBuilder.Append('"'); _position += 2; continue;
-                        case 'x':
-                        case 'X':
-                            // \xHH (2 hex digits) decoding
-                            if (_position + 3 < _source.Length)
-                            {
-                                var h1 = _source[_position + 2];
-                                var h2 = _source[_position + 3];
-                                int v1 = FromHexDigit(h1);
-                                int v2 = FromHexDigit(h2);
-                                if (v1 >= 0 && v2 >= 0)
-                                {
-                                    textBuilder.Append((char)((v1 << 4) | v2));
-                                    _position += 4;
-                                    continue;
-                                }
-                            }
-                            // Not a valid \xHH; treat as literal backslash
-                            break;
-                    }
-                }
-
-                textBuilder.Append(c);
+                textBuilder.Append(_source[_position]);
                 _position++;
             }
             if (_position < _source.Length && _source[_position] == '"')
@@ -281,10 +244,6 @@ internal class CharacterParser
                 textBuilder.Append('"');
                 _position++; // skip closing '"'
             }
-            // FIXED: Return S" followed by the quoted string token (two tokens in sequence)
-            // The evaluation loop will see S" first, then the quoted string
-            // This matches how the Tokenizer works
-            // Store the string token for the next ParseNext() call
             _nextToken = textBuilder.ToString();
             return "S\"";
         }
