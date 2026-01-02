@@ -542,24 +542,15 @@ internal static partial class CorePrimitives
 
         static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
 
-        string DecodeName(long a, long b)
+        string DecodeName(long addr, long u)
         {
-            // Prefer counted-string heuristic if possible.
-            if (a > 0)
-            {
-                long maybeLen = 0;
-                i.MemTryGet(a - 1, out maybeLen);
-                if (ToLong(maybeLen) == b)
-                    return NormalizeFileName(i.ReadMemoryString(a, b));
-            }
+            // Primary: treat as (c-addr u)
+            var primary = NormalizeFileName(i.ReadMemoryString(addr, u));
+            if (!string.IsNullOrWhiteSpace(primary)) return primary;
 
-            // Fallback: try (addr u) then swapped.
-            var candidate1 = NormalizeFileName(i.ReadMemoryString(a, b));
-            if (!string.IsNullOrWhiteSpace(candidate1) && (File.Exists(candidate1) || Path.IsPathRooted(candidate1)))
-                return candidate1;
-
-            var candidate2 = NormalizeFileName(i.ReadMemoryString(b, a));
-            return !string.IsNullOrWhiteSpace(candidate2) ? candidate2 : candidate1;
+            // Fallback: swapped order for non-standard producers
+            var swapped = NormalizeFileName(i.ReadMemoryString(u, addr));
+            return !string.IsNullOrWhiteSpace(swapped) ? swapped : primary;
         }
 
         var oldName = DecodeName(vAddr1, vU1);
@@ -588,22 +579,13 @@ internal static partial class CorePrimitives
 
         static string NormalizeFileName(string s) => s.TrimEnd('\r', '\n').Trim();
 
-        string DecodeName(long a, long b)
+        string DecodeName(long addr, long u)
         {
-            if (a > 0)
-            {
-                long maybeLen = 0;
-                i.MemTryGet(a - 1, out maybeLen);
-                if (ToLong(maybeLen) == b)
-                    return NormalizeFileName(i.ReadMemoryString(a, b));
-            }
+            var primary = NormalizeFileName(i.ReadMemoryString(addr, u));
+            if (!string.IsNullOrWhiteSpace(primary)) return primary;
 
-            var candidate1 = NormalizeFileName(i.ReadMemoryString(a, b));
-            if (!string.IsNullOrWhiteSpace(candidate1) && (File.Exists(candidate1) || Path.IsPathRooted(candidate1)))
-                return candidate1;
-
-            var candidate2 = NormalizeFileName(i.ReadMemoryString(b, a));
-            return !string.IsNullOrWhiteSpace(candidate2) ? candidate2 : candidate1;
+            var swapped = NormalizeFileName(i.ReadMemoryString(u, addr));
+            return !string.IsNullOrWhiteSpace(swapped) ? swapped : primary;
         }
 
         var src = DecodeName(vAddr1, vU1);

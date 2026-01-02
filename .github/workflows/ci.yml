@@ -36,7 +36,7 @@ jobs:
         run: |
           set -o pipefail
           report="$RUNNER_TEMP/ans-diff-report.md"
-          dotnet run --project . --configuration Release -- --output="$report" 2>&1 | tee "$report"
+          dotnet run --project . --configuration Release -- --sets=core --output="$report" 2>&1 | tee "$report"
           rc=${PIPESTATUS[0]}
           if [ $rc -ne 0 ]; then
             echo "ans-diff reported missing ANS words; failing CI"
