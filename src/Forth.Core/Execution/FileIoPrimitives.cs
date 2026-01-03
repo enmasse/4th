@@ -31,8 +31,8 @@ internal static class FileIoPrimitives
         // Standard form: (c-addr u filename) where filename must be a string object on the stack.
         i.EnsureStack(3, "WRITE-FILE");
         var filenameObj = i.PopInternal();
-        var u = CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
 
         if (filenameObj is string fname)
         {
@@ -98,8 +98,8 @@ internal static class FileIoPrimitives
     private static Task Prim_FILESTATUS(ForthInterpreter i)
     {
         i.EnsureStack(2, "FILE-STATUS");
-        var v1 = CorePrimitives.ToLong(i.PopInternal());
-        var v2 = CorePrimitives.ToLong(i.PopInternal());
+        var v1 = PrimitivesUtil.ToLong(i.PopInternal());
+        var v2 = PrimitivesUtil.ToLong(i.PopInternal());
 
         var filename = FileIoDecoder.DecodeFilenameFromCStringPair(i, v1, v2);
 
@@ -164,9 +164,9 @@ internal static class FileIoPrimitives
     private static Task Prim_CREATEFILE(ForthInterpreter i)
     {
         i.EnsureStack(3, "CREATE-FILE");
-        var fam = CorePrimitives.ToLong(i.PopInternal());
-        var u = CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var fam = PrimitivesUtil.ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         var filename = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr, u);
         try
         {
@@ -187,8 +187,8 @@ internal static class FileIoPrimitives
     private static Task Prim_DELETEFILE(ForthInterpreter i)
     {
         i.EnsureStack(2, "DELETE-FILE");
-        var u = (int)CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
 
         var filename = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr, u);
 
@@ -232,7 +232,7 @@ internal static class FileIoPrimitives
     [Primitive("CLOSE-FILE", HelpString = "CLOSE-FILE ( fid -- ior ) - close file handle")]
     private static Task Prim_CLOSEFILE(ForthInterpreter i)
     {
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
         try
         {
             i.CloseFileHandle(fid);
@@ -249,8 +249,8 @@ internal static class FileIoPrimitives
     [Primitive("REPOSITION-FILE", HelpString = "REPOSITION-FILE ( fid offset -- ) - seek to offset in file")]
     private static Task Prim_REPOSITIONFILE(ForthInterpreter i)
     {
-        var offset = CorePrimitives.ToLong(i.PopInternal());
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
+        var offset = PrimitivesUtil.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
         i.RepositionFileHandle(fid, offset);
         return Task.CompletedTask;
     }
@@ -258,7 +258,7 @@ internal static class FileIoPrimitives
     [Primitive("FILE-POSITION", HelpString = "FILE-POSITION ( fileid -- ud ior ) - get current file position")]
     private static Task Prim_FILEPOSITION(ForthInterpreter i)
     {
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
         try
         {
             var pos = i.GetFilePosition(fid);
@@ -278,10 +278,10 @@ internal static class FileIoPrimitives
     [Primitive("READ-FILE-BYTES", HelpString = "READ-FILE-BYTES ( fid addr u -- cnt ) - read up to u bytes into addr from file")]
     private static Task Prim_READFILEBYTES(ForthInterpreter i)
     {
-        var uLong = CorePrimitives.ToLong(i.PopInternal());
+        var uLong = PrimitivesUtil.ToLong(i.PopInternal());
         var u = (int)uLong;
-        var addr = CorePrimitives.ToLong(i.PopInternal());
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative length");
         var read = i.ReadFileIntoMemory(fid, addr, u);
         i.Push((long)read);
@@ -291,10 +291,10 @@ internal static class FileIoPrimitives
     [Primitive("WRITE-FILE-BYTES", HelpString = "WRITE-FILE-BYTES ( fid addr u -- cnt ) - write u bytes from addr to file")]
     private static Task Prim_WRITEFILEBYTES(ForthInterpreter i)
     {
-        var uLong = CorePrimitives.ToLong(i.PopInternal());
+        var uLong = PrimitivesUtil.ToLong(i.PopInternal());
         var u = (int)uLong;
-        var addr = CorePrimitives.ToLong(i.PopInternal());
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative length");
         var written = i.WriteMemoryToFile(fid, addr, u);
         i.Push((long)written);
@@ -304,9 +304,9 @@ internal static class FileIoPrimitives
     [Primitive("WRITE-LINE", HelpString = "WRITE-LINE ( c-addr u fileid -- ) - write u chars from c-addr to file, followed by newline")]
     private static Task Prim_WRITELINE(ForthInterpreter i)
     {
-        var fid = (int)CorePrimitives.ToLong(i.PopInternal());
-        var u = (int)CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var fid = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         var content = i.ReadMemoryString(addr, u);
         i.WriteStringToFile(fid, content + "\n");
         return Task.CompletedTask;
@@ -349,10 +349,10 @@ internal static class FileIoPrimitives
     {
         i.EnsureStack(4, "RENAME-FILE");
 
-        var u2 = CorePrimitives.ToLong(i.PopInternal());
-        var addr2 = CorePrimitives.ToLong(i.PopInternal());
-        var u1 = CorePrimitives.ToLong(i.PopInternal());
-        var addr1 = CorePrimitives.ToLong(i.PopInternal());
+        var u2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var u1 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr1 = PrimitivesUtil.ToLong(i.PopInternal());
 
         var oldName = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr1, u1);
         var newName = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr2, u2);
@@ -403,10 +403,10 @@ internal static class FileIoPrimitives
     private static Task Prim_COPYFILE(ForthInterpreter i)
     {
         i.EnsureStack(4, "COPY-FILE");
-        var u2 = CorePrimitives.ToLong(i.PopInternal());
-        var addr2 = CorePrimitives.ToLong(i.PopInternal());
-        var u1 = CorePrimitives.ToLong(i.PopInternal());
-        var addr1 = CorePrimitives.ToLong(i.PopInternal());
+        var u2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var u1 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr1 = PrimitivesUtil.ToLong(i.PopInternal());
 
         var src = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr1, u1);
         var dst = FileIoDecoder.DecodeFilenameFromCStringPair(i, addr2, u2);

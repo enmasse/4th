@@ -6,6 +6,24 @@ namespace Forth.Core.Execution;
 
 internal static class PrimitivesUtil
 {
+    // ...existing code...
+
+    internal static double ToDoubleFromObj(object o)
+    {
+        return o switch
+        {
+            double d => d,
+            float f => f,
+            long l => (double)l,
+            int ii => (double)ii,
+            short s => (double)s,
+            byte b => (double)b,
+            char c => (double)c,
+            bool bo => bo ? 1.0 : 0.0,
+            _ => throw new ForthException(ForthErrorCode.TypeError, $"Expected number, got {o?.GetType().Name ?? "null"}")
+        };
+    }
+
     internal static long ToLong(object o)
     {
         return o switch

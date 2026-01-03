@@ -12,7 +12,7 @@ internal static class PicturedNumericPrimitives
     private static Task Prim_Pic_Hold(ForthInterpreter i)
     {
         i.EnsureStack(1, "HOLD");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         i.PicturedHold((char)(n & 0xFFFF));
         return Task.CompletedTask;
     }
@@ -21,7 +21,7 @@ internal static class PicturedNumericPrimitives
     private static Task Prim_Pic_Hash(ForthInterpreter i)
     {
         i.EnsureStack(1, "#");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         const long b = 10;
         long u = n < 0 ? -n : n;
         long rem = u % b;
@@ -35,7 +35,7 @@ internal static class PicturedNumericPrimitives
     private static Task Prim_Pic_HashS(ForthInterpreter i)
     {
         i.EnsureStack(1, "#S");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         const long b = 10;
         long u = n < 0 ? -n : n;
         if (u == 0)
@@ -58,7 +58,7 @@ internal static class PicturedNumericPrimitives
     private static Task Prim_Pic_SIGN(ForthInterpreter i)
     {
         i.EnsureStack(1, "SIGN");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         if (n < 0) i.PicturedHold('-');
         return Task.CompletedTask;
     }

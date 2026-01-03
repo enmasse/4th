@@ -589,9 +589,9 @@ internal static class DictionaryVocabPrimitives
         {
             // treat as (addr len)
             long addr = addrCell;
-            int len = (int)CorePrimitives.ToLong(lenCell);
+            int len = (int)PrimitivesUtil.ToLong(lenCell);
             var chars = new char[len];
-            for (int k = 0; k < len; k++) { i.MemTryGet(addr + k, out var v); chars[k] = (char)(CorePrimitives.ToLong(v) & 0xFF); }
+            for (int k = 0; k < len; k++) { i.MemTryGet(addr + k, out var v); chars[k] = (char)(PrimitivesUtil.ToLong(v) & 0xFF); }
             i.PopInternal(); // len
             i.PopInternal(); // addr
             query = new string(chars);
@@ -600,9 +600,9 @@ internal static class DictionaryVocabPrimitives
         {
             // counted string address form produced by S" or custom literal words
             i.MemTryGet(countedAddr, out var lenObj);
-            int len = (int)CorePrimitives.ToLong(lenObj);
+            int len = (int)PrimitivesUtil.ToLong(lenObj);
             var chars = new char[len];
-            for (int k = 0; k < len; k++) { i.MemTryGet(countedAddr + 1 + k, out var v); chars[k] = (char)(CorePrimitives.ToLong(v) & 0xFF); }
+            for (int k = 0; k < len; k++) { i.MemTryGet(countedAddr + 1 + k, out var v); chars[k] = (char)(PrimitivesUtil.ToLong(v) & 0xFF); }
             i.PopInternal();
             query = new string(chars);
         }

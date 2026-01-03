@@ -15,12 +15,6 @@ namespace Forth.Core.Execution;
     Justification = "Primitives are discovered and invoked via reflection by CreateWords() scanning [Primitive] attributes.")]
 internal static class CorePrimitives
 {
-    // Temporary compatibility shim while the codebase is migrated off CorePrimitives.* helper calls.
-    // Prefer calling PrimitivesUtil directly in new/updated code.
-    internal static long ToLong(object o) => PrimitivesUtil.ToLong(o);
-    internal static bool ToBool(object v) => PrimitivesUtil.ToBool(v);
-    internal static bool IsNumeric(object o) => PrimitivesUtil.IsNumeric(o);
-
     private static readonly Lazy<ImmutableDictionary<(string? Module, string Name), Word>> _words =
         new(CreateWords);
 

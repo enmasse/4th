@@ -9,7 +9,7 @@ internal static class ComparisonPrimitives
     private static Task Prim_0Gt(ForthInterpreter i)
     {
         i.EnsureStack(1, "0>");
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a > 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -18,7 +18,7 @@ internal static class ComparisonPrimitives
     private static Task Prim_0Lt(ForthInterpreter i)
     {
         i.EnsureStack(1, "0<");
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a < 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -27,8 +27,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Lt(ForthInterpreter i)
     {
         i.EnsureStack(2, "<");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a < b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -37,8 +37,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Eq(ForthInterpreter i)
     {
         i.EnsureStack(2, "=");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a == b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -47,8 +47,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Gt(ForthInterpreter i)
     {
         i.EnsureStack(2, ">");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a > b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -57,7 +57,7 @@ internal static class ComparisonPrimitives
     private static Task Prim_0Eq(ForthInterpreter i)
     {
         i.EnsureStack(1, "0=");
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a == 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -66,7 +66,7 @@ internal static class ComparisonPrimitives
     private static Task Prim_0Ne(ForthInterpreter i)
     {
         i.EnsureStack(1, "0<>");
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a != 0 ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -75,8 +75,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Ne(ForthInterpreter i)
     {
         i.EnsureStack(2, "<>");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a != b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -85,8 +85,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Le(ForthInterpreter i)
     {
         i.EnsureStack(2, "<=");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a <= b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -95,8 +95,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_Ge(ForthInterpreter i)
     {
         i.EnsureStack(2, ">=");
-        var b = CorePrimitives.ToLong(i.PopInternal());
-        var a = CorePrimitives.ToLong(i.PopInternal());
+        var b = PrimitivesUtil.ToLong(i.PopInternal());
+        var a = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a >= b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -105,8 +105,8 @@ internal static class ComparisonPrimitives
     private static Task Prim_ULt(ForthInterpreter i)
     {
         i.EnsureStack(2, "U<");
-        var b = (ulong)CorePrimitives.ToLong(i.PopInternal());
-        var a = (ulong)CorePrimitives.ToLong(i.PopInternal());
+        var b = (ulong)PrimitivesUtil.ToLong(i.PopInternal());
+        var a = (ulong)PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(a < b ? -1L : 0L);
         return Task.CompletedTask;
     }
@@ -115,30 +115,31 @@ internal static class ComparisonPrimitives
     private static Task Prim_COMPARE(ForthInterpreter i)
     {
         i.EnsureStack(4, "COMPARE");
-        var u2 = CorePrimitives.ToLong(i.PopInternal());
+        var u2 = PrimitivesUtil.ToLong(i.PopInternal());
         var addr2 = i.PopInternal();
-        var u1 = CorePrimitives.ToLong(i.PopInternal());
+        var u1 = PrimitivesUtil.ToLong(i.PopInternal());
         var addr1 = i.PopInternal();
         if (u1 < 0 || u2 < 0) throw new ForthException(ForthErrorCode.TypeError, "COMPARE negative length");
 
-        string str1, str2;
+        string str1;
         if (addr1 is string s1)
         {
             str1 = u1 <= s1.Length ? s1.Substring(0, (int)u1) : s1;
         }
         else
         {
-            var a1 = CorePrimitives.ToLong(addr1);
+            var a1 = PrimitivesUtil.ToLong(addr1);
             str1 = i.ReadMemoryString(a1, u1);
         }
 
+        string str2;
         if (addr2 is string s2)
         {
             str2 = u2 <= s2.Length ? s2.Substring(0, (int)u2) : s2;
         }
         else
         {
-            var a2 = CorePrimitives.ToLong(addr2);
+            var a2 = PrimitivesUtil.ToLong(addr2);
             str2 = i.ReadMemoryString(a2, u2);
         }
 

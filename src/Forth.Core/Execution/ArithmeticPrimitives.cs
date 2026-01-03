@@ -728,7 +728,7 @@ internal static class ArithmeticPrimitives
     private static Task Prim_Question(ForthInterpreter i)
     {
         i.EnsureStack(1, "?");
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         var val = i._mem[addr];
         i.WriteText(val.ToString());
         return Task.CompletedTask;

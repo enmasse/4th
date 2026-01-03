@@ -86,7 +86,7 @@ internal static class NumberParsingPrimitives
     private static Task Prim_ToUNumber(ForthInterpreter i)
     {
         i.EnsureStack(2, ">UNUMBER");
-        var u = CorePrimitives.ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
         var addr = i.PopInternal();
         if (u < 0) throw new ForthException(ForthErrorCode.TypeError, ">UNUMBER negative length");
 
@@ -94,7 +94,7 @@ internal static class NumberParsingPrimitives
         int @base = (int)(baseVal <= 1 ? 10 : baseVal);
         if (@base < 2) @base = 10;
 
-        var addrLong = CorePrimitives.ToLong(addr);
+        var addrLong = PrimitivesUtil.ToLong(addr);
         string slice = i.ReadMemoryString(addrLong, (int)u);
         if (NumberParser.TryParse(slice, def => @base, out var num))
         {

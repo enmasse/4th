@@ -29,14 +29,14 @@ internal static class IoFormattingPrimitives
     }
 
     [Primitive(".", Category = "Arithmetic", HelpString = ". ( n -- ) - print top of stack as a number")]
-    private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = CorePrimitives.ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
+    private static Task Prim_Dot(ForthInterpreter i) { i.EnsureStack(1, "."); var n = PrimitivesUtil.ToLong(i.PopInternal()); i.WriteNumber(n); return Task.CompletedTask; }
 
     [Primitive(".R", Category = "Arithmetic", HelpString = ".R ( n1 n2 -- ) - print n1 right-justified in field of n2 characters")]
     private static Task Prim_DotR(ForthInterpreter i)
     {
         i.EnsureStack(2, ".R");
-        var width = (int)CorePrimitives.ToLong(i.PopInternal());
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var width = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         var str = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (str.Length < width)
         {
@@ -54,8 +54,8 @@ internal static class IoFormattingPrimitives
     private static Task Prim_DDot(ForthInterpreter i)
     {
         i.EnsureStack(2, "D.");
-        var high = CorePrimitives.ToLong(i.PopInternal());
-        var low = CorePrimitives.ToLong(i.PopInternal());
+        var high = PrimitivesUtil.ToLong(i.PopInternal());
+        var low = PrimitivesUtil.ToLong(i.PopInternal());
         var d = (new System.Numerics.BigInteger(high) << 64) | new System.Numerics.BigInteger((ulong)low);
         i.WriteText(d.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return Task.CompletedTask;
@@ -121,7 +121,7 @@ internal static class IoFormattingPrimitives
     private static Task Prim_EMIT(ForthInterpreter i)
     {
         i.EnsureStack(1, "EMIT");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         char ch = (char)(n & 0xFFFF);
         i.WriteText(ch.ToString());
         return Task.CompletedTask;
@@ -133,9 +133,9 @@ internal static class IoFormattingPrimitives
         if (i.Stack.Count == 0)
             throw new ForthException(ForthErrorCode.StackUnderflow, "Stack underflow in TYPE");
 
-        if (i.Stack.Count >= 2 && CorePrimitives.IsNumeric(i.Stack[^1]) && (CorePrimitives.IsNumeric(i.Stack[^2]) || i.Stack[^2] is string || i.Stack[^2] is Word))
+        if (i.Stack.Count >= 2 && PrimitivesUtil.IsNumeric(i.Stack[^1]) && (PrimitivesUtil.IsNumeric(i.Stack[^2]) || i.Stack[^2] is string || i.Stack[^2] is Word))
         {
-            var u = CorePrimitives.ToLong(i.PopInternal());
+            var u = PrimitivesUtil.ToLong(i.PopInternal());
             var addrOrStr = i.PopInternal();
             if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "TYPE negative length");
             if (addrOrStr is string sstr)
@@ -144,9 +144,9 @@ internal static class IoFormattingPrimitives
                 i.WriteText(sliceLen == sstr.Length ? sstr : sstr.Substring(0, sliceLen));
                 return Task.CompletedTask;
             }
-            if (CorePrimitives.IsNumeric(addrOrStr))
+            if (PrimitivesUtil.IsNumeric(addrOrStr))
             {
-                var a = CorePrimitives.ToLong(addrOrStr);
+                var a = PrimitivesUtil.ToLong(addrOrStr);
                 i.WriteText(i.ReadMemoryString(a, u));
                 return Task.CompletedTask;
             }
@@ -163,16 +163,16 @@ internal static class IoFormattingPrimitives
                 int added = i.Stack.Count - before;
                 if (added <= 0)
                     throw new ForthException(ForthErrorCode.TypeError, "TYPE address word did not push a result");
-                if (added >= 2 && CorePrimitives.IsNumeric(i.Stack[^1]) && CorePrimitives.IsNumeric(i.Stack[^2]))
+                if (added >= 2 && PrimitivesUtil.IsNumeric(i.Stack[^1]) && PrimitivesUtil.IsNumeric(i.Stack[^2]))
                 {
-                    var u2 = CorePrimitives.ToLong(i.PopInternal());
-                    var a2 = CorePrimitives.ToLong(i.PopInternal());
+                    var u2 = PrimitivesUtil.ToLong(i.PopInternal());
+                    var a2 = PrimitivesUtil.ToLong(i.PopInternal());
                     i.WriteText(i.ReadMemoryString(a2, u2));
                     return Task.CompletedTask;
                 }
 
                 var addrVal = i.PopInternal();
-                var a = CorePrimitives.ToLong(addrVal);
+                var a = PrimitivesUtil.ToLong(addrVal);
                 i.WriteText(i.ReadMemoryString(a, u));
                 return Task.CompletedTask;
             }
@@ -225,8 +225,8 @@ internal static class IoFormattingPrimitives
     private static Task Prim_READLINE(ForthInterpreter i)
     {
         i.EnsureStack(2, "READ-LINE");
-        var u = (int)CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         int len = 0;
         while (len < u)
         {
@@ -243,8 +243,8 @@ internal static class IoFormattingPrimitives
     private static Task Prim_ACCEPT(ForthInterpreter i)
     {
         i.EnsureStack(2, "ACCEPT");
-        var u = (int)CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         int len = 0;
         while (len < u)
         {
@@ -264,7 +264,7 @@ internal static class IoFormattingPrimitives
     private static Task Prim_WORD(ForthInterpreter i)
     {
         i.EnsureStack(1, "WORD");
-        var delim = (char)CorePrimitives.ToLong(i.PopInternal());
+        var delim = (char)PrimitivesUtil.ToLong(i.PopInternal());
 
         string parsedWord;
 
@@ -304,9 +304,9 @@ internal static class IoFormattingPrimitives
     {
         object addr;
         long u1;
-        if (i.Stack.Count >= 2 && CorePrimitives.IsNumeric(i.Stack[^1]) && (CorePrimitives.IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
+        if (i.Stack.Count >= 2 && PrimitivesUtil.IsNumeric(i.Stack[^1]) && (PrimitivesUtil.IsNumeric(i.Stack[^2]) || i.Stack[^2] is string))
         {
-            u1 = CorePrimitives.ToLong(i.PopInternal());
+            u1 = PrimitivesUtil.ToLong(i.PopInternal());
             addr = i.PopInternal();
         }
         else if (i.Stack.Count >= 1 && i.Stack[^1] is string s)
@@ -324,9 +324,9 @@ internal static class IoFormattingPrimitives
         {
             str = u1 <= sstr.Length ? sstr.Substring(0, (int)u1) : sstr;
         }
-        else if (CorePrimitives.IsNumeric(addr))
+        else if (PrimitivesUtil.IsNumeric(addr))
         {
-            var a = CorePrimitives.ToLong(addr);
+            var a = PrimitivesUtil.ToLong(addr);
             str = i.ReadMemoryString(a, u1);
         }
         else
@@ -344,10 +344,10 @@ internal static class IoFormattingPrimitives
     private static Task Prim_Search(ForthInterpreter i)
     {
         i.EnsureStack(4, "SEARCH");
-        var u2 = CorePrimitives.ToLong(i.PopInternal());
-        var addr2 = CorePrimitives.ToLong(i.PopInternal());
-        var u1 = CorePrimitives.ToLong(i.PopInternal());
-        var addr1 = CorePrimitives.ToLong(i.PopInternal());
+        var u2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var u1 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr1 = PrimitivesUtil.ToLong(i.PopInternal());
         var str1 = i.ReadMemoryString(addr1, u1);
         var str2 = i.ReadMemoryString(addr2, u2);
         var index = str1.IndexOf(str2);
@@ -388,9 +388,9 @@ internal static class IoFormattingPrimitives
     private static Task Prim_SlashString(ForthInterpreter i)
     {
         i.EnsureStack(3, "/STRING");
-        var n = CorePrimitives.ToLong(i.PopInternal());
-        var u1 = CorePrimitives.ToLong(i.PopInternal());
-        var addr1 = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
+        var u1 = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr1 = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(addr1 + n);
         i.Push(u1 - n);
         return Task.CompletedTask;
@@ -416,8 +416,8 @@ internal static class IoFormattingPrimitives
     private static Task Prim_AT_XY(ForthInterpreter i)
     {
         i.EnsureStack(2, "AT-XY");
-        var row = (int)CorePrimitives.ToLong(i.PopInternal());
-        var col = (int)CorePrimitives.ToLong(i.PopInternal());
+        var row = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var col = (int)PrimitivesUtil.ToLong(i.PopInternal());
         try { Console.SetCursorPosition(col, row); } catch { }
         return Task.CompletedTask;
     }
@@ -426,7 +426,7 @@ internal static class IoFormattingPrimitives
     private static async Task Prim_MS(ForthInterpreter i)
     {
         i.EnsureStack(1, "MS");
-        var u = (int)CorePrimitives.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
         await Task.Delay(u);
     }
 
@@ -443,8 +443,8 @@ internal static class IoFormattingPrimitives
         if (!i._isCompiling)
             throw new ForthException(ForthErrorCode.CompileError, "SLITERAL can only be used in definitions");
         i.EnsureStack(2, "SLITERAL");
-        var u = CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         var str = i.ReadMemoryString(addr, u);
         i.CurrentList().Add(ii =>
         {
@@ -472,16 +472,16 @@ internal static class IoFormattingPrimitives
     private static Task Prim_RESTORE_INPUT(ForthInterpreter i)
     {
         i.EnsureStack(1, "RESTORE-INPUT");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         if (n != 4)
         {
             i.Push(-1L);
             return Task.CompletedTask;
         }
         var source = (string)i.PopInternal();
-        var position = (int)CorePrimitives.ToLong(i.PopInternal());
+        var position = (int)PrimitivesUtil.ToLong(i.PopInternal());
         var inVal = i.PopInternal();
-        var id = CorePrimitives.ToLong(i.PopInternal());
+        var id = PrimitivesUtil.ToLong(i.PopInternal());
         if (id != i.SourceId)
         {
             i.Push(-1L);
@@ -490,7 +490,7 @@ internal static class IoFormattingPrimitives
         i._currentSource = source;
         i._parser = new CharacterParser(source);
         i._parser.SetPosition(position);
-        i._mem[i.InAddr] = CorePrimitives.ToLong(inVal);
+        i._mem[i.InAddr] = PrimitivesUtil.ToLong(inVal);
         i.Push(0L);
         return Task.CompletedTask;
     }

@@ -52,7 +52,7 @@ internal static class StackPrimitives
     private static Task Prim_PICK(ForthInterpreter i)
     {
         i.EnsureStack(1, "PICK");
-        var n = CorePrimitives.ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         if (n < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: negative index {n}");
         if (n >= i.Stack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"PICK: index {n} exceeds stack depth {i.Stack.Count}");
         i.Push(i.StackNthFromTop((int)n + 1));
@@ -110,7 +110,7 @@ internal static class StackPrimitives
         i.EnsureStack(1, "?DUP");
         var n = i.PopInternal();
         i.Push(n);
-        if (CorePrimitives.ToLong(n) != 0) i.Push(n);
+        if (PrimitivesUtil.ToLong(n) != 0) i.Push(n);
         return Task.CompletedTask;
     }
 

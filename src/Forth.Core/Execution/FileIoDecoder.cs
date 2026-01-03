@@ -45,7 +45,7 @@ internal static class FileIoDecoder
         {
             long maybeLen = 0;
             i.MemTryGet(v1 - 1, out maybeLen);
-            if (CorePrimitives.ToLong(maybeLen) == v2)
+            if (PrimitivesUtil.ToLong(maybeLen) == v2)
             {
                 return i.ReadMemoryString(v1, v2);
             }
@@ -58,8 +58,8 @@ internal static class FileIoDecoder
     {
         if (i.Stack.Count >= 2 && i.Stack[^1] is long && i.Stack[^2] is long)
         {
-            var v1 = CorePrimitives.ToLong(i.PopInternal());
-            var v2 = CorePrimitives.ToLong(i.PopInternal());
+            var v1 = PrimitivesUtil.ToLong(i.PopInternal());
+            var v2 = PrimitivesUtil.ToLong(i.PopInternal());
             return DecodeCStringFromTwoLongs(i, v1, v2);
         }
 
@@ -81,8 +81,8 @@ internal static class FileIoDecoder
         }
 
         i.EnsureStack(2, opname);
-        var u = CorePrimitives.ToLong(i.PopInternal());
-        var addr = CorePrimitives.ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         return ResolvePath(i.ReadMemoryString(addr, u));
     }
 
@@ -95,8 +95,8 @@ internal static class FileIoDecoder
     internal static string PopFilenameFromCStringPair(ForthInterpreter i, string opname)
     {
         i.EnsureStack(2, opname);
-        var v2 = CorePrimitives.ToLong(i.PopInternal());
-        var v1 = CorePrimitives.ToLong(i.PopInternal());
+        var v2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var v1 = PrimitivesUtil.ToLong(i.PopInternal());
         return DecodeFilenameFromCStringPair(i, v1, v2);
     }
 
