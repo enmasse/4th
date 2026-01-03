@@ -1,10 +1,11 @@
+using System;
 using Forth.Core.Interpreter;
-using System.Globalization;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class FloatingPrimitives
 {
     private static double ToDoubleFromObj(object o)
     {
@@ -141,7 +142,7 @@ internal static partial class CorePrimitives
     private static Task Prim_FAt(ForthInterpreter i)
     {
         i.EnsureStack(1, "F@");
-        var addr = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         i.MemTryGet(addr, out var bits);
         var d = System.BitConverter.Int64BitsToDouble(bits);
         i.Push(d);
@@ -152,7 +153,7 @@ internal static partial class CorePrimitives
     private static Task Prim_FBang(ForthInterpreter i)
     {
         i.EnsureStack(2, "F!");
-        var addr = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         var val = i.PopInternal();
         var d = ToDoubleFromObj(val);
         var bits = System.BitConverter.DoubleToInt64Bits(d);

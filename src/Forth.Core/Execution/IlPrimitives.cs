@@ -1,15 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading.Tasks;
-using Forth.Core.Binding;
 using Forth.Core.Interpreter;
+using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class IlPrimitives
 {
     [Primitive("IL{", IsImmediate = true, HelpString = "IL{ ... }IL - inline IL block (raw IL opcodes supported)")]
     private static Task Prim_IL_BEGIN(ForthInterpreter i)

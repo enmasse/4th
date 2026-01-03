@@ -5,7 +5,7 @@ using Forth.Core.Interpreter;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class CompilationPrimitives
 {
     [Primitive(":", IsImmediate = true, HelpString = ": <name> - begin a new definition")]
     private static Task Prim_Colon(ForthInterpreter i)
@@ -80,7 +80,7 @@ internal static partial class CorePrimitives
             {
                 ii.EnsureStack(1, "IF");
                 var flag = ii.PopInternal();
-                if (ToBool(flag))
+                if (PrimitivesUtil.ToBool(flag))
                 {
                     foreach (var a in thenPart) await a(ii);
                 }
@@ -143,7 +143,7 @@ internal static partial class CorePrimitives
                     await a(ii);
                 ii.EnsureStack(1, "WHILE");
                 var flag = ii.PopInternal();
-                if (!ToBool(flag))
+                if (!PrimitivesUtil.ToBool(flag))
                     break;
                 foreach (var b in mid)
                     await b(ii);
@@ -169,7 +169,7 @@ internal static partial class CorePrimitives
                     await a(ii);
                 ii.EnsureStack(1, "UNTIL");
                 var flag = ii.PopInternal();
-                if (ToBool(flag))
+                if (PrimitivesUtil.ToBool(flag))
                     break;
             }
         });
@@ -226,8 +226,8 @@ internal static partial class CorePrimitives
         i.CurrentList().Add(async ii =>
         {
             ii.EnsureStack(2, "DO");
-            var start = ToLong(ii.PopInternal());
-            var limit = ToLong(ii.PopInternal());
+            var start = PrimitivesUtil.ToLong(ii.PopInternal());
+            var limit = PrimitivesUtil.ToLong(ii.PopInternal());
             if (df.IsConditional && start == limit) { return; }
             long step = start <= limit ? 1L : -1L;
             for (long idx = start; idx != limit; idx += step)
@@ -262,8 +262,8 @@ internal static partial class CorePrimitives
         {
             // Setup: consume start and limit once
             ii.EnsureStack(2, "+LOOP setup");
-            var start = ToLong(ii.PopInternal());
-            var limit = ToLong(ii.PopInternal());
+            var start = PrimitivesUtil.ToLong(ii.PopInternal());
+            var limit = PrimitivesUtil.ToLong(ii.PopInternal());
             if (df.IsConditional && start == limit) { return; }
             long idx = start;
             while (true)
@@ -286,7 +286,7 @@ internal static partial class CorePrimitives
 
                 // Consume step value provided by body before +LOOP
                 ii.EnsureStack(1, "+LOOP");
-                var step = ToLong(ii.PopInternal());
+                var step = PrimitivesUtil.ToLong(ii.PopInternal());
                 if (step == 0) step = (start <= limit) ? 1 : -1; // avoid infinite loops
 
                 var next = idx + step;
@@ -368,7 +368,7 @@ internal static partial class CorePrimitives
             // Some legacy sources call [IF] without first pushing a flag; treat as false
             flagObj = 0L;
         }
-        bool cond = ToBool(flagObj);
+        bool cond = PrimitivesUtil.ToBool(flagObj);
 
         i._bracketIfActiveDepth++;
 
@@ -612,7 +612,7 @@ internal static partial class CorePrimitives
                 if (branch.Count == 0) continue;
                 
                 // Peek at selector (don't pop yet)
-                var selector = ToLong(ii.Peek());
+                var selector = PrimitivesUtil.ToLong(ii.Peek());
                 
                 // Execute the first action in the branch (pushes test value)
                 await branch[0](ii);
@@ -620,7 +620,7 @@ internal static partial class CorePrimitives
                 // Now we have: ( selector test-value -- )
                 ii.EnsureStack(2, "OF comparison");
                 
-                var testVal = ToLong(ii.PopInternal());
+                var testVal = PrimitivesUtil.ToLong(ii.PopInternal());
                 
                 if (selector == testVal)
                 {
@@ -645,7 +645,7 @@ internal static partial class CorePrimitives
     private static Task Prim_CS_PICK(ForthInterpreter i)
     {
         i.EnsureStack(1, "CS-PICK");
-        var u = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-PICK: negative index {u}");
         var arr = i._controlStack.ToArray();
         int idx = arr.Length - 1 - (int)u;
@@ -658,7 +658,7 @@ internal static partial class CorePrimitives
     private static Task Prim_CS_ROLL(ForthInterpreter i)
     {
         i.EnsureStack(1, "CS-ROLL");
-        var u = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-ROLL: negative count {u}");
         int count = (int)u + 1;
         if (count > i._controlStack.Count) throw new ForthException(ForthErrorCode.StackUnderflow, $"CS-ROLL: not enough items on control stack");

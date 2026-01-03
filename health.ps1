@@ -52,4 +52,4 @@ Get-Content TODO.md
 # Generate prompt for next task
 Write-Host "`nHealth check complete!" -ForegroundColor Green
 
-exit 0exit 0
+exit 0

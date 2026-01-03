@@ -8,7 +8,7 @@ using System.Collections.Immutable;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class DictionaryVocabPrimitives
 {
     // Minimal Wordlist representation for DEFINITIONS/WORDLIST behavior
     public sealed class Wordlist
@@ -243,7 +243,7 @@ internal static partial class CorePrimitives
     private static Task Prim_CONSTANT(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after CONSTANT"); i.EnsureStack(1, "CONSTANT"); var val = i.PopInternal(); var createdConst = new Word(ii => { ii.Push(val); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdConst); i.RegisterDefinition(name); i._lastDefinedWord = createdConst; i._decompile[name] = $": {name} {val} ;"; return Task.CompletedTask; }
 
     [Primitive("VALUE", IsImmediate = true, HelpString = "VALUE <name> - define a named variable-like value (consumes stack)")]
-    private static Task Prim_VALUE(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after VALUE"); i.EnsureStack(1, "VALUE"); var val = ToLong(i.PopInternal()); i._values[name] = val; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
+    private static Task Prim_VALUE(ForthInterpreter i) { if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after VALUE"); i.EnsureStack(1, "VALUE"); var val = PrimitivesUtil.ToLong(i.PopInternal()); i._values[name] = val; var createdValue = new Word(ii => { ii.Push(ii.ValueGet(name)); return Task.CompletedTask; }) { Name = name, Module = i._currentModule }; i._dict = i._dict.SetItem((i._currentModule, name), createdValue); i.RegisterDefinition(name); i._lastDefinedWord = createdValue; i._decompile[name] = $": {name} ;"; return Task.CompletedTask; }
 
     [Primitive("TO", IsImmediate = true, HelpString = "TO <name> - set a VALUE to the top of stack")]
     private static Task Prim_TO(ForthInterpreter i) 
@@ -253,7 +253,7 @@ internal static partial class CorePrimitives
         {
             // Interpret mode: execute immediately
             i.EnsureStack(1, "TO"); 
-            var vv = ToLong(i.PopInternal()); 
+            var vv = PrimitivesUtil.ToLong(i.PopInternal()); 
             i.ValueSet(name, vv); 
         }
         else
@@ -262,7 +262,7 @@ internal static partial class CorePrimitives
             i.CurrentList().Add(ii => 
             { 
                 ii.EnsureStack(1, "TO"); 
-                var vv = ToLong(ii.PopInternal()); 
+                var vv = PrimitivesUtil.ToLong(ii.PopInternal()); 
                 ii.ValueSet(name, vv); 
                 return Task.CompletedTask; 
             });
@@ -358,7 +358,7 @@ internal static partial class CorePrimitives
     [Primitive("[']", IsImmediate = true, HelpString = "['] <name> - compile execution token literal")]
     private static Task Prim_BRACKETTICK(ForthInterpreter i)
     {
-        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after [']");
+        if (!i.TryParseNextWord(out var name)) throw new ForthException(ForthErrorCode.CompileError, "Expected name after ['");
         if (!i.TryResolveWord(name, out var word) || word is null) throw new ForthException(ForthErrorCode.UndefinedWord, $"Word not found: {name}");
         
         if (!i._isCompiling)
@@ -410,7 +410,7 @@ internal static partial class CorePrimitives
     private static Task Prim_S(ForthInterpreter i)
     {
         if (!i.TryParseNextWord(out var next)) throw new ForthException(ForthErrorCode.CompileError, "Expected text after S");
-        if (next.Length < 2 || next[0] != '"' || next[^1] != '"')
+        if (next.Length < 2 || next[0] != '"' || next[^1] != '"' )
             throw new ForthException(ForthErrorCode.CompileError, "S expects quoted token");
         var str = next[1..^1];
         if (!i._isCompiling)
@@ -480,7 +480,7 @@ internal static partial class CorePrimitives
             {
                 ii.EnsureStack(1, "ABORT\"");
                 var flag = ii.PopInternal();
-                if (ToBool(flag))
+                if (PrimitivesUtil.ToBool(flag))
                 {
                     throw new ForthException(ForthErrorCode.Unknown, captured);
                 }
@@ -528,7 +528,7 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(1, "SET-ORDER");
         var countObj = i.PopInternal();
-        var count = (int)ToLong(countObj);
+        var count = (int)PrimitivesUtil.ToLong(countObj);
         if (count < 0) throw new ForthException(ForthErrorCode.CompileError, "SET-ORDER expects non-negative count");
         var list = new List<string?>();
         for (int idx = 0; idx < count; idx++)
@@ -631,8 +631,8 @@ internal static partial class CorePrimitives
     private static async Task Prim_EVALUATE(ForthInterpreter i)
     {
         i.EnsureStack(2, "EVALUATE");
-        var u = ToLong(i.PopInternal());
-        var addr = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.TypeError, "EVALUATE negative length");
         var str = i.ReadMemoryString(addr, u);
         await i.EvalAsync(str);
@@ -643,14 +643,14 @@ internal static partial class CorePrimitives
     private static Task Prim_FIND(ForthInterpreter i)
     {
         i.EnsureStack(1, "FIND");
-        var countedAddr = ToLong(i.PopInternal());
+        var countedAddr = PrimitivesUtil.ToLong(i.PopInternal());
         i.MemTryGet(countedAddr, out var lenObj);
-        int len = (int)ToLong(lenObj);
+        int len = (int)PrimitivesUtil.ToLong(lenObj);
         var chars = new char[len];
         for (int k = 0; k < len; k++)
         {
             i.MemTryGet(countedAddr + 1 + k, out var v);
-            chars[k] = (char)(ToLong(v) & 0xFF);
+            chars[k] = (char)(PrimitivesUtil.ToLong(v) & 0xFF);
         }
         var str = new string(chars);
 #pragma warning disable CS8604 // word is not null here
@@ -718,8 +718,8 @@ internal static partial class CorePrimitives
     {
         i.EnsureStack(3, "SEARCH-WORDLIST");
         var wid = i.PopInternal();
-        var u = ToLong(i.PopInternal());
-        var caddr = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var caddr = PrimitivesUtil.ToLong(i.PopInternal());
         var name = i.ReadMemoryString(caddr, u);
         string? module = null;
         if (wid is string s) module = s;

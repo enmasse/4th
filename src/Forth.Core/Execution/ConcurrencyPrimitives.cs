@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class ConcurrencyPrimitives
 {
     [Primitive("TASK?", HelpString = "TASK? ( task -- flag ) - push -1 if Task/ValueTask is completed else 0")]
     private static Task Prim_TASKQ(ForthInterpreter i)

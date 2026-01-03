@@ -1,17 +1,17 @@
 using Forth.Core.Interpreter;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+using System;
+using System.Text;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class MemoryPrimitives
 {
     [Primitive("@", HelpString = "@ ( addr -- value ) - fetch cell at address")]
     private static Task Prim_At(ForthInterpreter i) 
     { 
         i.EnsureStack(1, "@"); 
-        var addr = ToLong(i.PopInternal()); 
+        var addr = PrimitivesUtil.ToLong(i.PopInternal()); 
         // Fetch as object (handles both execution tokens and numeric values)
         i.MemTryGetObject(addr, out object v); 
         i.Push(v); 
@@ -29,7 +29,7 @@ internal static partial class CorePrimitives
         long addr = addrObj switch
         {
             Word w when w.BodyAddr.HasValue => w.BodyAddr.Value,
-            _ => ToLong(addrObj)
+            _ => PrimitivesUtil.ToLong(addrObj)
         };
         
         // Store the value - if it's a Word (execution token), store as object
@@ -42,7 +42,7 @@ internal static partial class CorePrimitives
         }
         else
         {
-            long valueToStore = ToLong(valObj);
+            long valueToStore = PrimitivesUtil.ToLong(valObj);
             i.MemSet(addr, valueToStore);
             i._lastStoreAddr = addr;
             i._lastStoreValue = valueToStore;
@@ -53,21 +53,21 @@ internal static partial class CorePrimitives
     // No helper; `!` does not execute words to derive values
 
     [Primitive("+!", HelpString = "+! ( x addr -- ) - add x to cell at addr")]
-    private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = ToLong(i.PopInternal()); var add = ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, ToLong(cur) + add); return Task.CompletedTask; }
+    private static Task Prim_PlusBang(ForthInterpreter i) { i.EnsureStack(2, "+!"); var addr = PrimitivesUtil.ToLong(i.PopInternal()); var add = PrimitivesUtil.ToLong(i.PopInternal()); i.MemTryGet(addr, out var cur); i.MemSet(addr, PrimitivesUtil.ToLong(cur) + add); return Task.CompletedTask; }
 
     [Primitive("C!", HelpString = "C! ( x addr -- ) - store low byte of x at addr")]
-    private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = ToLong(i.PopInternal()); var val = ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }
+    private static Task Prim_CBang(ForthInterpreter i) { i.EnsureStack(2, "C!"); var addr = PrimitivesUtil.ToLong(i.PopInternal()); var val = PrimitivesUtil.ToLong(i.PopInternal()); var b = (long)((byte)val); i.MemSet(addr, b); return Task.CompletedTask; }
 
     [Primitive("C@", HelpString = "C@ ( addr -- byte ) - fetch low byte at address")]
-    private static Task Prim_CAt(ForthInterpreter i) { i.EnsureStack(1, "C@"); var addr = ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push((long)((byte)v)); return Task.CompletedTask; }
+    private static Task Prim_CAt(ForthInterpreter i) { i.EnsureStack(1, "C@"); var addr = PrimitivesUtil.ToLong(i.PopInternal()); i.MemTryGet(addr, out var v); i.Push((long)((byte)v)); return Task.CompletedTask; }
 
     [Primitive("MOVE", HelpString = "MOVE ( src dst u -- ) - copy u bytes from src to dst")]
     private static Task Prim_MOVE(ForthInterpreter i)
     {
         i.EnsureStack(3, "MOVE");
-        var u = ToLong(i.PopInternal());
-        var dst = ToLong(i.PopInternal());
-        var src = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var dst = PrimitivesUtil.ToLong(i.PopInternal());
+        var src = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative MOVE length");
         if (u == 0) return Task.CompletedTask;
         if (src < dst && src + u > dst)
@@ -91,9 +91,9 @@ internal static partial class CorePrimitives
     private static Task Prim_CMOVE(ForthInterpreter i)
     {
         i.EnsureStack(3, "CMOVE");
-        var u = ToLong(i.PopInternal());
-        var dst = ToLong(i.PopInternal());
-        var src = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var dst = PrimitivesUtil.ToLong(i.PopInternal());
+        var src = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative CMOVE length");
         for (long k = 0; k < u; k++)
         {
@@ -107,9 +107,9 @@ internal static partial class CorePrimitives
     private static Task Prim_CMOVE_Greater(ForthInterpreter i)
     {
         i.EnsureStack(3, "CMOVE>");
-        var u = ToLong(i.PopInternal());
-        var dst = ToLong(i.PopInternal());
-        var src = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var dst = PrimitivesUtil.ToLong(i.PopInternal());
+        var src = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative CMOVE> length");
         for (long k = u - 1; k >= 0; k--)
         {
@@ -120,20 +120,20 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("FILL", HelpString = "FILL ( addr u ch -- ) - fill u bytes at addr with ch")]
-    private static Task Prim_FILL(ForthInterpreter i) { i.EnsureStack(3, "FILL"); var ch = ToLong(i.PopInternal()); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative FILL length"); var b = (long)((byte)ch); for (long k = 0; k < u; k++) i.MemSet(addr + k, b); return Task.CompletedTask; }
+    private static Task Prim_FILL(ForthInterpreter i) { i.EnsureStack(3, "FILL"); var ch = PrimitivesUtil.ToLong(i.PopInternal()); var u = PrimitivesUtil.ToLong(i.PopInternal()); var addr = PrimitivesUtil.ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative FILL length"); var b = (long)((byte)ch); for (long k = 0; k < u; k++) i.MemSet(addr + k, b); return Task.CompletedTask; }
 
     [Primitive("BLANK", HelpString = "BLANK ( addr u -- ) - fill u bytes at addr with space")]
-    private static Task Prim_BLANK(ForthInterpreter i) { i.EnsureStack(2, "BLANK"); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative BLANK length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 32); return Task.CompletedTask; }
+    private static Task Prim_BLANK(ForthInterpreter i) { i.EnsureStack(2, "BLANK"); var u = PrimitivesUtil.ToLong(i.PopInternal()); var addr = PrimitivesUtil.ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative BLANK length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 32); return Task.CompletedTask; }
 
     [Primitive("ERASE", HelpString = "ERASE ( addr u -- ) - set u bytes at addr to zero")]
-    private static Task Prim_ERASE(ForthInterpreter i) { i.EnsureStack(2, "ERASE"); var u = ToLong(i.PopInternal()); var addr = ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 0); return Task.CompletedTask; }
+    private static Task Prim_ERASE(ForthInterpreter i) { i.EnsureStack(2, "ERASE"); var u = PrimitivesUtil.ToLong(i.PopInternal()); var addr = PrimitivesUtil.ToLong(i.PopInternal()); if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ERASE length"); for (long k = 0; k < u; k++) i.MemSet(addr + k, 0); return Task.CompletedTask; }
 
     [Primitive("DUMP", HelpString = "DUMP ( addr u -- ) - print u bytes from addr in hex")]
     private static Task Prim_DUMP(ForthInterpreter i)
     {
         i.EnsureStack(2, "DUMP");
-        var u = ToLong(i.PopInternal());
-        var addr = ToLong(i.PopInternal());
+        var u = PrimitivesUtil.ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative DUMP length");
         var sb = new StringBuilder();
         for (long k = 0; k < u; k++)
@@ -170,18 +170,18 @@ internal static partial class CorePrimitives
     }
 
     [Primitive(",", HelpString = ", ( x -- ) - append cell to dictionary and advance here")]
-    private static Task Prim_Comma(ForthInterpreter i) { i.EnsureStack(1, ","); var v = ToLong(i.PopInternal()); i._mem[i._nextAddr++] = v; return Task.CompletedTask; }
+    private static Task Prim_Comma(ForthInterpreter i) { i.EnsureStack(1, ","); var v = PrimitivesUtil.ToLong(i.PopInternal()); i._mem[i._nextAddr++] = v; return Task.CompletedTask; }
 
     [Primitive("C,", HelpString = "C, ( ch -- ) - append byte to dictionary and advance here")]
-    private static Task Prim_CComma(ForthInterpreter i) { i.EnsureStack(1, "C,"); var v = ToLong(i.PopInternal()); i._mem[i._nextAddr++] = (long)((byte)v); return Task.CompletedTask; }
+    private static Task Prim_CComma(ForthInterpreter i) { i.EnsureStack(1, "C,"); var v = PrimitivesUtil.ToLong(i.PopInternal()); i._mem[i._nextAddr++] = (long)((byte)v); return Task.CompletedTask; }
 
     [Primitive("2!", HelpString = "2! ( x1 x2 addr -- ) - store two cells at address")]
     private static Task Prim_2Bang(ForthInterpreter i)
     {
         i.EnsureStack(3, "2!");
-        var addr = ToLong(i.PopInternal());
-        var x2 = ToLong(i.PopInternal());
-        var x1 = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
+        var x2 = PrimitivesUtil.ToLong(i.PopInternal());
+        var x1 = PrimitivesUtil.ToLong(i.PopInternal());
         i.MemSet(addr, x1);
         i.MemSet(addr + 1, x2);
         return Task.CompletedTask;
@@ -191,7 +191,7 @@ internal static partial class CorePrimitives
     private static Task Prim_2At(ForthInterpreter i)
     {
         i.EnsureStack(1, "2@");
-        var addr = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         i.MemTryGet(addr, out var x1);
         i.MemTryGet(addr + 1, out var x2);
         i.Push(x1);
@@ -203,7 +203,7 @@ internal static partial class CorePrimitives
     private static Task Prim_CellPlus(ForthInterpreter i)
     {
         i.EnsureStack(1, "CELL+");
-        var addr = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(addr + 1);
         return Task.CompletedTask;
     }
@@ -212,7 +212,7 @@ internal static partial class CorePrimitives
     private static Task Prim_Cells(ForthInterpreter i)
     {
         i.EnsureStack(1, "CELLS");
-        var n = ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(n * 1); // cell size 1
         return Task.CompletedTask;
     }
@@ -221,7 +221,7 @@ internal static partial class CorePrimitives
     private static Task Prim_CharPlus(ForthInterpreter i)
     {
         i.EnsureStack(1, "CHAR+");
-        var addr = ToLong(i.PopInternal());
+        var addr = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(addr + 1);
         return Task.CompletedTask;
     }
@@ -230,7 +230,7 @@ internal static partial class CorePrimitives
     private static Task Prim_Chars(ForthInterpreter i)
     {
         i.EnsureStack(1, "CHARS");
-        var n = ToLong(i.PopInternal());
+        var n = PrimitivesUtil.ToLong(i.PopInternal());
         i.Push(n * 1); // char size 1
         return Task.CompletedTask;
     }
@@ -243,7 +243,7 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("ALLOT", HelpString = "ALLOT ( u -- ) - reserve u cells in dictionary")]
-    private static Task Prim_ALLOT(ForthInterpreter i) { i.EnsureStack(1, "ALLOT"); var cells = ToLong(i.PopInternal()); if (cells < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size"); for (long k = 0; k < cells; k++) i._mem[i._nextAddr++] = 0; return Task.CompletedTask; }
+    private static Task Prim_ALLOT(ForthInterpreter i) { i.EnsureStack(1, "ALLOT"); var cells = PrimitivesUtil.ToLong(i.PopInternal()); if (cells < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative ALLOT size"); for (long k = 0; k < cells; k++) i._mem[i._nextAddr++] = 0; return Task.CompletedTask; }
 
     // HERE: push the current dictionary allocation pointer (address of next free cell)
     [Primitive("HERE", HelpString = "HERE ( -- addr ) - push current dictionary allocation pointer")]

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class ControlExecutionPrimitives
 {
     [Primitive("EXIT", HelpString = "Exit from current word")]
     private static Task Prim_EXIT(ForthInterpreter i) { i.ThrowExit(); return Task.CompletedTask; }
@@ -26,7 +26,6 @@ internal static partial class CorePrimitives
     [Primitive("ABORT", HelpString = "Abort execution with error")]
     private static Task Prim_ABORT(ForthInterpreter i)
     {
-        // If a string is on the stack, use it as the abort message
         if (i.Stack.Count > 0 && i.StackTop() is string s)
         {
             i.PopInternal();
@@ -75,7 +74,7 @@ internal static partial class CorePrimitives
             await xt.ExecuteAsync(i).ConfigureAwait(false);
             i.Push(0L);
         }
-        catch (Forth.Core.ForthException ex)
+        catch (ForthException ex)
         {
             var codeVal = (long)ex.Code;
             if (codeVal == 0) codeVal = 1;
@@ -88,5 +87,5 @@ internal static partial class CorePrimitives
     }
 
     [Primitive("THROW", HelpString = "Throw an exception by error code")]
-    private static Task Prim_THROW(ForthInterpreter i) { i.EnsureStack(1, "THROW"); var err = ToLong(i.PopInternal()); if (err != 0) throw new Forth.Core.ForthException((Forth.Core.ForthErrorCode)err, $"THROW {err}"); return Task.CompletedTask; }
+    private static Task Prim_THROW(ForthInterpreter i) { i.EnsureStack(1, "THROW"); var err = PrimitivesUtil.ToLong(i.PopInternal()); if (err != 0) throw new ForthException((ForthErrorCode)err, $"THROW {err}"); return Task.CompletedTask; }
 }

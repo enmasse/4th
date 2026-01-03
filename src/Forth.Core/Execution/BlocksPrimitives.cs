@@ -6,13 +6,13 @@ using System.Text;
 
 namespace Forth.Core.Execution;
 
-internal static partial class CorePrimitives
+internal static class BlocksPrimitives
 {
     [Primitive("BLOCK", HelpString = "BLOCK ( n -- c-addr u ) load block n")]
     private static Task Prim_BLOCK(ForthInterpreter i)
     {
         i.EnsureStack(1, "BLOCK");
-        var n = (int)ToLong(i.PopInternal());
+        var n = (int)PrimitivesUtil.ToLong(i.PopInternal());
         i.EnsureBlockExistsOnDisk(n);
         var addr = i.GetOrAllocateBlockAddr(n);
         i.LoadBlockFromBacking(n, addr);
@@ -26,8 +26,8 @@ internal static partial class CorePrimitives
     private static Task Prim_SAVE(ForthInterpreter i)
     {
         i.EnsureStack(3, "SAVE");
-        var n = (int)ToLong(i.PopInternal());
-        var u = (int)ToLong(i.PopInternal());
+        var n = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var u = (int)PrimitivesUtil.ToLong(i.PopInternal());
         var src = i.PopInternal();
         if (u < 0) throw new ForthException(ForthErrorCode.CompileError, "Negative length");
         if (u > ForthInterpreter.BlockSize) u = ForthInterpreter.BlockSize;
@@ -49,7 +49,7 @@ internal static partial class CorePrimitives
     private static Task Prim_LIST(ForthInterpreter i)
     {
         i.EnsureStack(1, "LIST");
-        var n = (int)ToLong(i.PopInternal());
+        var n = (int)PrimitivesUtil.ToLong(i.PopInternal());
         i.EnsureBlockExistsOnDisk(n);
         var addr = i.GetOrAllocateBlockAddr(n);
         i.LoadBlockFromBacking(n, addr);
@@ -77,7 +77,7 @@ internal static partial class CorePrimitives
     private static async Task Prim_LOAD(ForthInterpreter i)
     {
         i.EnsureStack(1, "LOAD");
-        var n = (int)ToLong(i.PopInternal());
+        var n = (int)PrimitivesUtil.ToLong(i.PopInternal());
         i.EnsureBlockExistsOnDisk(n);
         var addr = i.GetOrAllocateBlockAddr(n);
         i.LoadBlockFromBacking(n, addr);
@@ -96,8 +96,8 @@ internal static partial class CorePrimitives
     private static async Task Prim_THRU(ForthInterpreter i)
     {
         i.EnsureStack(2, "THRU");
-        var n2 = (int)ToLong(i.PopInternal());
-        var n1 = (int)ToLong(i.PopInternal());
+        var n2 = (int)PrimitivesUtil.ToLong(i.PopInternal());
+        var n1 = (int)PrimitivesUtil.ToLong(i.PopInternal());
         for (int n = n1; n <= n2; n++)
         {
             i.EnsureBlockExistsOnDisk(n);
@@ -119,7 +119,7 @@ internal static partial class CorePrimitives
     private static Task Prim_BUFFER(ForthInterpreter i)
     {
         i.EnsureStack(1, "BUFFER");
-        var n = (int)ToLong(i.PopInternal());
+        var n = (int)PrimitivesUtil.ToLong(i.PopInternal());
         var addr = i.GetOrAllocateBlockAddr(n);
         i.Push((long)addr);
         return Task.CompletedTask;
