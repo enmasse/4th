@@ -32,7 +32,7 @@ jobs:
         run: dotnet build Forth.sln -c Release --no-restore
 
       - name: Test
-        run: dotnet test 4th.Tests/4th.Tests.csproj -c Release --no-build --verbosity normal
+        run: dotnet test tests/4th.Tests/4th.Tests/4th.Tests.csproj -c Release --no-build --verbosity normal
 
       - name: Pack Forth.Core
         run: dotnet pack src/Forth.Core/Forth.Core.csproj -c Release -o artifacts --no-build
