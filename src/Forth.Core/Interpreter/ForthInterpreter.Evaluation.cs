@@ -28,7 +28,7 @@ public partial class ForthInterpreter
         return await EvalInternalAsync(line).ConfigureAwait(false);
     }
 
-    private async Task<bool> EvalInternalAsync(string line)
+    internal async Task<bool> EvalInternalAsync(string line)
     {
         _currentSourceId = -1; // string evaluation
         ArgumentNullException.ThrowIfNull(line);

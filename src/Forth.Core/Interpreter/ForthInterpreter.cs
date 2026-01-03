@@ -7,6 +7,9 @@ using System.Globalization;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using Forth.Core.Modules;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Forth.Core.Interpreter;
 
@@ -72,6 +75,8 @@ public partial class ForthInterpreter : IForthInterpreter
         }
     }
 
+    private readonly ForthInterpreterNumberParsing _numberParsing;
+
     /// <summary>
     /// Converts an object to a long value, supporting common numeric types.
     /// </summary>
@@ -114,4 +119,21 @@ public partial class ForthInterpreter : IForthInterpreter
     internal void RequestExit() => _exitRequested = true;
 
     internal void ThrowExit() => throw new ExitWordException();
+
+    private readonly ForthInterpreterFileIO _fileIo;
+
+    internal int _lastWriteHandle;
+    internal byte[]? _lastWriteBuffer;
+    internal long _lastWritePositionAfter;
+    internal int _lastReadHandle;
+    internal byte[]? _lastReadBuffer;
+    internal long _lastReadPositionAfter;
+
+    private readonly ForthInterpreterIOAndEnvironment _ioAndEnvironment;
+
+    private readonly ForthInterpreterModuleManagement _moduleManagement;
+
+    private readonly ForthInterpreterWordManagement _wordManagement;
+
+    private readonly ForthInterpreterParsing _parsing;
 }

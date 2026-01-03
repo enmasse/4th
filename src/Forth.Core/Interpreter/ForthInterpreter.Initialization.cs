@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Forth.Core.Interpreter;
@@ -16,6 +17,13 @@ public partial class ForthInterpreter
     public ForthInterpreter(IForthIO? io = null, int? blockCacheSize = null)
     {
         _io = io ?? new ConsoleForthIO();
+
+        _numberParsing = new ForthInterpreterNumberParsing(this);
+        _fileIo = new ForthInterpreterFileIO(this);
+        _ioAndEnvironment = new ForthInterpreterIOAndEnvironment(this);
+        _moduleManagement = new ForthInterpreterModuleManagement(this);
+        _wordManagement = new ForthInterpreterWordManagement(this);
+        _parsing = new ForthInterpreterParsing(this);
 
         _stateAddr = _nextAddr++;
         _mem[_stateAddr] = 0;
@@ -52,7 +60,7 @@ public partial class ForthInterpreter
         }
 
         // Add ENV wordlist words
-        AddEnvWords();
+        _ioAndEnvironment.AddEnvWords();
 
         // Ensure REPORT-ERRORS exists as a stub so compliance helper files that
         // expect this word can be loaded and override it if necessary.
@@ -101,7 +109,7 @@ public partial class ForthInterpreter
                 Trace($"Prelude load: not found at {preludePath}");
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             // If prelude fails to load, mark as loaded anyway to avoid blocking
             // The interpreter will still work without prelude words
@@ -118,6 +126,7 @@ public partial class ForthInterpreter
         foreach (var line in lines)
         {
             var trimmed = line.Trim();
+
             // Skip empty lines and comments
             if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('\\'))
             {

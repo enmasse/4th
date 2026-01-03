@@ -70,6 +70,13 @@ public partial class ForthInterpreter
     internal ForthInterpreter(MarkerSnapshot snapshot, IForthIO? io = null)
     {
         _io = io ?? new ConsoleForthIO();
+        _numberParsing = new ForthInterpreterNumberParsing(this);
+        _fileIo = new ForthInterpreterFileIO(this);
+        _ioAndEnvironment = new ForthInterpreterIOAndEnvironment(this);
+        _moduleManagement = new ForthInterpreterModuleManagement(this);
+        _wordManagement = new ForthInterpreterWordManagement(this);
+        _parsing = new ForthInterpreterParsing(this);
+
         // Allocate system variables in same order as main ctor
         _stateAddr = _nextAddr++;
         _mem[_stateAddr] = 0;
@@ -84,8 +91,15 @@ public partial class ForthInterpreter
         _inAddr = _nextAddr++;
         _mem[_inAddr] = 0;
 
+        _scrAddr = _nextAddr++;
+        _mem[_scrAddr] = 0;
+
+        _padAddr = 900000L;
+
         _dict = snapshot.Dict;
         _loadPrelude = Task.CompletedTask;
+        _preludeLoaded = true;
+
         _usingModules.AddRange(snapshot.UsingModules);
         foreach (var kvp in snapshot.Values) _values[kvp.Key] = kvp.Value;
         var maxSnapAddr = snapshot.NextAddr;
